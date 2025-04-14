@@ -3,7 +3,7 @@ import ModalTeacher from './components/ModalTeacher'
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { verifyToken } from "../utils/verifyToken"; 
+import { verifyToken } from "../../utils/verifyToken"; 
 
 export default async function Dashboard() {
   const cookiesData = await cookies();
@@ -17,10 +17,9 @@ export default async function Dashboard() {
     
     return (
       <>
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Panel de Control</h1>
-        <p className="text-gray-600">
-          Bienvenido al sistema de gestión escolar. Usa el menú de la izquierda para navegar.
-        </p>
+        <div className='absolute right-5 bottom-5'>
+          <ModalTeacher />
+        </div>
       </>
     );
 }
