@@ -26,7 +26,7 @@ export default function Modal() {
   const [subject, setSubject] = useState("");
   const [task, setTask] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [type, setType] = useState("Exam");
+  const [type, setType] = useState("exam");
 
   const createAssessment = async () => {
     try {
@@ -42,7 +42,7 @@ export default function Modal() {
           headers: {
             "Content-Type": "application/json",
           },
-          withCredentials: true, 
+          withCredentials: true,
         }
       );
 
@@ -64,7 +64,12 @@ export default function Modal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Task</Button>
+        <Button
+          variant="outline"
+          className="absolute bottom-5 right-5 cursor-pointer"
+        >
+          Create Task
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -127,8 +132,8 @@ export default function Modal() {
               </SelectContent>
             </Select>
           </div>
-            </div>
-         <DialogFooter>
+        </div>
+        <DialogFooter>
           <Button type="button" onClick={createAssessment}>
             Save Task
           </Button>

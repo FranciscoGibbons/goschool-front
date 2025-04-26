@@ -1,25 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
+import { NextResponse } from "next/server";
+import axios from "axios";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const body = await req.json();
 
+  // Verificar que se haya proporcionado el campo "role"
+  if (!body.role) {
+    return NextResponse.json(
+      { error: 'Falta el campo "role"' },
+      { status: 400 }
+    );
+  }
+
   try {
-    const res = await axios.post('http://127.0.0.1:8080/api/v1/login/', body, {
-      headers: { 'Content-Type': 'application/json' },
+    // Enviar los datos con el rol al backend
+    const res = await axios.post("http://127.0.0.1:8080/api/v1/login/", body, {
+      headers: { "Content-Type": "application/json" },
       withCredentials: true,
     });
 
-    // 🔁 Transmitimos el set-cookie del backend al navegador
-    const setCookie = res.headers['set-cookie'];
+    // Transmitir la cookie de sesión al cliente
+    const setCookie = res.headers["set-cookie"];
 
     return new NextResponse(null, {
       status: 200,
       headers: {
-        'Set-Cookie': setCookie?.join('; ') || '',
+        "Set-Cookie": setCookie?.join("; ") || "",
       },
     });
-  } catch {
-    return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 400 });
+  } catch (error) {
+    console.error("Error al hacer login:", error);
+    return NextResponse.json(
+      { error: "Credenciales inválidas" },
+      { status: 400 }
+    );
   }
 }
