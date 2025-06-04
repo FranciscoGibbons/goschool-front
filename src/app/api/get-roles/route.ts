@@ -8,16 +8,12 @@ export async function POST(req: NextRequest) {
 
   try {
     // Aquí hacemos la solicitud POST al backend
-    const res = await axios.post(
-      "http://127.0.0.1:8080/api/v1/get_roles/",
-      body,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true, // Si necesitas enviar cookies
-      }
-    );
+    const res = await axios.post("http://localhost:8080/api/v1/roles/", body, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true, // Si necesitas enviar cookies
+    });
 
     console.log("Respuesta de los roles:", res.data);
 

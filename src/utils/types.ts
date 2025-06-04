@@ -25,3 +25,10 @@ export interface Messages {
   courses: string;
   id: number;
 }
+
+export interface UserInfo {
+  full_name: string;
+  phone_number: string;
+  address: string;
+  birth_date: string;
+}

@@ -16,19 +16,17 @@ export default async function Mensajes() {
   let messages: Message[] = [];
 
   try {
-    const res = await axios.get(
-      "http://localhost:8080/api/v1/get_messages/0/",
-      {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `jwt=${token}`,
-        },
-      }
-    );
+    const res = await axios.get("http://localhost:8080/api/v1/messages/", {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `jwt=${token}`,
+      },
+    });
 
     if (res.status === 200) {
       messages = res.data;
+      console.log(res.data);
     }
   } catch (error) {
     console.error("Error al obtener los mensajes:", error);
@@ -57,7 +55,7 @@ export default async function Mensajes() {
 
               return (
                 <div
-                  key={message.id}
+                  key={`${message.id}-${index}`}
                   className="flex items-start p-4 bg-white rounded-lg shadow-sm border hover:shadow-md transition"
                 >
                   {/* Avatar */}

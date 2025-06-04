@@ -33,7 +33,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     try {
       // Realiza la solicitud POST directamente a la API externa
       const response = await axios.post(
-        "http://localhost:8080/api/v1/post_message/",
+        "http://localhost:8080/api/v1/messages/",
         formData,
         {
           headers: {

@@ -1,6 +1,9 @@
 "use client";
+
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import userInfoStore from "@/store/userInfoStore";
+
 import {
   Select,
   SelectContent,
@@ -10,13 +13,14 @@ import {
 } from "@/components/ui/select";
 
 export default function LoginForm() {
+  const { fetchUserInfo } = userInfoStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<string>("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errorLogin, setErrorLogin] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [roles, setRoles] = useState<string[]>([]); // Vacío por defecto
+  const [roles, setRoles] = useState<string[]>([]);
   const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -26,7 +30,7 @@ export default function LoginForm() {
 
     try {
       if (!roles.length) {
-        // Paso 1: obtener roles desde el backend
+        // 1. Obtener roles
         const res = await fetch("/api/get-roles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -44,7 +48,7 @@ export default function LoginForm() {
         if (data.roles.length === 0) {
           setErrorLogin("No tienes roles asignados.");
         } else if (data.roles.length === 1) {
-          // Si solo hay un rol, loguear directamente
+          // 2. Hacer login directamente
           const loginRes = await fetch("/api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -52,16 +56,25 @@ export default function LoginForm() {
           });
 
           if (loginRes.ok) {
-            router.push("/dashboard");
+            try {
+              // 3. Si el login fue exitoso, traer la info del usuario y ESPERAR a que termine
+              await fetchUserInfo();
+              console.log("User info fetched after login");
+              router.push("/dashboard");
+            } catch (error) {
+              console.error("Error fetching user info:", error);
+              setErrorLogin(
+                "Sesión iniciada pero no se pudo cargar la información del usuario."
+              );
+            }
           } else {
             setErrorLogin("Error al iniciar sesión.");
           }
         } else {
-          // Si hay varios roles, mostrar selector
           setRoles(data.roles);
         }
       } else {
-        // Paso 2: si ya se seleccionó un rol, hacer login con ese rol
+        // Ya tenemos roles, login con rol seleccionado
         const loginRes = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -69,7 +82,16 @@ export default function LoginForm() {
         });
 
         if (loginRes.ok) {
-          router.push("/dashboard");
+          try {
+            await fetchUserInfo();
+            console.log("User info fetched after role selection");
+            router.push("/dashboard");
+          } catch (error) {
+            console.error("Error fetching user info:", error);
+            setErrorLogin(
+              "Sesión iniciada pero no se pudo cargar la información del usuario."
+            );
+          }
         } else {
           setErrorLogin("Error al iniciar sesión.");
         }
