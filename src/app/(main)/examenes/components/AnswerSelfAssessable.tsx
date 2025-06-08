@@ -1,4 +1,3 @@
-// app/exams/components/AnswerSelfAssessable.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,11 +8,13 @@ import { Input } from "@/components/ui/input";
 interface AnswerProps {
   assessmentId: number;
   questions: string[];
+  onClose: () => void; // nuevo
 }
 
 export default function AnswerSelfAssessable({
   assessmentId,
   questions,
+  onClose,
 }: AnswerProps) {
   const [answers, setAnswers] = useState<string[]>(
     Array(questions.length).fill("")
@@ -43,6 +44,7 @@ export default function AnswerSelfAssessable({
 
       if (res.status === 200) {
         alert("Respuestas enviadas correctamente");
+        onClose(); // cerrar al enviar correctamente
       } else {
         alert("Hubo un problema al enviar las respuestas");
       }
@@ -56,7 +58,18 @@ export default function AnswerSelfAssessable({
 
   return (
     <div className="space-y-4 mt-6 border-t pt-6">
-      <h3 className="text-lg font-bold text-blue-900">Responder evaluación</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-bold text-blue-900">
+          Responder evaluación
+        </h3>
+        <button
+          onClick={onClose}
+          className="text-sm text-blue-500 hover:underline"
+        >
+          Cancelar
+        </button>
+      </div>
+
       {questions.map((q, idx) => (
         <div key={idx} className="space-y-1">
           <p className="font-medium">
@@ -69,9 +82,11 @@ export default function AnswerSelfAssessable({
           />
         </div>
       ))}
+
       <Button onClick={handleSubmit} disabled={isSubmitting}>
         {isSubmitting ? "Enviando..." : "Enviar respuestas"}
       </Button>
     </div>
   );
 }
+//               

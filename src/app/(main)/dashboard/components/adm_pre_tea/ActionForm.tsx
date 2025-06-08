@@ -182,7 +182,6 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       });
 
       if (response.status === 201 || response.status === 200) {
-        alert("Creación exitosa");
         onClose();
       } else {
         alert("Error en la creación");
