@@ -7,6 +7,13 @@ interface Message {
   title: string;
   message: string;
   courses: string;
+  sender_id: number;
+}
+
+interface Sender {
+  id: number;
+  name: string;
+  role: string;
 }
 
 export default async function Mensajes() {
@@ -26,22 +33,36 @@ export default async function Mensajes() {
 
     if (res.status === 200) {
       messages = res.data;
-      console.log(res.data);
+      console.log("Mensajes recibidos:", res.data);
     }
   } catch (error) {
     console.error("Error al obtener los mensajes:", error);
+    return <p className="text-red-500">Error al cargar mensajes.</p>;
   }
 
-  // Función para mockear datos
-  const getMockSender = (index: number) => {
-    const mockNames = [
-      { name: "Guillermina Cererols", role: "Preceptor" },
-      { name: "Pamela Valentina Barón", role: "Director" },
-      { name: "Carlos Fernández", role: "Preceptor" },
-      { name: "Laura Martínez", role: "Director" },
-    ];
-    return mockNames[index % mockNames.length];
-  };
+  // Forzamos petición de sender_id=1 (admin)
+  const sendersMap = new Map<number, Sender>();
+
+  try {
+    const res = await axios.get(
+      `http://localhost:8080/api/v1/public_personal_data/?id=1`,
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `jwt=${token}`,
+        },
+      }
+    );
+
+    const sender = res.data[0]; // Suponiendo que devuelve un array con un solo sender
+
+    if (sender) {
+      sendersMap.set(1, sender);
+    }
+  } catch (error) {
+    console.error("Error al obtener los datos del remitente (admin):", error);
+  }
 
   return (
     <div className="h-full w-full p-6 overflow-hidden flex flex-col">
@@ -50,32 +71,35 @@ export default async function Mensajes() {
       {messages.length > 0 ? (
         <div className="flex-1 overflow-y-auto">
           <div className="flex flex-col space-y-4">
-            {messages.map((message, index) => {
-              const mock = getMockSender(index);
+            {messages.map((message) => {
+              const sender = sendersMap.get(1); // Siempre usamos el admin
+
+              const initials =
+                sender?.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase() || "??";
 
               return (
                 <div
-                  key={`${message.id}-${index}`}
+                  key={message.id}
                   className="flex items-start p-4 bg-white rounded-lg shadow-sm border hover:shadow-md transition"
                 >
-                  {/* Avatar */}
                   <Avatar className="h-12 w-12 mr-4">
-                    <AvatarFallback>
-                      {mock.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </AvatarFallback>
+                    <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
 
-                  {/* Info */}
                   <div className="flex flex-col w-full">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-800">{mock.name}</p>
-                        <p className="text-sm text-blue-600">{mock.role}</p>
+                        <p className="font-medium text-gray-800">
+                          {sender?.name || "Desconocido"}
+                        </p>
+                        <p className="text-sm text-blue-600">
+                          {sender?.role || "—"}
+                        </p>
                       </div>
                     </div>
 

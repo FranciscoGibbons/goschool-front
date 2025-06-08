@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import { Role, FormsObj } from "@/utils/types";
-type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
 
 import { PlusIcon } from "@heroicons/react/24/outline";
 import {
@@ -21,14 +20,16 @@ import {
 } from "@/components/ui/select";
 import { ActionForm } from "./ActionForm";
 
+type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
+
 const getActionsForRole = (role: string) => {
   switch (role) {
     case "admin":
-      return ["Crear mensaje"];
+      return ["Crear mensaje"] as Array<keyof FormsObj>;
     case "preceptor":
-      return ["Crear mensaje"];
+      return ["Crear mensaje"] as Array<keyof FormsObj>;
     case "teacher":
-      return ["Crear examen"];
+      return ["Crear examen"] as Array<keyof FormsObj>;
     default:
       return [];
   }
@@ -37,7 +38,7 @@ const getActionsForRole = (role: string) => {
 export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
   const [action, setAction] = useState<keyof FormsObj | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const options = getActionsForRole(role) as Array<keyof FormsObj>; // Ensure options match FormsObj keys
+  const options = getActionsForRole(role);
 
   return (
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -46,7 +47,7 @@ export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
           <PlusIcon className="size-10" aria-hidden="true" />
         </button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogTitle>Crear tarea</DialogTitle>
         {!action ? (
           <Select onValueChange={(value) => setAction(value as keyof FormsObj)}>
@@ -75,3 +76,5 @@ export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
     </Dialog>
   );
 };
+
+export default AddActionHandler;

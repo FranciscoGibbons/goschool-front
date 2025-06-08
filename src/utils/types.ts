@@ -1,15 +1,28 @@
-export interface Exam {
+// TIPOS
+
+export interface BaseExam {
   id: number;
-  subject_id: number; // por ahora
+  subject_id: number;
   task: string;
   due_date: string;
   created_at: string;
-  type: "exam" | "homework" | "project";
+  type: "oral" | "selfassessable";
+  questions?: string[];
 }
+
+export interface SelfAssessableExam extends BaseExam {
+  type: "selfassessable";
+  questions: string[];
+  correct: string[];
+  incorrect1: string[];
+  incorrect2: string[];
+}
+
+export type Exam = BaseExam | SelfAssessableExam;
 
 export type Role = "admin" | "teacher" | "student" | "preceptor" | "father";
 
-interface MessageForm {
+export interface MessageForm {
   title: string;
   message: string;
   courses: string;
@@ -17,6 +30,16 @@ interface MessageForm {
 
 export interface FormsObj {
   "Crear mensaje": MessageForm;
+  "Crear examen": {
+    subject: string;
+    task: string;
+    due_date: string;
+    type: "oral" | "selfassessable";
+    questions: string[];
+    correct: string[];
+    incorrect1: string[];
+    incorrect2: string[];
+  };
 }
 
 export interface Messages {
