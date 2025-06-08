@@ -19,7 +19,7 @@ export default async function Exams() {
   // Obtener rol del usuario
   const getRole = async (jwt: string): Promise<string> => {
     try {
-      const res = await axios.get("http://localhost:8080/api/v1/get_role/", {
+      const res = await axios.get("http://localhost:8080/api/v1/role/", {
         headers: { Cookie: `jwt=${jwt}` },
         withCredentials: true,
       });
@@ -47,15 +47,8 @@ export default async function Exams() {
   const role = await getRole(token);
   let exams = await getExams(token);
 
-  // Filtrar para estudiantes: solo mostrar autoevaluables y exámenes asignados (si backend no lo hace)
   if (role === "student") {
-    // Supongo que cada exam tiene una propiedad `assigned_to_students` o similar,
-    // si no la hay, simplemente filtra sólo los autoevaluables para que respondan.
-
-    // Si no hay info de asignación, mostrar sólo autoevaluables:
     exams = exams.filter((exam) => exam.type === "selfassessable");
-
-    // Si tienes una propiedad que indica asignación al estudiante, filtra aquí según corresponda.
   }
 
   return (

@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { FormsObj } from "@/utils/types";
+import {
+  FormsObj,
+  MessageForm,
+  ExamForm,
+  SelfAssessableExamForm,
+  MessagePayload,
+  ExamPayload,
+  TaskPayload,
+  SelfAssessablePayload,
+} from "@/utils/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,40 +29,67 @@ interface ActionFormProps {
 }
 
 export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
-  const initialState: FormsObj[typeof action] =
-    action === "Crear mensaje"
-      ? { title: "", message: "", courses: "" }
-      : {
-          subject: "",
-          task: "",
-          due_date: "",
-          type: "oral",
-          questions: [""],
-          correct: [""],
-          incorrect1: [""],
-          incorrect2: [""],
-        };
-
-  const [formData, setFormData] =
-    useState<FormsObj[typeof action]>(initialState);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleChange = <K extends keyof FormsObj[typeof action]>(
-    field: K,
-    value: string
-  ) => {
-    setFormData({
-      ...formData,
-      [field]: value,
-    });
+  // Estados iniciales más específicos
+  const getInitialState = (): FormsObj[typeof action] => {
+    if (action === "Crear mensaje") {
+      return { title: "", message: "", courses: "" } as MessageForm;
+    } else {
+      return {
+        subject: "",
+        task: "",
+        due_date: "",
+        type: "oral",
+        questions: [""],
+        correct: [""],
+        incorrect1: [""],
+        incorrect2: [""],
+      } as ExamForm;
+    }
   };
 
+  const [formData, setFormData] = useState<FormsObj[typeof action]>(
+    getInitialState()
+  );
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Type guards para verificar el tipo de formulario
+  const isMessageForm = (
+    data: FormsObj[typeof action]
+  ): data is MessageForm => {
+    return action === "Crear mensaje";
+  };
+
+  const isExamForm = (data: FormsObj[typeof action]): data is ExamForm => {
+    return action === "Crear examen";
+  };
+
+  const isSelfAssessableExamForm = (
+    data: ExamForm
+  ): data is SelfAssessableExamForm => {
+    return data.type === "selfassessable";
+  };
+
+  // Manejo de cambios para campos individuales
+  const handleChange = <T extends FormsObj[typeof action]>(
+    field: keyof T,
+    value: string
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Manejo de cambios para arrays (solo para formularios de examen autoevaluable)
   const handleArrayChange = (
-    field: "questions" | "correct" | "incorrect1" | "incorrect2",
+    field: keyof Pick<
+      SelfAssessableExamForm,
+      "questions" | "correct" | "incorrect1" | "incorrect2"
+    >,
     index: number,
     value: string
   ) => {
-    if ("questions" in formData) {
+    if (isExamForm(formData) && isSelfAssessableExamForm(formData)) {
       const updatedArray = [...formData[field]];
       updatedArray[index] = value;
       setFormData({
@@ -63,10 +99,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   };
 
+  // Agregar elemento al array
   const handleAddArrayItem = (
-    field: "questions" | "correct" | "incorrect1" | "incorrect2"
+    field: keyof Pick<
+      SelfAssessableExamForm,
+      "questions" | "correct" | "incorrect1" | "incorrect2"
+    >
   ) => {
-    if ("questions" in formData) {
+    if (isExamForm(formData) && isSelfAssessableExamForm(formData)) {
       setFormData({
         ...formData,
         [field]: [...formData[field], ""],
@@ -74,11 +114,15 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   };
 
+  // Remover elemento del array
   const handleRemoveArrayItem = (
-    field: "questions" | "correct" | "incorrect1" | "incorrect2",
+    field: keyof Pick<
+      SelfAssessableExamForm,
+      "questions" | "correct" | "incorrect1" | "incorrect2"
+    >,
     index: number
   ) => {
-    if ("questions" in formData) {
+    if (isExamForm(formData) && isSelfAssessableExamForm(formData)) {
       const updatedArray = [...formData[field]];
       updatedArray.splice(index, 1);
       setFormData({
@@ -91,32 +135,46 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      let payload: any;
-      if (action === "Crear mensaje") {
-        payload = formData;
-      } else if (action === "Crear examen" && "questions" in formData) {
+      let payload: MessagePayload | ExamPayload;
+      let url: string;
+
+      if (action === "Crear mensaje" && isMessageForm(formData)) {
         payload = {
-          newtask: {
-            subject: Number(formData.subject),
-            task: formData.task,
-            due_date: formData.due_date,
-            type: formData.type,
-          },
+          title: formData.title,
+          message: formData.message,
+          courses: formData.courses,
+        } satisfies MessagePayload;
+        url = "http://localhost:8080/api/v1/messages/";
+      } else if (action === "Crear examen" && isExamForm(formData)) {
+        const taskPayload: TaskPayload = {
+          subject: Number(formData.subject),
+          task: formData.task,
+          due_date: formData.due_date,
+          type: formData.type,
         };
-        if (formData.type === "selfassessable") {
-          payload.newselfassessable = {
+
+        if (isSelfAssessableExamForm(formData)) {
+          const selfAssessablePayload: SelfAssessablePayload = {
             questions: formData.questions,
             correct: formData.correct,
             incorrect1: formData.incorrect1,
             incorrect2: formData.incorrect2,
           };
-        }
-      }
 
-      const url =
-        action === "Crear mensaje"
-          ? "http://localhost:8080/api/v1/messages/"
-          : "http://localhost:8080/api/v1/assessments/";
+          payload = {
+            newtask: taskPayload,
+            newselfassessable: selfAssessablePayload,
+          } satisfies ExamPayload;
+        } else {
+          payload = {
+            newtask: taskPayload,
+          } satisfies ExamPayload;
+        }
+
+        url = "http://localhost:8080/api/v1/assessments/";
+      } else {
+        throw new Error("Tipo de formulario no válido");
+      }
 
       const response = await axios.post(url, payload, {
         headers: { "Content-Type": "application/json" },
@@ -141,40 +199,54 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">{action}</h2>
 
-      {action === "Crear mensaje" &&
-        (Object.keys(formData) as Array<keyof FormsObj["Crear mensaje"]>).map(
-          (key) => (
-            <Input
-              key={key}
-              placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
-              value={formData[key]}
-              onChange={(e) => handleChange(key, e.target.value)}
-            />
-          )
-        )}
+      {/* Formulario para mensajes */}
+      {action === "Crear mensaje" && isMessageForm(formData) && (
+        <>
+          <Input
+            placeholder="Título"
+            value={formData.title}
+            onChange={(e) => handleChange<MessageForm>("title", e.target.value)}
+          />
+          <Input
+            placeholder="Mensaje"
+            value={formData.message}
+            onChange={(e) =>
+              handleChange<MessageForm>("message", e.target.value)
+            }
+          />
+          <Input
+            placeholder="Cursos"
+            value={formData.courses}
+            onChange={(e) =>
+              handleChange<MessageForm>("courses", e.target.value)
+            }
+          />
+        </>
+      )}
 
-      {action === "Crear examen" && "questions" in formData && (
+      {/* Formulario para exámenes */}
+      {action === "Crear examen" && isExamForm(formData) && (
         <>
           <Input
             placeholder="ID materia (subject)"
             type="number"
             value={formData.subject}
-            onChange={(e) => handleChange("subject", e.target.value)}
+            onChange={(e) => handleChange<ExamForm>("subject", e.target.value)}
           />
           <Input
             placeholder="Nombre de la evaluación"
             value={formData.task}
-            onChange={(e) => handleChange("task", e.target.value)}
+            onChange={(e) => handleChange<ExamForm>("task", e.target.value)}
           />
           <Input
             type="date"
             value={formData.due_date}
-            onChange={(e) => handleChange("due_date", e.target.value)}
+            onChange={(e) => handleChange<ExamForm>("due_date", e.target.value)}
           />
           <Select
             value={formData.type}
-            onValueChange={(value) =>
-              handleChange("type" as keyof FormsObj["Crear examen"], value)
+            onValueChange={(value: "oral" | "selfassessable") =>
+              handleChange<ExamForm>("type", value)
             }
           >
             <SelectTrigger>
@@ -188,13 +260,22 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             </SelectContent>
           </Select>
 
-          {formData.type === "selfassessable" && (
+          {/* Campos adicionales para exámenes autoevaluables */}
+          {isSelfAssessableExamForm(formData) && (
             <>
               {(
                 ["questions", "correct", "incorrect1", "incorrect2"] as const
               ).map((field) => (
                 <div key={field} className="mb-4">
-                  <h3 className="font-semibold mb-1 capitalize">{field}</h3>
+                  <h3 className="font-semibold mb-1 capitalize">
+                    {field === "questions"
+                      ? "Preguntas"
+                      : field === "correct"
+                      ? "Respuestas correctas"
+                      : field === "incorrect1"
+                      ? "Respuestas incorrectas 1"
+                      : "Respuestas incorrectas 2"}
+                  </h3>
                   {formData[field].map((value, idx) => (
                     <div key={idx} className="flex items-center space-x-2 mb-2">
                       <Input
@@ -219,7 +300,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                     size="sm"
                     onClick={() => handleAddArrayItem(field)}
                   >
-                    + Agregar {field}
+                    + Agregar{" "}
+                    {field === "questions"
+                      ? "pregunta"
+                      : field === "correct"
+                      ? "respuesta correcta"
+                      : "respuesta incorrecta"}
                   </Button>
                 </div>
               ))}
