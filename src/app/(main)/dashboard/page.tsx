@@ -19,6 +19,8 @@ export default async function Dashboard() {
 
   const role: Role = await getRole(token || "");
 
+  console.log("Dashboard page role:", role);
+
   if (role === "admin" || role === "preceptor" || role === "teacher") {
     return <DashAdminPreceptorTeacher role={role} />;
   }

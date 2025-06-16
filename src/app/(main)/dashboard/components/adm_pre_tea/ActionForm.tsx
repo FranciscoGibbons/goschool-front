@@ -8,8 +8,6 @@ import {
   SelfAssessableExamForm,
   MessagePayload,
   ExamPayload,
-  TaskPayload,
-  SelfAssessablePayload,
 } from "@/utils/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import axios from "axios";
+import { toast } from "sonner";
 
 interface ActionFormProps {
   action: keyof FormsObj;
@@ -39,10 +38,10 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         task: "",
         due_date: "",
         type: "oral",
-        questions: [""],
-        correct: [""],
-        incorrect1: [""],
-        incorrect2: [""],
+        questions: Array(10).fill(""),
+        correct: Array(10).fill(""),
+        incorrect1: Array(10).fill(""),
+        incorrect2: Array(10).fill(""),
       } as ExamForm;
     }
   };
@@ -51,6 +50,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     getInitialState()
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   // Type guards para verificar el tipo de formulario
   const isMessageForm = (
@@ -80,55 +80,43 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }));
   };
 
-  // Manejo de cambios para arrays (solo para formularios de examen autoevaluable)
+  type ArrayField = "questions" | "correct" | "incorrect1" | "incorrect2";
+
   const handleArrayChange = (
-    field: keyof Pick<
-      SelfAssessableExamForm,
-      "questions" | "correct" | "incorrect1" | "incorrect2"
-    >,
+    field: ArrayField,
     index: number,
     value: string
   ) => {
     if (isExamForm(formData) && isSelfAssessableExamForm(formData)) {
-      const updatedArray = [...formData[field]];
-      updatedArray[index] = value;
+      const examData = formData as SelfAssessableExamForm;
       setFormData({
-        ...formData,
-        [field]: updatedArray,
+        ...examData,
+        [field]: examData[field].map((item, i) => (i === index ? value : item)),
       });
     }
   };
 
-  // Agregar elemento al array
-  const handleAddArrayItem = (
-    field: keyof Pick<
-      SelfAssessableExamForm,
-      "questions" | "correct" | "incorrect1" | "incorrect2"
-    >
-  ) => {
-    if (isExamForm(formData) && isSelfAssessableExamForm(formData)) {
-      setFormData({
-        ...formData,
-        [field]: [...formData[field], ""],
-      });
+  const isQuestionComplete = (index: number) => {
+    if (!isExamForm(formData) || !isSelfAssessableExamForm(formData))
+      return false;
+    const examData = formData as SelfAssessableExamForm;
+    return (
+      examData.questions[index] &&
+      examData.correct[index] &&
+      examData.incorrect1[index] &&
+      examData.incorrect2[index]
+    );
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestion < 9) {
+      setCurrentQuestion(currentQuestion + 1);
     }
   };
 
-  // Remover elemento del array
-  const handleRemoveArrayItem = (
-    field: keyof Pick<
-      SelfAssessableExamForm,
-      "questions" | "correct" | "incorrect1" | "incorrect2"
-    >,
-    index: number
-  ) => {
-    if (isExamForm(formData) && isSelfAssessableExamForm(formData)) {
-      const updatedArray = [...formData[field]];
-      updatedArray.splice(index, 1);
-      setFormData({
-        ...formData,
-        [field]: updatedArray,
-      });
+  const handlePrevQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
     }
   };
 
@@ -146,32 +134,46 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         } satisfies MessagePayload;
         url = "http://localhost:8080/api/v1/messages/";
       } else if (action === "Crear examen" && isExamForm(formData)) {
-        const taskPayload: TaskPayload = {
-          subject: Number(formData.subject),
-          task: formData.task,
-          due_date: formData.due_date,
-          type: formData.type,
-        };
-
         if (isSelfAssessableExamForm(formData)) {
-          const selfAssessablePayload: SelfAssessablePayload = {
-            questions: formData.questions,
-            correct: formData.correct,
-            incorrect1: formData.incorrect1,
-            incorrect2: formData.incorrect2,
-          };
+          // Verificar que todas las preguntas estén completas
+          const allQuestionsComplete = formData.questions.every((_, index) =>
+            isQuestionComplete(index)
+          );
+
+          if (!allQuestionsComplete) {
+            toast.error(
+              "Por favor completa todas las preguntas antes de enviar"
+            );
+            setIsLoading(false);
+            return;
+          }
 
           payload = {
-            newtask: taskPayload,
-            newselfassessable: selfAssessablePayload,
+            newtask: {
+              subject: Number(formData.subject),
+              task: formData.task,
+              due_date: formData.due_date,
+              type: "selfassessable",
+            },
+            newselfassessable: {
+              questions: formData.questions,
+              correct: formData.correct,
+              incorrect1: formData.incorrect1,
+              incorrect2: formData.incorrect2,
+            },
           } satisfies ExamPayload;
+          url = "http://localhost:8080/api/v1/assessments/";
         } else {
           payload = {
-            newtask: taskPayload,
+            newtask: {
+              subject: Number(formData.subject),
+              task: formData.task,
+              due_date: formData.due_date,
+              type: formData.type,
+            },
           } satisfies ExamPayload;
+          url = "http://localhost:8080/api/v1/assessments/";
         }
-
-        url = "http://localhost:8080/api/v1/assessments/";
       } else {
         throw new Error("Tipo de formulario no válido");
       }
@@ -182,13 +184,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       });
 
       if (response.status === 201 || response.status === 200) {
+        toast.success("Examen creado exitosamente");
         onClose();
       } else {
-        alert("Error en la creación");
+        toast.error("Error en la creación");
       }
     } catch (error) {
       console.error(error);
-      alert("Error en la creación");
+      toast.error("Error en la creación");
     } finally {
       setIsLoading(false);
     }
@@ -261,54 +264,124 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
           {/* Campos adicionales para exámenes autoevaluables */}
           {isSelfAssessableExamForm(formData) && (
-            <>
-              {(
-                ["questions", "correct", "incorrect1", "incorrect2"] as const
-              ).map((field) => (
-                <div key={field} className="mb-4">
-                  <h3 className="font-semibold mb-1 capitalize">
-                    {field === "questions"
-                      ? "Preguntas"
-                      : field === "correct"
-                      ? "Respuestas correctas"
-                      : field === "incorrect1"
-                      ? "Respuestas incorrectas 1"
-                      : "Respuestas incorrectas 2"}
-                  </h3>
-                  {formData[field].map((value, idx) => (
-                    <div key={idx} className="flex items-center space-x-2 mb-2">
+            <div className="space-y-6 mt-4">
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold mb-4">
+                  Configuración del Quiz - Pregunta {currentQuestion + 1} de 10
+                </h3>
+                <div className="p-4 border rounded-lg bg-gray-50">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Pregunta
+                      </label>
                       <Input
-                        placeholder={`${field} #${idx + 1}`}
-                        value={value}
+                        placeholder="Escribe la pregunta"
+                        value={formData.questions[currentQuestion]}
                         onChange={(e) =>
-                          handleArrayChange(field, idx, e.target.value)
+                          handleArrayChange(
+                            "questions",
+                            currentQuestion,
+                            e.target.value
+                          )
                         }
                       />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRemoveArrayItem(field, idx)}
-                        disabled={formData[field].length === 1}
-                      >
-                        X
-                      </Button>
                     </div>
-                  ))}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Respuesta correcta
+                      </label>
+                      <Input
+                        placeholder="Respuesta correcta"
+                        value={formData.correct[currentQuestion]}
+                        onChange={(e) =>
+                          handleArrayChange(
+                            "correct",
+                            currentQuestion,
+                            e.target.value
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Opción incorrecta 1
+                      </label>
+                      <Input
+                        placeholder="Primera opción incorrecta"
+                        value={formData.incorrect1[currentQuestion]}
+                        onChange={(e) =>
+                          handleArrayChange(
+                            "incorrect1",
+                            currentQuestion,
+                            e.target.value
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Opción incorrecta 2
+                      </label>
+                      <Input
+                        placeholder="Segunda opción incorrecta"
+                        value={formData.incorrect2[currentQuestion]}
+                        onChange={(e) =>
+                          handleArrayChange(
+                            "incorrect2",
+                            currentQuestion,
+                            e.target.value
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between mt-4">
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleAddArrayItem(field)}
+                    variant="outline"
+                    onClick={handlePrevQuestion}
+                    disabled={currentQuestion === 0}
                   >
-                    + Agregar{" "}
-                    {field === "questions"
-                      ? "pregunta"
-                      : field === "correct"
-                      ? "respuesta correcta"
-                      : "respuesta incorrecta"}
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleNextQuestion}
+                    disabled={
+                      currentQuestion === 9 ||
+                      !isQuestionComplete(currentQuestion)
+                    }
+                  >
+                    Siguiente
                   </Button>
                 </div>
-              ))}
-            </>
+
+                <div className="mt-4 flex justify-center gap-2">
+                  {Array(10)
+                    .fill(0)
+                    .map((_, index) => (
+                      <Button
+                        key={index}
+                        variant={
+                          currentQuestion === index ? "default" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => setCurrentQuestion(index)}
+                        className={
+                          isQuestionComplete(index) ? "bg-green-100" : ""
+                        }
+                      >
+                        {index + 1}
+                      </Button>
+                    ))}
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}

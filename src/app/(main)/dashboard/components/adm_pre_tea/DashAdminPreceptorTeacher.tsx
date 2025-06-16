@@ -9,6 +9,8 @@ type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
 const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
   const { userInfo } = userInfoStore();
 
+  console.log("DashAdminPreceptorTeacher role:", role);
+
   return (
     <>
       <div>{userInfo?.full_name}</div>

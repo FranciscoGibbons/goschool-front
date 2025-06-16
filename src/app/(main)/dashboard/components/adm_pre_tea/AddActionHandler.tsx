@@ -22,14 +22,14 @@ import { ActionForm } from "./ActionForm";
 
 type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
 
-const getActionsForRole = (role: string) => {
+const getActionsForRole = (role: ActionableRole) => {
   switch (role) {
     case "admin":
-      return ["Crear mensaje"] as Array<keyof FormsObj>;
+      return ["Crear mensaje", "Crear examen"] as Array<keyof FormsObj>;
     case "preceptor":
       return ["Crear mensaje"] as Array<keyof FormsObj>;
     case "teacher":
-      return ["Crear examen"] as Array<keyof FormsObj>;
+      return ["Crear mensaje", "Crear examen"] as Array<keyof FormsObj>;
     default:
       return [];
   }
@@ -40,6 +40,9 @@ export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const options = getActionsForRole(role);
 
+  console.log("Current role:", role);
+  console.log("Available options:", options);
+
   return (
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
       <DialogTrigger asChild>
@@ -48,7 +51,7 @@ export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
-        <DialogTitle>Crear tarea</DialogTitle>
+        <DialogTitle>{action || "Crear tarea"}</DialogTitle>
         {!action ? (
           <Select onValueChange={(value) => setAction(value as keyof FormsObj)}>
             <SelectTrigger>

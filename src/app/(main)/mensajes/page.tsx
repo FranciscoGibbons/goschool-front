@@ -45,7 +45,7 @@ export default async function Mensajes() {
   for (const senderId of uniqueSenderIds) {
     try {
       const res = await axios.get(
-        `http://localhost:8080/api/v1/public_personal_data/?id=${senderId}`,
+        `http://localhost:8080/api/v1/public_personal_data/?user_id=${senderId}`,
         {
           withCredentials: true,
           headers: {
