@@ -85,7 +85,7 @@ export default async function Mensajes() {
 
   return (
     <div className="h-full w-full p-6 overflow-hidden flex flex-col">
-      <h1 className="text-3xl font-bold mb-6">Mensajes</h1>
+      <h1 className="text-3xl font-bold mb-6 text-foreground">Mensajes</h1>
 
       {messages.length > 0 ? (
         <div className="flex-1 overflow-y-auto">
@@ -97,13 +97,13 @@ export default async function Mensajes() {
               return (
                 <div
                   key={message.id}
-                  className="flex items-start p-4 bg-white rounded-lg shadow-sm border hover:shadow-md transition"
+                  className="flex items-start p-4 bg-card rounded-lg shadow-sm border border-border hover:shadow-md transition"
                 >
                   <Avatar className="h-12 w-12 mr-4">
                     {sender?.photo ? (
                       <AvatarImage src={sender.photo} alt={sender.full_name} />
                     ) : (
-                      <AvatarFallback className="bg-blue-100 text-blue-600 font-semibold">
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                         {initials}
                       </AvatarFallback>
                     )}
@@ -112,24 +112,24 @@ export default async function Mensajes() {
                   <div className="flex flex-col w-full">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <p className="font-medium text-gray-800">
+                        <p className="font-medium text-card-foreground">
                           {sender?.full_name || "Usuario Desconocido"}
                         </p>
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-muted-foreground">
                         ID: {message.sender_id}
                       </div>
                     </div>
 
                     <div className="mt-1">
-                      <p className="font-semibold text-gray-900 mb-1">
+                      <p className="font-semibold text-card-foreground mb-1">
                         {message.title}
                       </p>
-                      <p className="text-gray-600 text-sm leading-relaxed">
+                      <p className="text-muted-foreground text-sm leading-relaxed">
                         {message.message}
                       </p>
                       {message.courses && (
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-muted-foreground mt-2">
                           Cursos: {message.courses}
                         </p>
                       )}

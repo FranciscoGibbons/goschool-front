@@ -19,7 +19,7 @@ export default function LogOut() {
   return (
     <Button
       variant="destructive"
-      className="w-full bg-blue-900 hover:bg-blue-700 cursor-pointer"
+      className="w-full bg-blue-900 hover:bg-blue-700 cursor-pointer dark:bg-blue-900 dark:hover:bg-blue-700"
       onClick={handleLogout}
     >
       Cerrar sesión

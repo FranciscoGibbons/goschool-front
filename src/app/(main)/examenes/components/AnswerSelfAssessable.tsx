@@ -57,14 +57,12 @@ export default function AnswerSelfAssessable({
   };
 
   return (
-    <div className="space-y-4 mt-6 border-t pt-6">
+    <div className="space-y-4 mt-6 border-t border-border pt-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-bold text-blue-900">
-          Responder evaluación
-        </h3>
+        <h3 className="text-lg font-bold text-primary">Responder evaluación</h3>
         <button
           onClick={onClose}
-          className="text-sm text-blue-500 hover:underline"
+          className="text-sm text-primary hover:text-primary/80 transition-colors"
         >
           Cancelar
         </button>
@@ -72,7 +70,7 @@ export default function AnswerSelfAssessable({
 
       {questions.map((q, idx) => (
         <div key={idx} className="space-y-1">
-          <p className="font-medium">
+          <p className="font-medium text-foreground">
             {idx + 1}. {q}
           </p>
           <Input

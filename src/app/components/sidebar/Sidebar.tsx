@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import ProfileAccount from "./ProfileAccount";
 import LogOut from "./LogOut";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const menuItems = [
   { name: "Inicio", icon: HomeIcon, href: "/dashboard" },
@@ -31,7 +32,7 @@ const menuItems = [
 export default function Sidebar() {
   return (
     <aside
-      className="flex flex-col justify-between py-10 h-screen w-64 bg-white border-r border-gray-200 p-4"
+      className="flex flex-col justify-between py-10 h-screen w-64 bg-sidebar border-r border-sidebar-border p-4"
       aria-label="Menú principal"
     >
       <div>
@@ -52,7 +53,7 @@ export default function Sidebar() {
               <li key={item.name}>
                 <Link
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 text-gray-700 rounded-lg hover:bg-gray-100"
+                  className="flex items-center gap-3 px-3 py-2 text-sidebar-foreground rounded-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   <item.icon className="size-5" aria-hidden="true" />
                   <span>{item.name}</span>
@@ -63,9 +64,14 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      <div className="pt-4">
+      <div className="space-y-4">
         <ProfileAccount />
-        <LogOut />
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <LogOut />
+          </div>
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );
