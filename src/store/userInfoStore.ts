@@ -31,14 +31,29 @@ const userInfoStore = create<UserInfoStore>()(
       fetchUserInfo: async () => {
         set({ isLoading: true, error: null });
         try {
-          const res = await axios.get(
+          const personalDataPromise = axios.get(
             "http://localhost:8080/api/v1/personal_data/",
             {
-              withCredentials: true, // 🔒 Esto permite enviar cookies como jwt
+              withCredentials: true,
             }
           );
 
-          set({ userInfo: res.data, isLoading: false });
+          const rolePromise = axios.get("http://localhost:8080/api/v1/role/", {
+            withCredentials: true,
+          });
+
+          const [personalDataRes, roleRes] = await Promise.all([
+            personalDataPromise,
+            rolePromise,
+          ]);
+
+          const personalData = personalDataRes.data;
+          const role = roleRes.data;
+
+          set({
+            userInfo: { ...personalData, role },
+            isLoading: false,
+          });
         } catch (error) {
           console.error("Error al obtener user info:", error);
           const message =

@@ -1,4 +1,5 @@
 import DashAdminPreceptorTeacher from "./components/adm_pre_tea/DashAdminPreceptorTeacher";
+import DashStudentFather from "./components/stu_fat/DashStudentFather";
 
 import { PlusIcon } from "@heroicons/react/24/outline";
 
@@ -23,6 +24,10 @@ export default async function Dashboard() {
 
   if (role === "admin" || role === "preceptor" || role === "teacher") {
     return <DashAdminPreceptorTeacher role={role} />;
+  }
+
+  if (role === "student" || role === "father") {
+    return <DashStudentFather />;
   }
 
   return (

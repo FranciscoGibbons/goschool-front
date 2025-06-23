@@ -29,7 +29,7 @@ const getActionsForRole = (role: ActionableRole) => {
     case "preceptor":
       return ["Crear mensaje"] as Array<keyof FormsObj>;
     case "teacher":
-      return ["Crear mensaje", "Crear examen"] as Array<keyof FormsObj>;
+      return ["Crear examen"] as Array<keyof FormsObj>;
     default:
       return [];
   }

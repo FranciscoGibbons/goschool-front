@@ -9,10 +9,9 @@ import {
   UserGroupIcon,
   ClockIcon,
   PencilIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import ProfileAccount from "./ProfileAccount";
-import LogOut from "./LogOut";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const menuItems = [
   { name: "Inicio", icon: HomeIcon, href: "/dashboard" },
@@ -27,6 +26,7 @@ const menuItems = [
   { name: "Conducta", icon: UserGroupIcon, href: "/conducta" },
   { name: "Horario", icon: ClockIcon, href: "/horario" },
   { name: "Asistencia", icon: PencilIcon, href: "/asistencia" },
+  { name: "Mi Perfil", icon: UserCircleIcon, href: "/perfil" },
 ];
 
 export default function Sidebar() {
@@ -66,12 +66,6 @@ export default function Sidebar() {
 
       <div className="space-y-4">
         <ProfileAccount />
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <LogOut />
-          </div>
-          <ThemeToggle />
-        </div>
       </div>
     </aside>
   );

@@ -70,6 +70,8 @@ export interface UserInfo {
   phone_number: string;
   address: string;
   birth_date: string;
+  role: string;
+  photo?: string;
 }
 
 // Tipos para los payloads de la API
