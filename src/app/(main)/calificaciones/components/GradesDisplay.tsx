@@ -18,8 +18,8 @@ interface Subject {
 
 interface Grade {
   id: number;
-  subject: number;
-  assessment_id: number;
+  subject_id: number;
+  assessment_id: number | null;
   student_id: number;
   grade_type: "numerical" | "conceptual";
   description: string;
@@ -66,7 +66,7 @@ export default function GradesDisplay() {
         const subjectsWithGradesData: SubjectWithGrades[] = subjects.map(
           (subject) => {
             const subjectGrades = grades.filter(
-              (grade) => grade.subject === subject.id
+              (grade) => grade.subject_id === subject.id
             );
             const numericalGrades = subjectGrades
               .filter((grade) => grade.grade_type === "numerical")
@@ -133,6 +133,9 @@ export default function GradesDisplay() {
   if (isLoading) {
     return <div className="text-center py-8">Cargando calificaciones...</div>;
   }
+
+  // Debug: mostrar materias y notas
+  console.log("subjectsWithGrades", subjectsWithGrades);
 
   return (
     <div className="space-y-6">

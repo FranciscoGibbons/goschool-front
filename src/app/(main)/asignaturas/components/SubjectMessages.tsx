@@ -5,7 +5,6 @@ import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DocumentIcon,
-  LinkIcon,
   ChatBubbleLeftIcon,
   ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
@@ -36,9 +35,8 @@ export default function SubjectMessages({
     const loadMessages = async () => {
       try {
         console.log("Fetching messages for subject:", subjectId);
-        // Temporalmente usar subject_id=1 para ver los mensajes existentes
         const res = await axios.get(
-          "http://localhost:8080/api/v1/subject_messages/?subject_id=1",
+          `http://localhost:8080/api/v1/subject_messages/?subject_id=${subjectId}`,
           {
             withCredentials: true,
           }
