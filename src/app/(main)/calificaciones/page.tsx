@@ -1,8 +1,15 @@
+import { AcademicCapIcon } from "@heroicons/react/24/outline";
+import GradesDisplay from "./components/GradesDisplay";
+
 export default function Calificaciones() {
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h1 className="text-2xl font-bold">Calificaciones</h1>
-      <p className="mt-4 text-gray-600">Esta sección está en desarrollo.</p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <AcademicCapIcon className="size-8 text-primary" />
+        <h1 className="text-3xl font-bold text-foreground">Calificaciones</h1>
+      </div>
+
+      <GradesDisplay />
     </div>
   );
 }

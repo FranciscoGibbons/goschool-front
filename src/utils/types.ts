@@ -52,10 +52,31 @@ export interface SelfAssessableExamForm extends BaseExamForm {
 // Tipo unión para el formulario de examen
 export type ExamForm = OralExamForm | SelfAssessableExamForm;
 
+// Formulario para calificaciones
+export interface GradeForm {
+  subject: string;
+  assessment_id: string;
+  student_id: string;
+  grade_type: "numerical" | "conceptual";
+  description: string;
+  grade: string;
+}
+
+// Formulario para mensajes de materia
+export interface SubjectMessageForm {
+  subject_id: string;
+  title: string;
+  content: string;
+  type: "message" | "file";
+  file?: File;
+}
+
 // FormsObj corregido con tipos más precisos
 export interface FormsObj {
   "Crear mensaje": MessageForm;
   "Crear examen": ExamForm;
+  "Cargar calificación": GradeForm;
+  "Crear mensaje de materia": SubjectMessageForm;
 }
 
 export interface Messages {
@@ -98,4 +119,21 @@ export interface SelfAssessablePayload {
 export interface ExamPayload {
   newtask: TaskPayload;
   newselfassessable?: SelfAssessablePayload;
+}
+
+export interface GradePayload {
+  subject: number;
+  assessment_id: number;
+  student_id: number;
+  grade_type: "numerical" | "conceptual";
+  description: string;
+  grade: number | string;
+}
+
+export interface SubjectMessagePayload {
+  subject_id: number;
+  title: string;
+  content: string;
+  type: "message" | "file";
+  file?: File;
 }

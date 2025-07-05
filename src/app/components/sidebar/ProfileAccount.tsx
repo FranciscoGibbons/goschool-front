@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import userInfoStore from "@/store/userInfoStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,10 +17,10 @@ import {
   ArrowLeftStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { ThemeToggle } from "@/components/theme-toggle";
+import axios from "axios";
 
 export default function ProfileAccount() {
   const { userInfo, fetchUserInfo } = userInfoStore();
-  const router = useRouter();
 
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
@@ -31,12 +30,15 @@ export default function ProfileAccount() {
 
   const handleLogout = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/v1/logout/", {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await axios.post(
+        "http://localhost:8080/api/v1/logout/",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
 
-      if (res.ok) {
+      if (res.status === 200) {
         // Forzar una recarga completa para limpiar todo el estado de la aplicación.
         // Esto evita el error 401 al no volver a llamar a fetchUserInfo.
         window.location.href = "/login";

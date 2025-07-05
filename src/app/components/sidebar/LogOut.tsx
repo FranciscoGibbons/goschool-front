@@ -1,28 +1,39 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { ArrowLeftStartOnRectangleIcon } from "@heroicons/react/24/outline";
+import axios from "axios";
 
 // Make a log out button bg-blue-900
 
 export default function LogOut() {
   const handleLogout = async () => {
-    const res = await fetch("http://localhost:8080/api/v1/logout/", {
-      method: "POST",
-      credentials: "include",
-    });
+    try {
+      const res = await axios.post(
+        "http://localhost:8080/api/v1/logout/",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
 
-    if (res.status === 200) {
-      window.location.href = "/login";
-    } else {
-      console.error("Error al cerrar sesión");
+      if (res.status === 200) {
+        window.location.href = "/login";
+      } else {
+        console.error("Error al cerrar sesión:", res.statusText);
+      }
+    } catch (error) {
+      console.error("Error de red al cerrar sesión:", error);
     }
   };
+
   return (
     <Button
-      variant="destructive"
-      className="w-full bg-blue-900 hover:bg-blue-700 cursor-pointer dark:bg-blue-900 dark:hover:bg-blue-700"
       onClick={handleLogout}
+      variant="ghost"
+      className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent"
     >
-      Cerrar sesión
+      <ArrowLeftStartOnRectangleIcon className="h-5 w-5" />
+      Cerrar Sesión
     </Button>
   );
 }

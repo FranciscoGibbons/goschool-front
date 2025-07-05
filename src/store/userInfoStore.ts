@@ -42,16 +42,34 @@ const userInfoStore = create<UserInfoStore>()(
             withCredentials: true,
           });
 
-          const [personalDataRes, roleRes] = await Promise.all([
-            personalDataPromise,
-            rolePromise,
-          ]);
+          const profilePicturePromise = axios.get(
+            "http://localhost:8080/api/v1/profile_pictures/",
+            {
+              withCredentials: true,
+            }
+          );
+
+          const [personalDataRes, roleRes, profilePictureRes] =
+            await Promise.all([
+              personalDataPromise,
+              rolePromise,
+              profilePicturePromise.catch(() => ({ data: null })), // Si falla, retorna null
+            ]);
 
           const personalData = personalDataRes.data;
           const role = roleRes.data;
+          // Usamos la URL directa del backend
+          const profilePicture = profilePictureRes.data?.url
+            ? `http://localhost:8080/api/v1/profile_pictures/serve/${encodeURIComponent(
+                profilePictureRes.data.url
+              )}`
+            : null;
+
+          console.log("Profile picture data:", profilePictureRes.data);
+          console.log("Final profile picture URL:", profilePicture);
 
           set({
-            userInfo: { ...personalData, role },
+            userInfo: { ...personalData, role, photo: profilePicture },
             isLoading: false,
           });
         } catch (error) {

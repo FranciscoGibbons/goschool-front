@@ -9,7 +9,6 @@ import {
   UserGroupIcon,
   ClockIcon,
   PencilIcon,
-  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import ProfileAccount from "./ProfileAccount";
 
@@ -26,7 +25,6 @@ const menuItems = [
   { name: "Conducta", icon: UserGroupIcon, href: "/conducta" },
   { name: "Horario", icon: ClockIcon, href: "/horario" },
   { name: "Asistencia", icon: PencilIcon, href: "/asistencia" },
-  { name: "Mi Perfil", icon: UserCircleIcon, href: "/perfil" },
 ];
 
 export default function Sidebar() {
