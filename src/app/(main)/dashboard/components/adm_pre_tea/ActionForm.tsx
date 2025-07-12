@@ -40,6 +40,7 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface ActionFormProps {
   action: keyof FormsObj;
@@ -231,6 +232,19 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     );
   };
 
+  // Función para contar preguntas completas
+  const getCompletedQuestionsCount = () => {
+    if (!isExamForm(formData) || !isSelfAssessableExamForm(formData)) return 0;
+    const examData = formData as SelfAssessableExamForm;
+    return examData.questions.filter((_, index) => isQuestionComplete(index))
+      .length;
+  };
+
+  // Función para verificar si se puede crear el autoevaluable (mínimo 3 preguntas)
+  const canCreateSelfAssessable = () => {
+    return getCompletedQuestionsCount() >= 3;
+  };
+
   const handleNextQuestion = () => {
     if (currentQuestion < 9) {
       setCurrentQuestion(currentQuestion + 1);
@@ -272,18 +286,28 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         url = "http://localhost:8080/api/v1/messages/";
       } else if (action === "Crear examen" && isExamForm(formData)) {
         if (isSelfAssessableExamForm(formData)) {
-          // Verificar que todas las preguntas estén completas
-          const allQuestionsComplete = formData.questions.every((_, index) =>
-            isQuestionComplete(index)
-          );
-
-          if (!allQuestionsComplete) {
+          // Verificar que al menos 3 preguntas estén completas
+          if (!canCreateSelfAssessable()) {
             toast.error(
-              "Por favor completa todas las preguntas antes de enviar"
+              `Por favor completa al menos 3 preguntas antes de enviar (${getCompletedQuestionsCount()}/3)`
             );
             setIsLoading(false);
             return;
           }
+
+          // Filtrar solo las preguntas completas
+          const completedQuestions = formData.questions.filter((_, index) =>
+            isQuestionComplete(index)
+          );
+          const completedCorrect = formData.correct.filter((_, index) =>
+            isQuestionComplete(index)
+          );
+          const completedIncorrect1 = formData.incorrect1.filter((_, index) =>
+            isQuestionComplete(index)
+          );
+          const completedIncorrect2 = formData.incorrect2.filter((_, index) =>
+            isQuestionComplete(index)
+          );
 
           payload = {
             newtask: {
@@ -293,10 +317,10 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
               type: "selfassessable",
             },
             newselfassessable: {
-              questions: formData.questions,
-              correct: formData.correct,
-              incorrect1: formData.incorrect1,
-              incorrect2: formData.incorrect2,
+              questions: completedQuestions,
+              correct: completedCorrect,
+              incorrect1: completedIncorrect1,
+              incorrect2: completedIncorrect2,
             },
           } satisfies ExamPayload;
           url = "http://localhost:8080/api/v1/assessments/";
@@ -423,7 +447,10 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">{action}</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">{action}</h2>
+        <ThemeToggle />
+      </div>
 
       {/* Formulario para mensajes */}
       {action === "Crear mensaje" && isMessageForm(formData) && (
@@ -585,13 +612,19 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           {isSelfAssessableExamForm(formData) && (
             <div className="space-y-6 mt-4">
               <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold mb-4">
-                  Configuración del Quiz - Pregunta {currentQuestion + 1} de 10
-                </h3>
-                <div className="p-4 border rounded-lg bg-gray-50">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">
+                    Configuración del Quiz - Pregunta {currentQuestion + 1} de
+                    10
+                  </h3>
+                  <div className="text-sm text-muted-foreground">
+                    Preguntas completas: {getCompletedQuestionsCount()}/3 mínimo
+                  </div>
+                </div>
+                <div className="p-4 border rounded-lg bg-muted">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Pregunta
                       </label>
                       <Input
@@ -608,7 +641,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Respuesta correcta
                       </label>
                       <Input
@@ -625,7 +658,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Opción incorrecta 1
                       </label>
                       <Input
@@ -642,7 +675,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Opción incorrecta 2
                       </label>
                       <Input
@@ -671,10 +704,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                   <Button
                     variant="outline"
                     onClick={handleNextQuestion}
-                    disabled={
-                      currentQuestion === 9 ||
-                      !isQuestionComplete(currentQuestion)
-                    }
+                    disabled={currentQuestion === 9}
                   >
                     Siguiente
                   </Button>
@@ -692,7 +722,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                         size="sm"
                         onClick={() => setCurrentQuestion(index)}
                         className={
-                          isQuestionComplete(index) ? "bg-green-100" : ""
+                          isQuestionComplete(index)
+                            ? "bg-green-100 dark:bg-green-900"
+                            : ""
                         }
                       >
                         {index + 1}
@@ -914,7 +946,15 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         <Button variant="outline" onClick={onBack}>
           Volver
         </Button>
-        <Button onClick={handleSubmit} disabled={isLoading}>
+        <Button
+          onClick={handleSubmit}
+          disabled={
+            isLoading ||
+            (action === "Crear examen" &&
+              isSelfAssessableExamForm(formData) &&
+              !canCreateSelfAssessable())
+          }
+        >
           {isLoading ? "Enviando..." : "Crear"}
         </Button>
       </div>

@@ -27,10 +27,10 @@ const menuItems = [
   { name: "Asistencia", icon: PencilIcon, href: "/asistencia" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ className = "" }: { className?: string }) {
   return (
     <aside
-      className="flex flex-col justify-between py-10 h-screen w-64 bg-sidebar border-r border-sidebar-border p-4"
+      className={`flex flex-col justify-between py-10 h-screen w-64 border-r border-sidebar-border p-4 ${className}`}
       aria-label="Menú principal"
     >
       <div>

@@ -20,6 +20,7 @@ import {
   PlayIcon,
   CheckIcon,
   ClockIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import AnswerSelfAssessable from "./AnswerSelfAssessable";
 
@@ -45,6 +46,7 @@ export default function SelfAssessableCard({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [selfassessableId, setSelfassessableId] = useState<number | null>(null);
 
   // Utilidad para mezclar aleatoriamente un array
   function shuffle<T>(array: T[]): T[] {
@@ -88,13 +90,35 @@ export default function SelfAssessableCard({
     }
   }, [questions]);
 
+  // Obtener el selfassessable_id a partir del assessment_id
   useEffect(() => {
+    const fetchSelfassessableId = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/api/v1/selfassessables/?assessment_id=${exam.id}`,
+          { withCredentials: true }
+        );
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setSelfassessableId(res.data[0].selfassessable_id || res.data[0].id);
+        } else {
+          setSelfassessableId(null);
+        }
+      } catch {
+        setSelfassessableId(null);
+      }
+    };
+    fetchSelfassessableId();
+  }, [exam.id]);
+
+  // Verificar si ya fue respondido
+  useEffect(() => {
+    if (!selfassessableId) return;
     const checkAnswered = async () => {
       setLoading(true);
       try {
         const res = await axios.post(
           "http://localhost:8080/api/v1/get_if_selfassessable_answered/",
-          { selfassessable_id: exam.selfassessable_id }, // <-- CORREGIDO
+          { selfassessable_id: selfassessableId },
           { withCredentials: true }
         );
         setAnswered(res.data === true);
@@ -105,7 +129,7 @@ export default function SelfAssessableCard({
       }
     };
     checkAnswered();
-  }, [exam.selfassessable_id]);
+  }, [selfassessableId]);
 
   const handleChange = (idx: number, value: string) => {
     console.log(`handleChange: pregunta ${idx}, valor: ${value}`);
@@ -154,28 +178,17 @@ export default function SelfAssessableCard({
     }
   };
 
+  // Cambia handleOpenQuestions para usar selfassessableId
   const handleOpenQuestions = async () => {
     setQuestionsLoading(true);
     setQuestionsError(null);
     try {
-      let questionsArr = [];
-      if (exam.selfassessable_id) {
-        // Fetch solo las preguntas de este autoevaluable
-        const res = await axios.get(
-          `http://localhost:8080/api/v1/selfassessables/?selfassessable_id=${exam.selfassessable_id}`,
-          { withCredentials: true }
-        );
-        questionsArr = Array.isArray(res.data) ? res.data : [];
-      } else {
-        // Fallback: fetch todas y filtra por selfassessable_id si está en las preguntas
-        const res = await axios.get(
-          `http://localhost:8080/api/v1/selfassessables/`,
-          { withCredentials: true }
-        );
-        questionsArr = Array.isArray(res.data)
-          ? res.data.filter((q) => q.selfassessable_id === exam.id)
-          : [];
-      }
+      if (!selfassessableId) throw new Error("No hay autoevaluable disponible");
+      const res = await axios.get(
+        `http://localhost:8080/api/v1/selfassessables/?selfassessable_id=${selfassessableId}`,
+        { withCredentials: true }
+      );
+      const questionsArr = Array.isArray(res.data) ? res.data : [];
       if (questionsArr.length > 0) {
         setQuestions(questionsArr);
       } else {
@@ -194,96 +207,91 @@ export default function SelfAssessableCard({
   // Formato de fecha y hora
   const formatDate = (date: string) => {
     const d = new Date(date);
-    return d
-      .toLocaleDateString("es-ES", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-      })
-      .toUpperCase();
-  };
-  const formatHour = (date: string) => {
-    const d = new Date(date);
-    return d.toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
+    return d.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
   };
 
   if (loading) {
     return (
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-muted rounded w-3/4"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-            <div className="h-8 bg-muted rounded w-1/3"></div>
+      <div className="bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 rounded-xl p-6 exam-card-hover">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 exam-skeleton rounded-lg"></div>
+            <div className="space-y-2 flex-1">
+              <div className="h-4 exam-skeleton rounded w-3/4"></div>
+              <div className="h-3 exam-skeleton rounded w-1/2"></div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="h-3 exam-skeleton rounded w-1/3"></div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-xl">
-              <AcademicCapIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
-                {exam.task}
-              </h3>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 text-xs font-medium">
-                  Autoevaluable
-                </Badge>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <BookOpenIcon className="h-4 w-4" />
-                  <span>{subjectName}</span>
-                </div>
+    <div className="group relative bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 rounded-xl p-6 hover:border-gray-300/50 dark:hover:border-gray-700/50 transition-all duration-200 hover:shadow-sm exam-card-hover">
+      {/* Status indicator */}
+      <div className="absolute top-6 right-6">
+        <div className="flex items-center gap-2">
+          <div className="exam-status-indicator"></div>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Autoevaluable
+          </span>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="space-y-4">
+        <div className="flex items-start gap-4">
+          <div className="p-3 exam-green-gradient rounded-xl border border-green-200/20 dark:border-green-800/20">
+            <SparklesIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+          </div>
+          <div className="flex-1 space-y-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+              {exam.task}
+            </h3>
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <BookOpenIcon className="w-4 h-4" />
+                <span>{subjectName}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <CalendarIcon className="w-4 h-4" />
+                <span>Entrega: {formatDate(exam.due_date)}</span>
               </div>
             </div>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-xl">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              Fecha de entrega: {formatDate(exam.due_date)}
-            </span>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Status section */}
+        <div className="flex items-center justify-between">
           {answered ? (
-            <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-xl">
-              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <CheckIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <div className="flex items-center gap-3 p-4 bg-green-50/50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-800/50 rounded-lg">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <CheckIcon className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-green-700 dark:text-green-400 font-medium text-sm">
+                <p className="text-sm font-medium text-green-900 dark:text-green-100">
                   Completado
                 </p>
-                <p className="text-green-600 dark:text-green-400 text-xs">
+                <p className="text-xs text-green-700 dark:text-green-300">
                   Ya has respondido este autoevaluable
                 </p>
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-xl">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                <ClockIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            <div className="flex items-center gap-3 p-4 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200/50 dark:border-orange-800/50 rounded-lg">
+              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                <ClockIcon className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-orange-700 dark:text-orange-400 font-medium text-sm">
+                <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
                   Pendiente
                 </p>
-                <p className="text-orange-600 dark:text-orange-400 text-xs">
+                <p className="text-xs text-orange-700 dark:text-orange-300">
                   Aún no has respondido
                 </p>
               </div>
@@ -296,7 +304,7 @@ export default function SelfAssessableCard({
                 <Button
                   onClick={handleOpenQuestions}
                   disabled={questionsLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+                  className="exam-btn-vercel px-6 py-2 rounded-lg hover:scale-105"
                 >
                   {questionsLoading ? (
                     <>
@@ -306,17 +314,17 @@ export default function SelfAssessableCard({
                   ) : (
                     <>
                       <PlayIcon className="h-4 w-4 mr-2" />
-                      Comenzar autoevaluación
+                      Comenzar
                     </>
                   )}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogTitle className="text-xl font-semibold">
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200/50 dark:border-gray-800/50 exam-scrollbar">
+                <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   Autoevaluación: {exam.task}
                 </DialogTitle>
                 {questionsError && (
-                  <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="p-4 bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/50 rounded-lg mb-4">
                     <p className="text-red-700 dark:text-red-400 text-sm">
                       {questionsError}
                     </p>
@@ -325,19 +333,23 @@ export default function SelfAssessableCard({
                 {mcQuestions.length > 0 && (
                   <div className="space-y-6">
                     {mcQuestions.map((question, idx) => (
-                      <div key={idx} className="space-y-3">
-                        <h4 className="font-medium text-gray-900 dark:text-white">
-                          Pregunta {idx + 1}: {question.question}
+                      <div key={idx} className="space-y-4">
+                        <h4 className="font-medium text-gray-900 dark:text-white text-lg">
+                          Pregunta {idx + 1}
                         </h4>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {question.question}
+                        </p>
                         <RadioGroup
                           value={answers[idx]}
                           onValueChange={(value) => handleChange(idx, value)}
+                          className="space-y-3"
                         >
                           {question.options.map(
                             (option: string, optIdx: number) => (
                               <div
                                 key={optIdx}
-                                className="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
+                                className="flex items-center space-x-3 p-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
                               >
                                 <input
                                   type="radio"
@@ -348,7 +360,7 @@ export default function SelfAssessableCard({
                                   onChange={(e) =>
                                     handleChange(idx, e.target.value)
                                   }
-                                  className="h-4 w-4 text-green-600 focus:ring-green-500"
+                                  className="h-4 w-4 text-green-600 focus:ring-green-500 focus:ring-2"
                                 />
                                 <label
                                   htmlFor={`q${idx}-opt${optIdx}`}
@@ -362,11 +374,11 @@ export default function SelfAssessableCard({
                         </RadioGroup>
                       </div>
                     ))}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
                       <Button
                         onClick={handleSubmit}
                         disabled={submitting || answers.some((a) => !a)}
-                        className="bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+                        className="exam-btn-vercel transition-all duration-200"
                       >
                         {submitting ? (
                           <>
@@ -381,15 +393,20 @@ export default function SelfAssessableCard({
                         )}
                       </Button>
                       <DialogClose asChild>
-                        <Button variant="outline">Cancelar</Button>
+                        <Button
+                          variant="outline"
+                          className="border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
+                        >
+                          Cancelar
+                        </Button>
                       </DialogClose>
                     </div>
                     {result && (
                       <div
-                        className={`p-3 rounded-lg text-sm ${
+                        className={`p-4 rounded-lg text-sm border ${
                           result.includes("correctamente")
-                            ? "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400"
-                            : "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400"
+                            ? "bg-green-50/50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200/50 dark:border-green-800/50"
+                            : "bg-red-50/50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200/50 dark:border-red-800/50"
                         }`}
                       >
                         {result}
@@ -401,7 +418,10 @@ export default function SelfAssessableCard({
             </Dialog>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Hover effect overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+    </div>
   );
 }
