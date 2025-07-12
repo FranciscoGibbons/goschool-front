@@ -30,11 +30,29 @@ export default async function Exams() {
     }
   };
 
-  const exams = await getExams(token);
+  const getSubjects = async (
+    jwt: string
+  ): Promise<{ id: number; name: string }[]> => {
+    try {
+      const res = await axios.get("http://localhost:8080/api/v1/subjetcs/", {
+        headers: { Cookie: `jwt=${jwt}` },
+        withCredentials: true,
+      });
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      return [];
+    }
+  };
+
+  const [exams, subjects] = await Promise.all([
+    getExams(token),
+    getSubjects(token),
+  ]);
 
   return (
     <div className="p-6 space-y-6">
-      <ExamList exams={exams} role={role} />
+      <ExamList exams={exams} role={role} subjects={subjects} />
     </div>
   );
 }

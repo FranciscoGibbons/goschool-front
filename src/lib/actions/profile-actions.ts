@@ -18,9 +18,9 @@ export async function uploadProfilePicture(clientFormData: FormData) {
     if (file.size > 5 * 1024 * 1024)
       throw new Error("File size exceeds 5MB limit");
 
-    // 3. Crear FormData con el path del archivo como string
+    // 3. Crear FormData con el archivo real
     const uploadFormData = new FormData();
-    uploadFormData.append("file", "/home/frangibb/Downloads/placeholder.png");
+    uploadFormData.append("file", file);
 
     // 4. POST al backend
     await axios.post(

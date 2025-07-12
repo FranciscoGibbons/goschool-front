@@ -9,6 +9,7 @@ import {
   BookOpenIcon,
   AcademicCapIcon,
   StarIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 
 interface Subject {
@@ -147,44 +148,25 @@ export default function GradesDisplay() {
         {subjectsWithGrades.map((subjectData) => (
           <Card
             key={subjectData.subject.id}
-            className="hover:shadow-lg transition-shadow"
+            className="hover:shadow-lg transition-shadow border-2 border-primary/20 bg-white/80 dark:bg-zinc-900/80"
           >
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <BookOpenIcon className="size-5" />
                 <span>{subjectData.subject.name}</span>
               </CardTitle>
-              {subjectData.average !== undefined && (
-                <div className="flex items-center gap-2">
-                  <StarIcon className="size-4 text-yellow-500" />
-                  <span className="text-lg font-semibold">
-                    Promedio: {subjectData.average}
-                  </span>
-                </div>
-              )}
             </CardHeader>
             <CardContent className="space-y-4">
-              {subjectData.average !== undefined && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progreso</span>
-                    <span>{subjectData.average}/10</span>
-                  </div>
-                  <Progress
-                    value={getProgressValue(subjectData.average)}
-                    className="h-2"
-                  />
-                </div>
-              )}
-
               {subjectData.grades.length > 0 ? (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Notas:</h4>
-                  <div className="space-y-2">
+                  <h4 className="font-medium text-sm text-primary/80">
+                    Notas:
+                  </h4>
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
                     {subjectData.grades.map((grade) => (
                       <div
                         key={grade.id}
-                        className="flex items-center justify-between p-2 bg-muted rounded"
+                        className="flex items-center justify-between p-2 bg-muted rounded border border-primary/10"
                       >
                         <div className="flex-1">
                           <p className="text-sm font-medium">

@@ -22,9 +22,24 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  MultiSelect,
+  MultiSelectValue,
+  MultiSelectItem,
 } from "@/components/ui/select";
 import axios from "axios";
 import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 
 interface ActionFormProps {
   action: keyof FormsObj;
@@ -36,7 +51,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   // Estados iniciales más específicos
   const getInitialState = (): FormsObj[typeof action] => {
     if (action === "Crear mensaje") {
-      return { title: "", message: "", courses: "" } as MessageForm;
+      return { title: "", message: "", courses: [] } as MessageForm;
     } else if (action === "Crear examen") {
       return {
         subject: "",
@@ -78,6 +93,10 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     []
   );
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [courses, setCourses] = useState<Array<{ id: number; name: string }>>(
+    []
+  );
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
 
   // Type guards para verificar el tipo de formulario
   const isMessageForm = (
@@ -116,12 +135,41 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           withCredentials: true,
         }
       );
+      console.log("Respuesta de materias (subjects):", response.data);
       setSubjects(response.data);
     } catch (error) {
       console.error("Error loading subjects:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.error("Status:", error.response.status);
+          console.error("Data:", error.response.data);
+        } else {
+          console.error("Sin respuesta del backend");
+        }
+      }
       toast.error("Error al cargar materias");
     } finally {
       setIsLoadingSubjects(false);
+    }
+  };
+
+  // Función para cargar cursos
+  const loadCourses = async () => {
+    setIsLoadingCourses(true);
+    try {
+      const response = await axios.get(
+        "http://localhost:8080/api/v1/courses/",
+        {
+          withCredentials: true,
+        }
+      );
+      setCourses(response.data);
+      console.log("Cursos recibidos:", response.data);
+    } catch (error) {
+      console.error("Error loading courses:", error);
+      toast.error("Error al cargar cursos");
+    } finally {
+      setIsLoadingCourses(false);
     }
   };
 
@@ -129,16 +177,25 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   useEffect(() => {
     if (
       action === "Cargar calificación" ||
-      action === "Crear mensaje de materia"
+      action === "Crear mensaje de materia" ||
+      action === "Crear examen"
     ) {
+      console.log("Disparando loadSubjects para action:", action);
       loadSubjects();
+    }
+  }, [action]);
+
+  // Cargar cursos cuando se necesite
+  useEffect(() => {
+    if (action === "Crear mensaje") {
+      loadCourses();
     }
   }, [action]);
 
   // Manejo de cambios para campos individuales
   const handleChange = <T extends FormsObj[typeof action]>(
     field: keyof T,
-    value: string
+    value: any
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -208,7 +265,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         payload = {
           title: formData.title,
           message: formData.message,
-          courses: formData.courses,
+          courses: Array.isArray(formData.courses)
+            ? formData.courses.join(",")
+            : formData.courses,
         } satisfies MessagePayload;
         url = "http://localhost:8080/api/v1/messages/";
       } else if (action === "Crear examen" && isExamForm(formData)) {
@@ -336,6 +395,32 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   };
 
+  // Función modular para obtener el label legible de un curso
+  function getCourseLabel(course: {
+    year: number;
+    division: string;
+    shift: string;
+  }) {
+    let yearLabel = "";
+    let divisionLabel = "";
+    if (course.year >= 8) {
+      yearLabel = `${course.year - 7}° secundaria`;
+      // Secundaria: 1=a, 2=b, 3=c
+      if (course.division === "1") divisionLabel = "a";
+      else if (course.division === "2") divisionLabel = "b";
+      else if (course.division === "3") divisionLabel = "c";
+      else divisionLabel = course.division;
+    } else {
+      yearLabel = `${course.year}° primaria`;
+      // Primaria: 1=Mar, 2=Gaviota, 3=Estrella
+      if (course.division === "1") divisionLabel = "Mar";
+      else if (course.division === "2") divisionLabel = "Gaviota";
+      else if (course.division === "3") divisionLabel = "Estrella";
+      else divisionLabel = course.division;
+    }
+    return `${yearLabel} ${divisionLabel}`;
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">{action}</h2>
@@ -355,25 +440,120 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
               handleChange<MessageForm>("message", e.target.value)
             }
           />
-          <Input
-            placeholder="Cursos"
-            value={formData.courses}
-            onChange={(e) =>
-              handleChange<MessageForm>("courses", e.target.value)
-            }
-          />
+          <div className="mb-2 font-medium">Selecciona uno o más cursos:</div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full justify-start">
+                {formData.courses.length === 0
+                  ? "Selecciona cursos"
+                  : formData.courses.length > 3
+                  ? `${formData.courses.length} cursos seleccionados`
+                  : courses
+                      .filter((c) => formData.courses.includes(c.id.toString()))
+                      .map(getCourseLabel)
+                      .join(", ")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80 max-h-64 overflow-y-auto p-2">
+              <div className="flex flex-col gap-2 mb-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => {
+                    const allIds = courses.map((c) => c.id.toString());
+                    handleChange<MessageForm>("courses", allIds);
+                  }}
+                >
+                  Agregar todos
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => {
+                      const primariaIds = courses
+                        .filter((c) => c.year < 8)
+                        .map((c) => c.id.toString());
+                      handleChange<MessageForm>("courses", primariaIds);
+                    }}
+                  >
+                    Agregar primaria
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => {
+                      const secundariaIds = courses
+                        .filter((c) => c.year >= 8)
+                        .map((c) => c.id.toString());
+                      handleChange<MessageForm>("courses", secundariaIds);
+                    }}
+                  >
+                    Agregar secundaria
+                  </Button>
+                </div>
+              </div>
+              {isLoadingCourses ? (
+                <div className="text-muted-foreground">Cargando cursos...</div>
+              ) : (
+                courses.map((course) => {
+                  const idStr = course.id.toString();
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={course.id}
+                      checked={formData.courses.includes(idStr)}
+                      onCheckedChange={(checked) => {
+                        let newCourses = Array.isArray(formData.courses)
+                          ? [...formData.courses]
+                          : [];
+                        if (checked) {
+                          if (!newCourses.includes(idStr))
+                            newCourses.push(idStr);
+                        } else {
+                          newCourses = newCourses.filter((c) => c !== idStr);
+                        }
+                        handleChange<MessageForm>("courses", newCourses);
+                      }}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {getCourseLabel(course)}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </>
       )}
 
       {/* Formulario para exámenes */}
       {action === "Crear examen" && isExamForm(formData) && (
         <>
-          <Input
-            placeholder="ID materia (subject)"
-            type="number"
+          <Select
             value={formData.subject}
-            onChange={(e) => handleChange<ExamForm>("subject", e.target.value)}
-          />
+            onValueChange={(value) => handleChange<ExamForm>("subject", value)}
+            disabled={isLoadingSubjects}
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  isLoadingSubjects
+                    ? "Cargando materias..."
+                    : "Selecciona una materia"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {subjects.map((subject) => (
+                <SelectItem key={subject.id} value={subject.id.toString()}>
+                  {subject.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             placeholder="Nombre de la evaluación"
             value={formData.task}

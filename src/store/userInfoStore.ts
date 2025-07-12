@@ -59,14 +59,7 @@ const userInfoStore = create<UserInfoStore>()(
           const personalData = personalDataRes.data;
           const role = roleRes.data;
           // Usamos la URL directa del backend
-          const profilePicture = profilePictureRes.data?.url
-            ? `http://localhost:8080/api/v1/profile_pictures/serve/${encodeURIComponent(
-                profilePictureRes.data.url
-              )}`
-            : null;
-
-          console.log("Profile picture data:", profilePictureRes.data);
-          console.log("Final profile picture URL:", profilePicture);
+          const profilePicture = profilePictureRes.data?.url || null;
 
           set({
             userInfo: { ...personalData, role, photo: profilePicture },

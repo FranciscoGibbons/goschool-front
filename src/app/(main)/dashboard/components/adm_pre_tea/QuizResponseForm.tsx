@@ -42,16 +42,17 @@ export function QuizResponseForm({
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
       await axios.post(
-        `http://localhost:8080/api/v1/selfassessable/${examId}/respond`,
+        `http://localhost:8080/api/v1/selfassessables/`,
         {
+          assessment_id: parseInt(examId),
           answers,
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
+          withCredentials: true,
         }
       );
 

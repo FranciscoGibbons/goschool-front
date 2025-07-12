@@ -55,13 +55,13 @@ export default async function Mensajes() {
         }
       );
 
-      if (res.data) {
+      if (res.data && res.data.length > 0) {
+        const sender = res.data[0];
         const senderData: Sender = {
           id: senderId,
-          full_name: res.data.full_name || "Usuario",
-          photo: res.data.photo || null,
+          full_name: sender.full_name || "Usuario",
+          photo: sender.photo || null,
         };
-
         sendersMap.set(senderId, senderData);
       }
     } catch (error) {

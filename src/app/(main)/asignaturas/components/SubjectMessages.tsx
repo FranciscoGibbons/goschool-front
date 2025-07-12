@@ -42,6 +42,15 @@ export default function SubjectMessages({
           }
         );
         console.log("Messages from API for subject 1:", res.data);
+        console.log(
+          "Messages details:",
+          res.data.map((m) => ({
+            id: m.id,
+            type: m.type,
+            file_url: m.file_url,
+            title: m.title,
+          }))
+        );
         setMessages(res.data);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -91,29 +100,64 @@ export default function SubjectMessages({
           messages.map((message, index) => (
             <Card
               key={`${message.id}-${message.created_at}-${index}`}
-              className="hover:shadow-md transition-shadow"
+              className={
+                `hover:shadow-md transition-shadow border-2 ` +
+                (message.type === "file"
+                  ? "border-blue-300"
+                  : "border-green-300")
+              }
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {getIcon(message.type)}
                   <span>{message.title}</span>
+                  <span
+                    className={
+                      "ml-2 px-2 py-0.5 rounded text-xs font-semibold " +
+                      (message.type === "file"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-green-100 text-green-800")
+                    }
+                  >
+                    {message.type === "file" ? "Archivo" : "Mensaje"}
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-3">{message.content}</p>
+                <p className="text-muted-foreground mb-3">
+                  {message.type !== "file" && message.content}
+                </p>
 
-                {message.file_url && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <ArrowDownTrayIcon className="size-4" />
-                    <a
-                      href={message.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Descargar archivo
-                    </a>
-                  </div>
+                {message.type === "file" &&
+                  (message.file_url ||
+                    (message.content &&
+                      message.content.startsWith("http"))) && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <ArrowDownTrayIcon className="size-4 text-blue-700" />
+                      <a
+                        href={message.file_url || message.content}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                        download
+                      >
+                        Descargar archivo
+                      </a>
+                    </div>
+                  )}
+
+                {message.type === "file" &&
+                  !message.file_url &&
+                  !(message.content && message.content.startsWith("http")) && (
+                    <div className="text-orange-600 text-sm mb-3">
+                      ⚠️ Archivo no disponible
+                    </div>
+                  )}
+
+                {message.type === "message" && (
+                  <p className="text-muted-foreground mb-3">
+                    {message.content}
+                  </p>
                 )}
 
                 <p className="text-xs text-muted-foreground">
