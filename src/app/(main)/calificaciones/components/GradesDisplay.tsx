@@ -46,7 +46,7 @@ export default function GradesDisplay() {
       try {
         // Obtener materias
         const subjectsRes = await axios.get(
-          "http://localhost:8080/api/v1/subjetcs/",
+          "http://localhost:8080/api/v1/subjects/",
           {
             withCredentials: true,
           }

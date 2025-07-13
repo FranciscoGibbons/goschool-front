@@ -28,7 +28,7 @@ export default function SubjectSelector() {
     // Cargar materias
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/api/v1/subjetcs/", {
+        const res = await axios.get("http://localhost:8080/api/v1/subjects/", {
           withCredentials: true,
         });
         const subjectsData = res.data;

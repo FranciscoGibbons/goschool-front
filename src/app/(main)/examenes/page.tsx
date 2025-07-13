@@ -35,7 +35,7 @@ export default async function Exams() {
     jwt: string
   ): Promise<{ id: number; name: string }[]> => {
     try {
-      const res = await axios.get("http://localhost:8080/api/v1/subjetcs/", {
+      const res = await axios.get("http://localhost:8080/api/v1/subjects/", {
         headers: { Cookie: `jwt=${jwt}` },
         withCredentials: true,
       });

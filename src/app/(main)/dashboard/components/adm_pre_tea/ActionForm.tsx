@@ -131,7 +131,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     setIsLoadingSubjects(true);
     try {
       const response = await axios.get(
-        "http://localhost:8080/api/v1/subjetcs/",
+        "http://localhost:8080/api/v1/subjects/",
         {
           withCredentials: true,
         }
