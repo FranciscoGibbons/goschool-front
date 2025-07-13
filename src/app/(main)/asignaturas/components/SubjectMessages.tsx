@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +57,6 @@ export default function SubjectMessages({
         setIsLoading(false);
       }
     };
-
     loadMessages();
   }, [subjectId]);
 
@@ -83,6 +81,21 @@ export default function SubjectMessages({
     });
   };
 
+  const getDownloadUrl = (message: SubjectMessage) => {
+    return message.file_url || (message.content && message.content.startsWith("http") ? message.content : null);
+  };
+
+  const handleDownload = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Cargando mensajes...</div>;
   }
@@ -94,7 +107,6 @@ export default function SubjectMessages({
           Mensajes de {subjectName}
         </h2>
       </div>
-
       <div className="space-y-4">
         {messages.length > 0 ? (
           messages.map((message, index) => (
@@ -124,42 +136,38 @@ export default function SubjectMessages({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-3">
-                  {message.type !== "file" && message.content}
-                </p>
-
-                {message.type === "file" &&
-                  (message.file_url ||
-                    (message.content &&
-                      message.content.startsWith("http"))) && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <ArrowDownTrayIcon className="size-4 text-blue-700" />
-                      <a
-                        href={message.file_url || message.content}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
-                        download
-                      >
-                        Descargar archivo
-                      </a>
-                    </div>
-                  )}
-
-                {message.type === "file" &&
-                  !message.file_url &&
-                  !(message.content && message.content.startsWith("http")) && (
-                    <div className="text-orange-600 text-sm mb-3">
-                      ⚠️ Archivo no disponible
-                    </div>
-                  )}
-
                 {message.type === "message" && (
                   <p className="text-muted-foreground mb-3">
                     {message.content}
                   </p>
                 )}
-
+                
+                {message.type === "file" && (
+                  <>
+                    {message.content && !message.content.startsWith("http") && (
+                      <p className="text-muted-foreground mb-3">
+                        {message.content}
+                      </p>
+                    )}
+                    {getDownloadUrl(message) ? (
+                      <div className="flex items-center gap-2 mb-3">
+                        <button
+                          onClick={() => handleDownload(getDownloadUrl(message)!, message.title)}
+                          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          <ArrowDownTrayIcon className="size-4" />
+                          Descargar archivo
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-orange-600 text-sm mb-3">
+                        <span>⚠️</span>
+                        <span>Archivo no disponible</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                
                 <p className="text-xs text-muted-foreground">
                   {formatDate(message.created_at)}
                 </p>
