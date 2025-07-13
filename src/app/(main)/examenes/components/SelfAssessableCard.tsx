@@ -46,19 +46,7 @@ export default function SelfAssessableCard({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [selfassessableId, setSelfassessableId] = useState<number | null>(null);
-
-  // Utilidad para mezclar aleatoriamente un array
-  function shuffle<T>(array: T[]): T[] {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
-
-  // Estructura de preguntas con opciones mezcladas
+  // Estructura de preguntas con opciones (sin mezclar)
   const [mcQuestions, setMcQuestions] = useState<any[]>([]);
 
   useEffect(() => {
@@ -67,16 +55,13 @@ export default function SelfAssessableCard({
       // Si las preguntas ya tienen opciones (correct, incorrect1, ...)
       const prepared = questions.map((q: any) => {
         console.log("Procesando pregunta:", q);
-        const options = [q.correct, q.incorrect1, q.incorrect2].filter(Boolean);
+        const options = [q.op1, q.op2, q.op3].filter(Boolean);
         console.log("Opciones encontradas:", options);
-        console.log(
-          "Opciones completas:",
-          options.map((opt) => `"${opt}"`)
-        );
-        console.log("Primera pregunta completa:", q);
+        
+        // NO MEZCLAR - mantener orden original
         const preparedQuestion = {
           ...q,
-          options: shuffle(options),
+          options: options, // Sin shuffle
         };
         console.log("Pregunta preparada:", preparedQuestion);
         return preparedQuestion;
@@ -90,46 +75,58 @@ export default function SelfAssessableCard({
     }
   }, [questions]);
 
-  // Obtener el selfassessable_id a partir del assessment_id
-  useEffect(() => {
-    const fetchSelfassessableId = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:8080/api/v1/selfassessables/?assessment_id=${exam.id}`,
-          { withCredentials: true }
-        );
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setSelfassessableId(res.data[0].selfassessable_id || res.data[0].id);
-        } else {
-          setSelfassessableId(null);
-        }
-      } catch {
-        setSelfassessableId(null);
+  // Función para verificar si ya fue respondido usando exam.id directamente
+  const checkIfAnswered = async () => {
+    if (!exam.id) {
+      console.log("No exam.id available, setting answered to false");
+      setAnswered(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      console.log("Checking if answered for exam.id:", exam.id);
+      const res = await axios.post(
+        "http://localhost:8080/api/v1/get_if_selfassessable_answered/",
+        { selfassessable_id: exam.id }, // Usar exam.id directamente
+        { withCredentials: true }
+      );
+      
+      console.log("API Response raw:", res.data);
+      console.log("Response type:", typeof res.data);
+      console.log("Response status:", res.status);
+      console.log("Response stringified:", JSON.stringify(res.data));
+      
+      // Try different ways to parse the response
+      let isAnswered = false;
+      
+      if (typeof res.data === 'boolean') {
+        isAnswered = res.data;
+      } else if (typeof res.data === 'string') {
+        isAnswered = res.data.toLowerCase() === 'true';
+      } else if (typeof res.data === 'number') {
+        isAnswered = res.data === 1;
+      } else if (res.data && typeof res.data === 'object') {
+        // If it's an object, check common property names
+        isAnswered = res.data.answered || res.data.is_answered || res.data.completed || false;
       }
-    };
-    fetchSelfassessableId();
-  }, [exam.id]);
+      
+      console.log("Final isAnswered value:", isAnswered);
+      setAnswered(isAnswered);
+      
+    } catch (error) {
+      console.error("Error checking if answered:", error);
+      console.log("Setting answered to false due to error");
+      setAnswered(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Verificar si ya fue respondido
+  // Verificar si ya fue respondido al cargar
   useEffect(() => {
-    if (!selfassessableId) return;
-    const checkAnswered = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.post(
-          "http://localhost:8080/api/v1/get_if_selfassessable_answered/",
-          { selfassessable_id: selfassessableId },
-          { withCredentials: true }
-        );
-        setAnswered(res.data === true);
-      } catch (e) {
-        setAnswered(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAnswered();
-  }, [selfassessableId]);
+    checkIfAnswered();
+  }, [exam.id]);
 
   const handleChange = (idx: number, value: string) => {
     console.log(`handleChange: pregunta ${idx}, valor: ${value}`);
@@ -141,10 +138,11 @@ export default function SelfAssessableCard({
     });
   };
 
-  // Cambia el handleSubmit para limpiar las respuestas antes de enviarlas
+  // Versión optimizada del handleSubmit con refresco automático
   const handleSubmit = async () => {
     setSubmitting(true);
     setResult(null);
+    
     // Validación: todas las preguntas deben estar respondidas
     const cleanAnswers = answers.map((a) => a.split("__")[0]);
     if (
@@ -155,39 +153,58 @@ export default function SelfAssessableCard({
       setSubmitting(false);
       return;
     }
+    
     try {
+      console.log("Submitting answers:", cleanAnswers);
+      // 1. Enviar respuestas al servidor usando exam.id
       const res = await axios.post(
         "http://localhost:8080/api/v1/selfassessables/",
         {
-          assessment_id: exam.id || exam.selfassessable_id,
+          assessment_id: exam.id, // Usar exam.id directamente
           answers: cleanAnswers,
         },
         { withCredentials: true }
       );
+      
+      console.log("Submit response:", res.status, res.data);
+      
       if (res.status === 200 || res.status === 201) {
         setResult("¡Respuestas enviadas correctamente!");
-        setAnswered(true);
-        setShowQuestions(false);
+        
+        // 2. OPTIMIZACIÓN: Refrescar estado desde el servidor
+        // Esto garantiza que el estado sea consistente con la base de datos
+        await checkIfAnswered();
+        
+        // 3. Cerrar modal después de un breve delay para mostrar el mensaje
+        setTimeout(() => {
+          setShowQuestions(false);
+          setResult(null); // Limpiar mensaje
+        }, 1500);
+        
       } else {
         setResult("Error al enviar respuestas");
       }
-    } catch (e) {
+    } catch (error) {
+      console.error("Error al enviar respuestas:", error);
       setResult("Error de red o del servidor");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Cambia handleOpenQuestions para usar selfassessableId
+  // Cargar preguntas usando exam.id directamente
   const handleOpenQuestions = async () => {
     setQuestionsLoading(true);
     setQuestionsError(null);
+    
     try {
-      if (!selfassessableId) throw new Error("No hay autoevaluable disponible");
+      if (!exam.id) throw new Error("No hay exam.id disponible");
+      
       const res = await axios.get(
-        `http://localhost:8080/api/v1/selfassessables/?selfassessable_id=${selfassessableId}`,
+        `http://localhost:8080/api/v1/selfassessables/?assessment_id=${exam.id}`,
         { withCredentials: true }
       );
+      
       const questionsArr = Array.isArray(res.data) ? res.data : [];
       if (questionsArr.length > 0) {
         setQuestions(questionsArr);
@@ -196,12 +213,18 @@ export default function SelfAssessableCard({
         setQuestionsError("No hay preguntas para este autoevaluable.");
       }
       setShowQuestions(true);
-    } catch (e) {
+    } catch (error) {
       setQuestionsError("Error al cargar preguntas");
-      console.error("Error al hacer fetch de preguntas:", e);
+      console.error("Error al hacer fetch de preguntas:", error);
     } finally {
       setQuestionsLoading(false);
     }
+  };
+
+  // Función para refrescar manualmente el estado (opcional)
+  const refreshAnsweredStatus = async () => {
+    console.log("Manually refreshing answered status");
+    await checkIfAnswered();
   };
 
   // Formato de fecha y hora
@@ -213,6 +236,18 @@ export default function SelfAssessableCard({
       year: "numeric",
     });
   };
+
+  // DEBUG: Add this temporary button to manually refresh status
+  const DebugRefreshButton = () => (
+    <Button
+      onClick={refreshAnsweredStatus}
+      variant="outline"
+      size="sm"
+      className="ml-2 text-xs"
+    >
+      🔄 Debug Refresh
+    </Button>
+  );
 
   if (loading) {
     return (
@@ -243,6 +278,13 @@ export default function SelfAssessableCard({
         </div>
       </div>
 
+      {/* DEBUG INFO - Remove this in production */}
+      <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+        <p>Debug: answered = {String(answered)}</p>
+        <p>Debug: exam.id = {exam.id}</p>
+        <DebugRefreshButton />
+      </div>
+
       {/* Main content */}
       <div className="space-y-4">
         <div className="flex items-start gap-4">
@@ -268,7 +310,7 @@ export default function SelfAssessableCard({
 
         {/* Status section */}
         <div className="flex items-center justify-between">
-          {answered ? (
+          {answered === true ? (
             <div className="flex items-center gap-3 p-4 bg-green-50/50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-800/50 rounded-lg">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                 <CheckIcon className="w-4 h-4 text-white" />
@@ -297,8 +339,8 @@ export default function SelfAssessableCard({
               </div>
             </div>
           )}
-
-          {!answered && (
+          
+          {answered !== true && (
             <Dialog open={showQuestions} onOpenChange={setShowQuestions}>
               <DialogTrigger asChild>
                 <Button
@@ -319,10 +361,12 @@ export default function SelfAssessableCard({
                   )}
                 </Button>
               </DialogTrigger>
+              
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200/50 dark:border-gray-800/50 exam-scrollbar">
                 <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   Autoevaluación: {exam.task}
                 </DialogTitle>
+                
                 {questionsError && (
                   <div className="p-4 bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/50 rounded-lg mb-4">
                     <p className="text-red-700 dark:text-red-400 text-sm">
@@ -330,6 +374,7 @@ export default function SelfAssessableCard({
                     </p>
                   </div>
                 )}
+                
                 {mcQuestions.length > 0 && (
                   <div className="space-y-6">
                     {mcQuestions.map((question, idx) => (
@@ -374,6 +419,7 @@ export default function SelfAssessableCard({
                         </RadioGroup>
                       </div>
                     ))}
+                    
                     <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
                       <Button
                         onClick={handleSubmit}
@@ -401,6 +447,7 @@ export default function SelfAssessableCard({
                         </Button>
                       </DialogClose>
                     </div>
+                    
                     {result && (
                       <div
                         className={`p-4 rounded-lg text-sm border ${
@@ -419,7 +466,7 @@ export default function SelfAssessableCard({
           )}
         </div>
       </div>
-
+      
       {/* Hover effect overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
     </div>

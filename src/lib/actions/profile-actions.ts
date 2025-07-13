@@ -15,7 +15,7 @@ export async function uploadProfilePicture(clientFormData: FormData) {
     if (!file) throw new Error("No file provided");
     if (!file.type.startsWith("image/"))
       throw new Error("Only images are allowed");
-    if (file.size > 5 * 1024 * 1024)
+    if (file.size > 10 * 1024 * 1024)
       throw new Error("File size exceeds 5MB limit");
 
     // 3. Crear FormData con el archivo real
