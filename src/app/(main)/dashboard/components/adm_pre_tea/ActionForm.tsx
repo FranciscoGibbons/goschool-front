@@ -22,18 +22,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  MultiSelect,
-  MultiSelectValue,
-  MultiSelectItem,
 } from "@/components/ui/select";
 import axios from "axios";
 import { toast } from "sonner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -41,6 +32,23 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import useSubjectsStore from "@/store/subjectsStore";
+
+// Tipos para los datos dinámicos
+interface Assessment {
+  id: number;
+  task: string;
+  subject_id: number;
+  due_date: string;
+  type: string;
+}
+
+interface Student {
+  id: number;
+  full_name: string;
+  photo?: string;
+}
 
 interface ActionFormProps {
   action: keyof FormsObj;
@@ -90,14 +98,22 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [subjects, setSubjects] = useState<Array<{ id: number; name: string }>>(
-    []
-  );
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const subjectsStore = useSubjectsStore();
+  const {
+    subjects,
+    fetchSubjects,
+    isLoading: isLoadingSubjects,
+  } = subjectsStore;
   const [courses, setCourses] = useState<Array<{ id: number; name: string }>>(
     []
   );
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+
+  // Nuevos estados para el formulario de calificaciones
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
 
   // Type guards para verificar el tipo de formulario
   const isMessageForm = (
@@ -128,16 +144,36 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
   // Función para cargar materias
   const loadSubjects = async () => {
-    setIsLoadingSubjects(true);
     try {
-      const response = await axios.get(
-        "http://localhost:8080/api/v1/subjects/",
-        {
+      const [subjectsResponse, coursesResponse] = await Promise.all([
+        axios.get("http://localhost:8080/api/v1/subjects/", {
           withCredentials: true,
-        }
+        }),
+        axios.get("http://localhost:8080/api/v1/courses/", {
+          withCredentials: true,
+        }),
+      ]);
+
+      const subjectsData = subjectsResponse.data;
+      const coursesData = coursesResponse.data;
+
+      // Crear un mapa de cursos para acceso rápido
+      const coursesMap = new Map(
+        coursesData.map((course: any) => [course.id, course])
       );
-      console.log("Respuesta de materias (subjects):", response.data);
-      setSubjects(response.data);
+
+      // Agregar información del curso a cada materia
+      const subjectsWithCourses = subjectsData.map((subject: any) => ({
+        ...subject,
+        course_name: coursesMap.get(subject.course_id)
+          ? `${coursesMap.get(subject.course_id).year}°${
+              coursesMap.get(subject.course_id).division
+            }`
+          : `Curso ${subject.course_id}`,
+      }));
+
+      console.log("Respuesta de materias con cursos:", subjectsWithCourses);
+      subjectsStore.setSubjects(subjectsWithCourses);
     } catch (error) {
       console.error("Error loading subjects:", error);
       if (axios.isAxiosError(error)) {
@@ -149,8 +185,86 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         }
       }
       toast.error("Error al cargar materias");
+    }
+  };
+
+  // Función para cargar evaluaciones de una materia
+  const loadAssessments = async (subjectId: string) => {
+    if (!subjectId) {
+      setAssessments([]);
+      return;
+    }
+
+    setIsLoadingAssessments(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/v1/assessments/?subject_id=${subjectId}`,
+        {
+          withCredentials: true,
+        }
+      );
+      console.log("Respuesta de evaluaciones:", response.data);
+      setAssessments(response.data);
+    } catch (error) {
+      console.error("Error loading assessments:", error);
+      toast.error("Error al cargar evaluaciones");
+      setAssessments([]);
     } finally {
-      setIsLoadingSubjects(false);
+      setIsLoadingAssessments(false);
+    }
+  };
+
+  // Función para cargar estudiantes de un curso
+  const loadStudents = async (courseId: number) => {
+    if (!courseId) {
+      setStudents([]);
+      return;
+    }
+
+    setIsLoadingStudents(true);
+    try {
+      // Primero obtener los IDs de estudiantes del curso
+      const studentsResponse = await axios.get(
+        `http://localhost:8080/api/v1/students/?course=${courseId}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      const studentIds = studentsResponse.data;
+      console.log("IDs de estudiantes:", studentIds);
+
+      if (studentIds.length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      // Luego obtener los datos personales de cada estudiante
+      const personalDataPromises = studentIds.map((studentId: number) =>
+        axios.get(
+          `http://localhost:8080/api/v1/public_personal_data/?user_id=${studentId}`,
+          {
+            withCredentials: true,
+          }
+        )
+      );
+
+      const personalDataResponses = await Promise.all(personalDataPromises);
+      const studentsData = personalDataResponses.map((response, index) => ({
+        id: studentIds[index],
+        full_name:
+          response.data[0]?.full_name || `Estudiante ${studentIds[index]}`,
+        photo: response.data[0]?.photo,
+      }));
+
+      console.log("Datos de estudiantes:", studentsData);
+      setStudents(studentsData);
+    } catch (error) {
+      console.error("Error loading students:", error);
+      toast.error("Error al cargar estudiantes");
+      setStudents([]);
+    } finally {
+      setIsLoadingStudents(false);
     }
   };
 
@@ -186,6 +300,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   }, [action]);
 
+  // Cargar materias cuando se necesite
+  useEffect(() => {
+    if (subjects.length === 0) {
+      fetchSubjects();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjects.length]);
+
   // Cargar cursos cuando se necesite
   useEffect(() => {
     if (action === "Crear mensaje") {
@@ -193,10 +315,39 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   }, [action]);
 
+  // Efecto para cargar evaluaciones cuando cambia la materia seleccionada
+  useEffect(() => {
+    if (action === "Cargar calificación" && formData.subject) {
+      loadAssessments(formData.subject);
+      // Limpiar evaluación seleccionada cuando cambia la materia
+      setFormData((prev) => ({
+        ...prev,
+        assessment_id: "",
+      }));
+    }
+  }, [formData.subject, action]);
+
+  // Efecto para cargar estudiantes cuando cambia la materia seleccionada
+  useEffect(() => {
+    if (action === "Cargar calificación" && formData.subject) {
+      const selectedSubject = subjects.find(
+        (s) => s.id.toString() === formData.subject
+      );
+      if (selectedSubject) {
+        loadStudents(selectedSubject.course_id);
+        // Limpiar estudiante seleccionado cuando cambia la materia
+        setFormData((prev) => ({
+          ...prev,
+          student_id: "",
+        }));
+      }
+    }
+  }, [formData.subject, subjects, action]);
+
   // Manejo de cambios para campos individuales
   const handleChange = <T extends FormsObj[typeof action]>(
     field: keyof T,
-    value: any
+    value: T[keyof T]
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -762,7 +913,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                 <SelectContent>
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id.toString()}>
-                      {subject.name}
+                      {subject.name} - {subject.course_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -770,29 +921,88 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             </div>
 
             <div>
-              <Label htmlFor="assessment_id">ID de Evaluación</Label>
-              <Input
-                id="assessment_id"
-                placeholder="ID de la evaluación"
-                type="number"
+              <Label htmlFor="assessment_id">Evaluación</Label>
+              <Select
                 value={formData.assessment_id}
-                onChange={(e) =>
-                  handleChange<GradeForm>("assessment_id", e.target.value)
+                onValueChange={(value) =>
+                  handleChange<GradeForm>("assessment_id", value)
                 }
-              />
+                disabled={isLoadingAssessments || !formData.subject}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !formData.subject
+                        ? "Primero selecciona una materia"
+                        : isLoadingAssessments
+                        ? "Cargando evaluaciones..."
+                        : "Selecciona una evaluación"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {assessments.map((assessment) => (
+                    <SelectItem
+                      key={assessment.id}
+                      value={assessment.id.toString()}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{assessment.task}</span>
+                        <span className="text-sm text-muted-foreground">
+                          Tipo: {assessment.type} | Fecha:{" "}
+                          {new Date(assessment.due_date).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <Label htmlFor="student_id">ID del Estudiante</Label>
-              <Input
-                id="student_id"
-                placeholder="ID del estudiante"
-                type="number"
+              <Label htmlFor="student_id">Estudiante</Label>
+              <Select
                 value={formData.student_id}
-                onChange={(e) =>
-                  handleChange<GradeForm>("student_id", e.target.value)
+                onValueChange={(value) =>
+                  handleChange<GradeForm>("student_id", value)
                 }
-              />
+                disabled={isLoadingStudents || !formData.subject}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !formData.subject
+                        ? "Primero selecciona una materia"
+                        : isLoadingStudents
+                        ? "Cargando estudiantes..."
+                        : "Selecciona un estudiante"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {students.map((student) => (
+                    <SelectItem key={student.id} value={student.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        {student.photo ? (
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={student.photo} />
+                            <AvatarFallback className="text-xs">
+                              {student.full_name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs">
+                              {student.full_name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <span>{student.full_name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -871,7 +1081,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                         key={subject.id}
                         value={subject.id.toString()}
                       >
-                        {subject.name}
+                        {subject.name} - {subject.course_name}
                       </SelectItem>
                     ))}
                   </SelectContent>

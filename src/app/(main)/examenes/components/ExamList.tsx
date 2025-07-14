@@ -11,6 +11,7 @@ import {
   ClockIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
+import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 
 interface Props {
   exams: Exam[];
@@ -46,15 +47,10 @@ export default function ExamList({ exams, role, subjects }: Props) {
   if (exams.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 bg-gray-900/10 rounded-full flex items-center justify-center mb-4 exam-gradient-bg">
-          <BookOpenIcon className="w-8 h-8 text-gray-400" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          No hay evaluaciones
-        </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-sm">
-          No se encontraron evaluaciones asignadas para este período.
-        </p>
+        <EmptyStateSVG className="w-96 h-72 mb-4 opacity-80" />
+        <span className="text-muted-foreground text-lg opacity-60">
+          No hay evaluaciones asignadas
+        </span>
       </div>
     );
   }
@@ -77,14 +73,14 @@ export default function ExamList({ exams, role, subjects }: Props) {
         ) : (
           <div
             key={exam.id}
-            className="group relative bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 rounded-xl p-6 hover:border-gray-300/50 dark:hover:border-gray-700/50 transition-all duration-200 hover:shadow-sm exam-card-hover exam-fade-in"
+            className="relative rounded-xl border border-border bg-card shadow-sm px-6 py-4 exam-fade-in"
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             {/* Status indicator */}
             <div className="absolute top-6 right-6">
               <div className="flex items-center gap-2">
-                <div className="exam-status-indicator animate-pulse"></div>
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   {exam.type}
                 </span>
               </div>
@@ -93,21 +89,21 @@ export default function ExamList({ exams, role, subjects }: Props) {
             {/* Main content */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   {exam.task}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Evaluación de {getSubjectName(exam.subject_id)}
                 </p>
               </div>
 
               {/* Metadata */}
               <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <CalendarIcon className="w-4 h-4" />
                   <span>Entrega: {formatDate(exam.due_date)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <BookOpenIcon className="w-4 h-4" />
                   <span>{getSubjectName(exam.subject_id)}</span>
                 </div>
@@ -132,9 +128,6 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 </div>
               )}
             </div>
-
-            {/* Hover effect overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
           </div>
         )
       )}

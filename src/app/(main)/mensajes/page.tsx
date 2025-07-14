@@ -1,6 +1,7 @@
 import axios from "axios";
 import { cookies } from "next/headers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 
 interface Message {
   id: string;
@@ -139,10 +140,11 @@ export default async function Mensajes() {
           })}
         </div>
       ) : (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground text-lg">
-            No hay mensajes disponibles.
-          </p>
+        <div className="flex flex-col items-center justify-center py-16">
+          <EmptyStateSVG className="w-96 h-72 mb-4 opacity-80" />
+          <span className="text-muted-foreground text-lg opacity-60">
+            No hay mensajes disponibles
+          </span>
         </div>
       )}
     </div>

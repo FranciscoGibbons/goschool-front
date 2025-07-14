@@ -5,7 +5,7 @@ import axios from "axios";
 import { Exam, Role } from "@/utils/types";
 import getRole from "@/utils/getRole";
 import ExamList from "./components/ExamList";
-import "./examenes.css";
+import { AcademicCapIcon } from "@heroicons/react/24/outline";
 
 export default async function Exams() {
   const cookiesData = await cookies();
@@ -52,23 +52,13 @@ export default async function Exams() {
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/30 exam-vercel-font">
-      <div className="w-full px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Evaluaciones
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Gestiona y completa tus evaluaciones asignadas
-          </p>
-        </div>
-
-        {/* Content */}
-        <div className="exam-fade-in">
-          <ExamList exams={exams} role={role} subjects={subjects} />
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <AcademicCapIcon className="size-8 text-primary" />
+        <h1 className="text-3xl font-bold text-foreground">Evaluaciones</h1>
       </div>
+
+      <ExamList exams={exams} role={role} subjects={subjects} />
     </div>
   );
 }

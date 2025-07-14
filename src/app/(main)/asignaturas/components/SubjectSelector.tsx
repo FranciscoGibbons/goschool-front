@@ -12,6 +12,7 @@ import {
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 import SubjectMessages from "./SubjectMessages";
 import axios from "axios";
+import useSubjectsStore from "@/store/subjectsStore";
 
 interface Subject {
   id: number;
@@ -19,47 +20,25 @@ interface Subject {
 }
 
 export default function SubjectSelector() {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const subjectsStore = useSubjectsStore();
+  const {
+    subjects,
+    fetchSubjects,
+    isLoading: isLoadingSubjects,
+  } = subjectsStore;
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    // Cargar materias
-    const fetchSubjects = async () => {
-      try {
-        const res = await axios.get("http://localhost:8080/api/v1/subjects/", {
-          withCredentials: true,
-        });
-        const subjectsData = res.data;
-        setSubjects(subjectsData);
+    if (subjects.length === 0) {
+      fetchSubjects();
+    } else if (!selectedSubject && subjects.length > 0) {
+      setSelectedSubject(subjects[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjects.length]);
 
-        // Seleccionar automáticamente la primera materia
-        if (subjectsData.length > 0) {
-          setSelectedSubject(subjectsData[0]);
-        }
-
-        setErrorMsg("");
-      } catch (error) {
-        setSubjects([]);
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 401) {
-            setErrorMsg("No autorizado. Inicia sesión nuevamente.");
-          } else {
-            setErrorMsg("Error al cargar materias.");
-          }
-        } else {
-          setErrorMsg("Error desconocido.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSubjects();
-  }, []);
-
-  if (isLoading) {
+  if (isLoadingSubjects) {
     return <div className="text-center py-8">Cargando asignaturas...</div>;
   }
 
@@ -70,10 +49,7 @@ export default function SubjectSelector() {
       )}
 
       <div className="space-y-4">
-        <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">
-            Seleccionar Materia
-          </label>
+        <div className="flex justify-start">
           <Select
             value={selectedSubject?.id.toString() || ""}
             onValueChange={(value) => {
