@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Loader2, CheckCircle, Clock } from "lucide-react";
 import {
   Dialog,
   DialogTrigger,
@@ -14,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup } from "@/components/ui/radio-group";
 import {
-  AcademicCapIcon,
   CalendarIcon,
   BookOpenIcon,
   PlayIcon,
@@ -23,6 +18,7 @@ import {
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 import AnswerSelfAssessable from "./AnswerSelfAssessable";
+import { Loader2 } from "lucide-react";
 
 interface SelfAssessableCardProps {
   exam: any; // SelfAssessableExam
@@ -57,7 +53,7 @@ export default function SelfAssessableCard({
         console.log("Procesando pregunta:", q);
         const options = [q.op1, q.op2, q.op3].filter(Boolean);
         console.log("Opciones encontradas:", options);
-        
+
         // NO MEZCLAR - mantener orden original
         const preparedQuestion = {
           ...q,
@@ -82,7 +78,7 @@ export default function SelfAssessableCard({
       setAnswered(false);
       return;
     }
-    
+
     setLoading(true);
     try {
       console.log("Checking if answered for exam.id:", exam.id);
@@ -91,29 +87,32 @@ export default function SelfAssessableCard({
         { selfassessable_id: exam.id }, // Usar exam.id directamente
         { withCredentials: true }
       );
-      
+
       console.log("API Response raw:", res.data);
       console.log("Response type:", typeof res.data);
       console.log("Response status:", res.status);
       console.log("Response stringified:", JSON.stringify(res.data));
-      
+
       // Try different ways to parse the response
       let isAnswered = false;
-      
-      if (typeof res.data === 'boolean') {
+
+      if (typeof res.data === "boolean") {
         isAnswered = res.data;
-      } else if (typeof res.data === 'string') {
-        isAnswered = res.data.toLowerCase() === 'true';
-      } else if (typeof res.data === 'number') {
+      } else if (typeof res.data === "string") {
+        isAnswered = res.data.toLowerCase() === "true";
+      } else if (typeof res.data === "number") {
         isAnswered = res.data === 1;
-      } else if (res.data && typeof res.data === 'object') {
+      } else if (res.data && typeof res.data === "object") {
         // If it's an object, check common property names
-        isAnswered = res.data.answered || res.data.is_answered || res.data.completed || false;
+        isAnswered =
+          res.data.answered ||
+          res.data.is_answered ||
+          res.data.completed ||
+          false;
       }
-      
+
       console.log("Final isAnswered value:", isAnswered);
       setAnswered(isAnswered);
-      
     } catch (error) {
       console.error("Error checking if answered:", error);
       console.log("Setting answered to false due to error");
@@ -142,7 +141,7 @@ export default function SelfAssessableCard({
   const handleSubmit = async () => {
     setSubmitting(true);
     setResult(null);
-    
+
     // Validación: todas las preguntas deben estar respondidas
     const cleanAnswers = answers.map((a) => a.split("__")[0]);
     if (
@@ -153,7 +152,7 @@ export default function SelfAssessableCard({
       setSubmitting(false);
       return;
     }
-    
+
     try {
       console.log("Submitting answers:", cleanAnswers);
       // 1. Enviar respuestas al servidor usando exam.id
@@ -165,22 +164,21 @@ export default function SelfAssessableCard({
         },
         { withCredentials: true }
       );
-      
+
       console.log("Submit response:", res.status, res.data);
-      
+
       if (res.status === 200 || res.status === 201) {
         setResult("¡Respuestas enviadas correctamente!");
-        
+
         // 2. OPTIMIZACIÓN: Refrescar estado desde el servidor
         // Esto garantiza que el estado sea consistente con la base de datos
         await checkIfAnswered();
-        
+
         // 3. Cerrar modal después de un breve delay para mostrar el mensaje
         setTimeout(() => {
           setShowQuestions(false);
           setResult(null); // Limpiar mensaje
         }, 1500);
-        
       } else {
         setResult("Error al enviar respuestas");
       }
@@ -196,15 +194,15 @@ export default function SelfAssessableCard({
   const handleOpenQuestions = async () => {
     setQuestionsLoading(true);
     setQuestionsError(null);
-    
+
     try {
       if (!exam.id) throw new Error("No hay exam.id disponible");
-      
+
       const res = await axios.get(
         `http://localhost:8080/api/v1/selfassessables/?assessment_id=${exam.id}`,
         { withCredentials: true }
       );
-      
+
       const questionsArr = Array.isArray(res.data) ? res.data : [];
       if (questionsArr.length > 0) {
         setQuestions(questionsArr);
@@ -278,13 +276,6 @@ export default function SelfAssessableCard({
         </div>
       </div>
 
-      {/* DEBUG INFO - Remove this in production */}
-      <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-        <p>Debug: answered = {String(answered)}</p>
-        <p>Debug: exam.id = {exam.id}</p>
-        <DebugRefreshButton />
-      </div>
-
       {/* Main content */}
       <div className="space-y-4">
         <div className="flex items-start gap-4">
@@ -339,7 +330,7 @@ export default function SelfAssessableCard({
               </div>
             </div>
           )}
-          
+
           {answered !== true && (
             <Dialog open={showQuestions} onOpenChange={setShowQuestions}>
               <DialogTrigger asChild>
@@ -361,12 +352,12 @@ export default function SelfAssessableCard({
                   )}
                 </Button>
               </DialogTrigger>
-              
+
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200/50 dark:border-gray-800/50 exam-scrollbar">
                 <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   Autoevaluación: {exam.task}
                 </DialogTitle>
-                
+
                 {questionsError && (
                   <div className="p-4 bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/50 rounded-lg mb-4">
                     <p className="text-red-700 dark:text-red-400 text-sm">
@@ -374,7 +365,7 @@ export default function SelfAssessableCard({
                     </p>
                   </div>
                 )}
-                
+
                 {mcQuestions.length > 0 && (
                   <div className="space-y-6">
                     {mcQuestions.map((question, idx) => (
@@ -419,7 +410,7 @@ export default function SelfAssessableCard({
                         </RadioGroup>
                       </div>
                     ))}
-                    
+
                     <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
                       <Button
                         onClick={handleSubmit}
@@ -447,7 +438,7 @@ export default function SelfAssessableCard({
                         </Button>
                       </DialogClose>
                     </div>
-                    
+
                     {result && (
                       <div
                         className={`p-4 rounded-lg text-sm border ${
@@ -466,7 +457,7 @@ export default function SelfAssessableCard({
           )}
         </div>
       </div>
-      
+
       {/* Hover effect overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
     </div>

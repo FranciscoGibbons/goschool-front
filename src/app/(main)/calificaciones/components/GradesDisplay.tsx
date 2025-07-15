@@ -41,6 +41,8 @@ export default function GradesDisplay() {
   const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [orderBy, setOrderBy] = useState<string>("date_desc");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const subjectsStore = useSubjectsStore();
   const { subjects, fetchSubjects } = subjectsStore;
@@ -80,52 +82,65 @@ export default function GradesDisplay() {
     }
   }, [subjects, selectedSubject]);
 
-  // Filtrar materias según selección (solo una materia a la vez)
-  const filteredSubjects = selectedSubject
-    ? subjects.filter((s) => s.id === selectedSubject)
-    : [];
+  // Eliminar filteredSubjects porque ya no se usa
 
-  // Agrupar notas por materia
-  const subjectsWithGrades = filteredSubjects.map((subject) => {
-    const subjectGrades = grades.filter((g) => g.subject_id === subject.id);
-    const subjectAssessments = assessments.filter(
-      (a) => a.subject_id === subject.id
-    );
-    // Agrupar por assessment_id si existe, si no por descripción
-    const gradesByAssessment: Record<
-      string,
-      { assessment?: Assessment; grades: Grade[] }
-    > = {};
-    subjectGrades.forEach((grade) => {
-      const key = grade.assessment_id
-        ? String(grade.assessment_id)
-        : `desc-${grade.description}`;
-      if (!gradesByAssessment[key]) {
-        gradesByAssessment[key] = {
-          assessment: grade.assessment_id
-            ? subjectAssessments.find((a) => a.id === grade.assessment_id)
-            : undefined,
-          grades: [],
-        };
-      }
-      gradesByAssessment[key].grades.push(grade);
+  // Ordenar y filtrar calificaciones
+  let subjectGrades = grades.filter((g) => g.subject_id === selectedSubject);
+  if (typeFilter !== "all") {
+    subjectGrades = subjectGrades.filter((g) => {
+      const assessment = assessments.find((a) => a.id === g.assessment_id);
+      return assessment && assessment.type === typeFilter;
     });
-    // Calcular promedio numérico
-    const numericalGrades = subjectGrades.filter(
-      (g) => g.grade_type === "numerical"
+  }
+  if (orderBy === "date_desc") {
+    subjectGrades.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-    const average = numericalGrades.length
-      ? Math.round(
-          (numericalGrades.reduce((sum, g) => sum + Number(g.grade), 0) /
-            numericalGrades.length) *
-            100
-        ) / 100
-      : undefined;
-    return {
-      subject,
-      gradesByAssessment,
-      average,
-    };
+  } else if (orderBy === "date_asc") {
+    subjectGrades.sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  } else if (orderBy === "grade_desc") {
+    subjectGrades.sort((a, b) => Number(b.grade) - Number(a.grade));
+  } else if (orderBy === "grade_asc") {
+    subjectGrades.sort((a, b) => Number(a.grade) - Number(b.grade));
+  }
+  // Obtener tipos únicos de evaluación SOLO de las calificaciones filtradas
+  const filteredAssessmentTypes = Array.from(
+    new Set(
+      grades
+        .filter((g) => g.subject_id === selectedSubject)
+        .map((g) => {
+          const assessment = assessments.find((a) => a.id === g.assessment_id);
+          return assessment ? assessment.type : null;
+        })
+        .filter(Boolean)
+    )
+  );
+
+  // Mostrar solo las calificaciones filtradas y ordenadas
+  const filteredGrades = subjectGrades;
+
+  // Agrupar por assessment_id si existe, si no por descripción
+  const gradesByAssessment: Record<
+    string,
+    { assessment?: Assessment; grades: Grade[] }
+  > = {};
+  filteredGrades.forEach((grade) => {
+    const key = grade.assessment_id
+      ? String(grade.assessment_id)
+      : `desc-${grade.description}`;
+    if (!gradesByAssessment[key]) {
+      gradesByAssessment[key] = {
+        assessment: grade.assessment_id
+          ? assessments.find((a) => a.id === grade.assessment_id)
+          : undefined,
+        grades: [],
+      };
+    }
+    gradesByAssessment[key].grades.push(grade);
   });
 
   const getGradeColor = (grade: number | string, type: string) => {
@@ -148,7 +163,7 @@ export default function GradesDisplay() {
 
   return (
     <div className="space-y-8">
-      {/* Selector de materia */}
+      {/* Selectores de materia y ordenamiento */}
       <div className="flex flex-col md:flex-row md:items-center gap-4">
         <div className="w-full max-w-xs">
           <Select
@@ -170,105 +185,112 @@ export default function GradesDisplay() {
             </SelectContent>
           </Select>
         </div>
+        {/* Nuevo select de ordenamiento */}
+        <div className="w-full max-w-xs">
+          <Select value={orderBy} onValueChange={setOrderBy}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date_desc">
+                Fecha: más reciente primero
+              </SelectItem>
+              <SelectItem value="date_asc">
+                Fecha: más antiguo primero
+              </SelectItem>
+              <SelectItem value="grade_desc">Nota: mayor a menor</SelectItem>
+              <SelectItem value="grade_asc">Nota: menor a mayor</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Nuevo select de tipo de evaluación */}
+        <div className="w-full max-w-xs">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Tipo de evaluación" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los tipos</SelectItem>
+              {filteredAssessmentTypes.map((type) => (
+                <SelectItem key={type} value={type as string}>
+                  {type === "selfassessable"
+                    ? "Autoevaluable"
+                    : type &&
+                      (type as string).charAt(0).toUpperCase() +
+                        (type as string).slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      {/* Calificaciones por materia */}
-      {subjectsWithGrades.length === 0 && (
+      {/* Calificaciones filtradas y ordenadas */}
+      {Object.keys(gradesByAssessment).length === 0 && (
         <div className="flex flex-col items-center justify-center py-12">
           <EmptyStateSVG />
         </div>
       )}
-      {subjectsWithGrades.map(({ subject, gradesByAssessment, average }) => (
-        <div key={subject.id} className="space-y-6">
-          <div className="flex items-center gap-3 mb-2">
-            {/* <BookOpenIcon className="size-6 text-primary" /> */}
-            {/* <h2 className="text-2xl font-bold text-foreground">{subject.name}</h2> */}
-            {/* Eliminado el texto de la materia */}
-            {average !== undefined && (
-              <span className="ml-4 px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                Promedio: {average}
+      {Object.entries(gradesByAssessment).map(
+        ([key, { assessment, grades }]) => (
+          <div
+            key={key}
+            className="rounded-xl border border-border bg-card shadow-sm px-6 py-4"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <AcademicCapIcon className="size-5 text-primary" />
+              <span className="font-semibold text-base text-foreground">
+                {assessment
+                  ? assessment.task
+                  : grades[0]?.description || "Sin descripción"}
               </span>
-            )}
-          </div>
-          {/* Notas agrupadas por evaluación o descripción */}
-          <div className="space-y-4">
-            {Object.entries(gradesByAssessment).length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16">
-                <EmptyStateSVG className="w-96 h-72 mb-4 opacity-80" />
-                <span className="text-muted-foreground text-lg opacity-60">
-                  No hay calificaciones registradas
-                </span>
-              </div>
-            )}
-            {Object.entries(gradesByAssessment).map(
-              ([key, { assessment, grades }]) => (
-                <div
-                  key={key}
-                  className="rounded-xl border border-border bg-card shadow-sm px-6 py-4"
+              {assessment && (
+                <span
+                  className={clsx(
+                    "ml-2 px-2 py-0.5 rounded text-xs font-semibold",
+                    getAssessmentTypeColor(assessment.type)
+                  )}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <AcademicCapIcon className="size-5 text-primary" />
-                    <span className="font-semibold text-base text-foreground">
-                      {assessment
-                        ? assessment.task
-                        : grades[0]?.description || "Sin descripción"}
+                  {assessment.type === "selfassessable"
+                    ? "Autoevaluable"
+                    : assessment.type.charAt(0).toUpperCase() +
+                      assessment.type.slice(1)}
+                </span>
+              )}
+              {assessment?.due_date && (
+                <span className="ml-2 text-xs text-muted-foreground flex items-center gap-1">
+                  <CalendarIcon className="size-4" />
+                  {new Date(assessment.due_date).toLocaleDateString("es-ES")}
+                </span>
+              )}
+            </div>
+            {/* Lista de notas */}
+            <div className="flex flex-wrap gap-4">
+              {grades.map((grade) => (
+                <div
+                  key={grade.id}
+                  className="flex flex-col items-center gap-1 min-w-[90px]"
+                >
+                  <Badge
+                    className={getGradeColor(grade.grade, grade.grade_type)}
+                  >
+                    {grade.grade}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {grade.grade_type === "conceptual"
+                      ? "Conceptual"
+                      : "Numérica"}
+                  </span>
+                  {grade.created_at && (
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(grade.created_at).toLocaleDateString("es-ES")}
                     </span>
-                    {assessment && (
-                      <span
-                        className={clsx(
-                          "ml-2 px-2 py-0.5 rounded text-xs font-semibold",
-                          getAssessmentTypeColor(assessment.type)
-                        )}
-                      >
-                        {assessment.type === "selfassessable"
-                          ? "Autoevaluable"
-                          : "Oral"}
-                      </span>
-                    )}
-                    {assessment?.due_date && (
-                      <span className="ml-2 text-xs text-muted-foreground flex items-center gap-1">
-                        <CalendarIcon className="size-4" />
-                        {new Date(assessment.due_date).toLocaleDateString(
-                          "es-ES"
-                        )}
-                      </span>
-                    )}
-                  </div>
-                  {/* Lista de notas */}
-                  <div className="flex flex-wrap gap-4">
-                    {grades.map((grade) => (
-                      <div
-                        key={grade.id}
-                        className="flex flex-col items-center gap-1 min-w-[90px]"
-                      >
-                        <Badge
-                          className={getGradeColor(
-                            grade.grade,
-                            grade.grade_type
-                          )}
-                        >
-                          {grade.grade}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {grade.grade_type === "conceptual"
-                            ? "Conceptual"
-                            : "Numérica"}
-                        </span>
-                        {grade.created_at && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(grade.created_at).toLocaleDateString(
-                              "es-ES"
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  )}
                 </div>
-              )
-            )}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      )}
       {errorMsg && (
         <div className="text-red-500 text-center py-4">{errorMsg}</div>
       )}

@@ -12,6 +12,13 @@ import {
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   exams: Exam[];
@@ -21,6 +28,35 @@ interface Props {
 
 export default function ExamList({ exams, role, subjects }: Props) {
   const [activeExamId, setActiveExamId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<string>("date_asc");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Ordenar y filtrar exámenes
+  let filteredExams = [...exams];
+  if (typeFilter !== "all") {
+    filteredExams = filteredExams.filter((exam) => exam.type === typeFilter);
+  }
+  if (statusFilter !== "all") {
+    filteredExams = filteredExams.filter(
+      (exam) => exam.status === statusFilter
+    );
+  }
+  if (filter === "date_asc") {
+    filteredExams.sort(
+      (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+    );
+  } else if (filter === "date_desc") {
+    filteredExams.sort(
+      (a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
+    );
+  }
+
+  // Obtener tipos y estados únicos
+  const examTypes = Array.from(new Set(exams.map((e) => e.type)));
+  const examStatuses = Array.from(
+    new Set(exams.map((e) => e.status).filter(Boolean))
+  );
 
   const getSubjectName = (id: number) => {
     const subject = subjects.find((s) => s.id === id);
@@ -57,7 +93,54 @@ export default function ExamList({ exams, role, subjects }: Props) {
 
   return (
     <div className="space-y-6">
-      {exams.map((exam, index) =>
+      {/* Selectores de filtro/ordenamiento */}
+      <div className="flex flex-wrap gap-4 mb-4">
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Ordenar por fecha de entrega" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date_asc">
+              Fecha de entrega: más próxima primero
+            </SelectItem>
+            <SelectItem value="date_desc">
+              Fecha de entrega: más lejana primero
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Tipo de examen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            {examTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type === "selfassessable"
+                  ? "Autoevaluable"
+                  : type.charAt(0).toUpperCase() + type.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {examStatuses.length > 0 && (
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              {examStatuses.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+      {/* Lista de exámenes filtrada y ordenada */}
+      {filteredExams.map((exam, index) =>
         exam.type === "selfassessable" ? (
           <div
             key={exam.id}
