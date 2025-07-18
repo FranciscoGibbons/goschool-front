@@ -95,6 +95,10 @@ export default function SelfAssessableCard({
     return `${day.toString().padStart(2, "0")} ${monthName}. ${year}`;
   };
 
+  // Utilidad para obtener la zona horaria local
+  const getUserTimezone = () =>
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
   // Verifica si ya respondido (solo para estudiantes)
   const checkIfAnswered = async () => {
     if (!exam.id || !isStudent) return setAnswered(false);

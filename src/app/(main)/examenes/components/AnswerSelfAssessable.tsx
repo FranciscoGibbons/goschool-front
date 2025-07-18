@@ -18,6 +18,10 @@ const COLORS = {
   border: "#ff9800",
 };
 
+// Utilidad para obtener la zona horaria local
+const getUserTimezone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
 export default function AnswerSelfAssessable({
   assessmentId,
   questions,
