@@ -12,9 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AcademicCapIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import { AcademicCapIcon, CalendarIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
+import { toast } from "sonner";
+import userInfoStore from "@/store/userInfoStore";
+import { useRouter } from "next/navigation";
 
 interface Grade {
   id: number;
@@ -43,6 +46,12 @@ export default function GradesDisplay() {
   const [errorMsg, setErrorMsg] = useState("");
   const [orderBy, setOrderBy] = useState<string>("date_desc");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [updatingGrade, setUpdatingGrade] = useState<Grade | null>(null);
+  const [editGrade, setEditGrade] = useState<Grade | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { userInfo } = userInfoStore();
+  const router = useRouter();
 
   const subjectsStore = useSubjectsStore();
   const { subjects, fetchSubjects } = subjectsStore;
@@ -156,6 +165,24 @@ export default function GradesDisplay() {
     type === "selfassessable"
       ? "bg-green-100 text-green-800"
       : "bg-blue-100 text-blue-800";
+
+  // Función para borrar una calificación
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Seguro que quieres borrar esta calificación?")) return;
+    setDeletingId(id);
+    try {
+      await fetch(`http://localhost:8080/api/v1/grades/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      toast.success("Calificación borrada");
+      setGrades((prev) => prev.filter((g) => Number(g.id) !== id));
+    } catch {
+      toast.error("Error al borrar la calificación");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (isLoading) {
     return <div className="text-center py-8">Cargando calificaciones...</div>;
@@ -285,11 +312,120 @@ export default function GradesDisplay() {
                       {new Date(grade.created_at).toLocaleDateString("es-ES")}
                     </span>
                   )}
+                  {/* Botones de acciones solo para admin/teacher/preceptor */}
+                  {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        className="p-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center justify-center w-7 h-7"
+                        onClick={() => {
+                          setUpdatingGrade(grade);
+                          setEditGrade({ ...grade });
+                        }}
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="p-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center justify-center w-7 h-7"
+                        onClick={() => handleDelete(Number(grade.id))}
+                        disabled={deletingId === Number(grade.id)}
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )
+      )}
+      {/* Modal de actualización (UI editable, PUT funcional) */}
+      {updatingGrade && editGrade && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
+            <h2 className="text-lg font-bold mb-4">Actualizar calificación</h2>
+            <form className="space-y-4" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsSaving(true);
+              try {
+                const res = await fetch(`http://localhost:8080/api/v1/grades/${updatingGrade.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "include",
+                  body: JSON.stringify({
+                    grade: editGrade.grade,
+                    grade_type: editGrade.grade_type,
+                    description: editGrade.description,
+                  }),
+                });
+                if (res.ok) {
+                  toast.success("Calificación actualizada");
+                  setGrades((prev) =>
+                    prev.map((g) =>
+                      Number(g.id) === Number(updatingGrade.id)
+                        ? { ...g, ...editGrade }
+                        : g
+                    )
+                  );
+                  setUpdatingGrade(null);
+                } else {
+                  toast.error("Error al actualizar la calificación");
+                }
+              } catch {
+                toast.error("Error de red al actualizar");
+              } finally {
+                setIsSaving(false);
+              }
+            }}>
+              <div>
+                <label className="block text-sm font-medium mb-1">Nota</label>
+                <input
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editGrade.grade}
+                  onChange={e => setEditGrade({ ...editGrade, grade: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo</label>
+                <select
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editGrade.grade_type}
+                  onChange={e => setEditGrade({ ...editGrade, grade_type: e.target.value as 'numerical' | 'conceptual' })}
+                  required
+                >
+                  <option value="numerical">Numérica</option>
+                  <option value="conceptual">Conceptual</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Descripción</label>
+                <input
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editGrade.description}
+                  onChange={e => setEditGrade({ ...editGrade, description: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2 mt-4 justify-end">
+                <button
+                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
+                  type="button"
+                  onClick={() => setUpdatingGrade(null)}
+                  disabled={isSaving}
+                >
+                  <TrashIcon className="w-4 h-4" /> Cancelar
+                </button>
+                <button
+                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
+                  type="submit"
+                  disabled={isSaving}
+                >
+                  <PencilIcon className="w-4 h-4" /> {isSaving ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
       {errorMsg && (
         <div className="text-red-500 text-center py-4">{errorMsg}</div>

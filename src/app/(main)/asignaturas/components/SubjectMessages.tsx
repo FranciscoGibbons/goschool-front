@@ -6,16 +6,19 @@ import {
   DocumentIcon,
   ChatBubbleLeftIcon,
   ArrowDownTrayIcon,
+  PencilIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
+import userInfoStore from "@/store/userInfoStore";
 
 interface SubjectMessage {
   id: number;
   subject_id: number;
   title: string;
   content: string;
-  type: "message" | "file";
+  type: "message" | "file" | "link";
   file_url?: string;
   created_at: string;
 }
@@ -56,6 +59,11 @@ function formatDateHeader(dateString: string) {
 export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   const [messages, setMessages] = useState<SubjectMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingMessage, setEditingMessage] = useState<SubjectMessage | null>(null);
+  const [editData, setEditData] = useState<Partial<SubjectMessage>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { userInfo } = userInfoStore();
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -216,10 +224,43 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                       )}
                     </>
                   )}
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2 mt-2">
                     <span className="text-xs text-muted-foreground">
                       {formatTime(message.created_at)}
                     </span>
+                    {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
+                      <>
+                        <button
+                          className="p-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center justify-center w-7 h-7"
+                          title="Editar"
+                          onClick={() => {
+                            setEditingMessage(message);
+                            setEditData({ ...message });
+                          }}
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="p-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center justify-center w-7 h-7"
+                          title="Borrar"
+                          onClick={async () => {
+                            if (!confirm("¿Seguro que quieres borrar este mensaje?")) return;
+                            setDeletingId(message.id);
+                            try {
+                              await axios.delete(`http://localhost:8080/api/v1/subject_messages/${message.id}`, { withCredentials: true });
+                              setMessages((prev) => prev.filter((m) => m.id !== message.id));
+                            } catch {
+                              alert("Error al borrar el mensaje");
+                            } finally {
+                              setDeletingId(null);
+                            }
+                          }}
+                          disabled={deletingId === message.id}
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -227,6 +268,95 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
           ))}
         </div>
       ))}
+      {editingMessage && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
+            <h2 className="text-lg font-bold mb-4">Editar mensaje de materia</h2>
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSaving(true);
+                try {
+                  const res = await axios.put(
+                    `http://localhost:8080/api/v1/subject_messages/${editingMessage.id}`,
+                    {
+                      title: editData.title,
+                      content: editData.content,
+                      type: editData.type,
+                    },
+                    { withCredentials: true }
+                  );
+                  if (res.status === 200) {
+                    setMessages((prev) =>
+                      prev.map((m) =>
+                        m.id === editingMessage.id ? { ...m, ...editData } : m
+                      )
+                    );
+                    setEditingMessage(null);
+                  } else {
+                    alert("Error al actualizar el mensaje");
+                  }
+                } catch {
+                  alert("Error de red al actualizar");
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+            >
+              <div>
+                <label className="block text-sm font-medium mb-1">Título</label>
+                <input
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editData.title || ""}
+                  onChange={e => setEditData({ ...editData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo</label>
+                <select
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editData.type || "message"}
+                  onChange={e => setEditData({ ...editData, type: e.target.value as 'message' | 'file' | 'link' })}
+                  required
+                >
+                  <option value="message">Mensaje</option>
+                  <option value="file">Archivo</option>
+                  <option value="link">Link</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Contenido</label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editData.content || ""}
+                  onChange={e => setEditData({ ...editData, content: e.target.value })}
+                  required
+                  rows={4}
+                />
+              </div>
+              <div className="flex gap-2 mt-4 justify-end">
+                <button
+                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
+                  type="button"
+                  onClick={() => setEditingMessage(null)}
+                  disabled={isSaving}
+                >
+                  <TrashIcon className="w-4 h-4" /> Cancelar
+                </button>
+                <button
+                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
+                  type="submit"
+                  disabled={isSaving}
+                >
+                  <PencilIcon className="w-4 h-4" /> {isSaving ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -31,6 +31,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useSubjectsStore from "@/store/subjectsStore";
+import React from "react";
 
 // Tipos para los datos dinámicos
 interface Assessment {
@@ -375,7 +376,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   }, [formData, action]);
 
-  // Efecto para cargar estudiantes cuando cambia la materia seleccionada
+  // Elimina el import de React y el useRef prevSubjectRef
+  // Restaura el useEffect original para cargar estudiantes:
   useEffect(() => {
     if (
       action === "Cargar calificación" &&
@@ -651,7 +653,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">{action}</h2>
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
       </div>
 
       {/* Formulario para mensajes */}

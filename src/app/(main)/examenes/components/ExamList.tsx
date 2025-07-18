@@ -8,7 +8,7 @@ import {
   getExamTypeIndicatorColor,
 } from "@/utils/types";
 import SelfAssessableCard from "./SelfAssessableCard";
-import { BookOpenIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import { BookOpenIcon, CalendarIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import {
   Select,
@@ -18,6 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useInView } from "react-intersection-observer";
+import userInfoStore from "@/store/userInfoStore";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Props {
   exams: Exam[];
@@ -29,6 +32,12 @@ export default function ExamList({ exams, role, subjects }: Props) {
   const [filter, setFilter] = useState<string>("date_asc");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [visibleCount, setVisibleCount] = useState<number>(10);
+  const [updatingExam, setUpdatingExam] = useState<Exam | null>(null);
+  const [editExam, setEditExam] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { userInfo } = userInfoStore();
+  const router = useRouter();
 
   // Intersection Observer para detectar cuando el usuario llega al final
   const { ref: loadMoreRef, inView } = useInView({
@@ -82,6 +91,33 @@ export default function ExamList({ exams, role, subjects }: Props) {
       year: "numeric",
     });
   };
+
+  // Función para borrar un examen
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Seguro que quieres borrar este examen?")) return;
+    setDeletingId(id);
+    try {
+      await fetch(`http://localhost:8080/api/v1/assessments/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      toast.success("Examen borrado");
+      router.refresh();
+    } catch {
+      toast.error("Error al borrar el examen");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Cuando se abre el modal, inicializar editExam
+  useEffect(() => {
+    if (updatingExam) {
+      setEditExam({ ...updatingExam });
+    } else {
+      setEditExam(null);
+    }
+  }, [updatingExam]);
 
   if (exams.length === 0) {
     return (
@@ -140,10 +176,28 @@ export default function ExamList({ exams, role, subjects }: Props) {
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <SelfAssessableCard
-              exam={exam}
+              exam={exam as any} // cast para evitar error de tipo
               subjectName={getSubjectName(exam.subject_id)}
               role={role}
             />
+            {/* Botones de acciones solo para admin/teacher/preceptor */}
+            {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
+                  onClick={() => setUpdatingExam(exam)}
+                >
+                  <PencilIcon className="w-4 h-4" /> Actualizar
+                </button>
+                <button
+                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
+                  onClick={() => handleDelete(exam.id)}
+                  disabled={deletingId === exam.id}
+                >
+                  <TrashIcon className="w-4 h-4" /> {deletingId === exam.id ? "Borrando..." : "Borrar"}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div
@@ -207,6 +261,24 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 </div>
               )}
             </div>
+            {/* Botones de acciones solo para admin/teacher/preceptor */}
+            {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
+                  onClick={() => setUpdatingExam(exam)}
+                >
+                  <PencilIcon className="w-4 h-4" /> Actualizar
+                </button>
+                <button
+                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
+                  onClick={() => handleDelete(exam.id)}
+                  disabled={deletingId === exam.id}
+                >
+                  <TrashIcon className="w-4 h-4" /> {deletingId === exam.id ? "Borrando..." : "Borrar"}
+                </button>
+              </div>
+            )}
           </div>
         )
       )}
@@ -225,6 +297,120 @@ export default function ExamList({ exams, role, subjects }: Props) {
       {visibleCount >= filteredExams.length && filteredExams.length > 0 && (
         <div className="text-center py-8 text-muted-foreground">
           <span>Has visto todas las evaluaciones</span>
+        </div>
+      )}
+
+      {/* Modal de actualización (solo UI, sin lógica de update aún) */}
+      {updatingExam && editExam && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
+            <h2 className="text-lg font-bold mb-4">Actualizar examen</h2>
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSaving(true);
+                try {
+                  const res = await fetch(`http://localhost:8080/api/v1/assessments/${updatingExam.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                      subject_id: Number(editExam.subject_id),
+                      task: editExam.task,
+                      due_date: editExam.due_date,
+                      type: editExam.type,
+                    }),
+                  });
+                  if (res.ok) {
+                    toast.success("Examen actualizado");
+                    setUpdatingExam(null);
+                    router.refresh();
+                  } else {
+                    toast.error("Error al actualizar el examen");
+                  }
+                } catch {
+                  toast.error("Error de red al actualizar");
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+            >
+              <div>
+                <label className="block text-sm font-medium mb-1">Materia</label>
+                <select
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editExam.subject_id}
+                  onChange={e => setEditExam({ ...editExam, subject_id: e.target.value })}
+                  required
+                  disabled={subjects.length === 0}
+                >
+                  {subjects.length === 0 && <option value="">No hay materias disponibles</option>}
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Título</label>
+                <input
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editExam.task}
+                  onChange={e => setEditExam({ ...editExam, task: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Fecha de entrega</label>
+                <input
+                  type="date"
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editExam.due_date}
+                  onChange={e => setEditExam({ ...editExam, due_date: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo</label>
+                <select
+                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                  value={editExam.type}
+                  onChange={e => setEditExam({ ...editExam, type: e.target.value })}
+                  required
+                  disabled={editExam.type === 'selfassessable'}
+                >
+                  <option value="exam">Examen</option>
+                  <option value="homework">Tarea</option>
+                  <option value="project">Proyecto</option>
+                  <option value="oral">Oral</option>
+                  <option value="remedial">Recuperatorio</option>
+                  <option value="selfassessable">Autoevaluable</option>
+                </select>
+                {editExam.type === 'selfassessable' && (
+                  <p className="text-xs text-muted-foreground mt-1">No se puede cambiar el tipo de un autoevaluable.</p>
+                )}
+              </div>
+              <div className="flex gap-2 mt-4 justify-end">
+                <button
+                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
+                  type="button"
+                  onClick={() => setUpdatingExam(null)}
+                  disabled={isSaving}
+                >
+                  <TrashIcon className="w-4 h-4" /> Cancelar
+                </button>
+                <button
+                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
+                  type="submit"
+                  disabled={isSaving}
+                >
+                  <PencilIcon className="w-4 h-4" /> {isSaving ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
