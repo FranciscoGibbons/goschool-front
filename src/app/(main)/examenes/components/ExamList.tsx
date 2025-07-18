@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Exam, Role, SelfAssessableExam } from "@/utils/types";
-import AnswerSelfAssessable from "./AnswerSelfAssessable";
-import { Button } from "@/components/ui/button";
-import SelfAssessableCard from "./SelfAssessableCard";
+import { useState, useEffect } from "react";
 import {
-  BookOpenIcon,
-  CalendarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-} from "@heroicons/react/24/outline";
+  Exam,
+  Role,
+  translateExamType,
+  getExamTypeIndicatorColor,
+} from "@/utils/types";
+import SelfAssessableCard from "./SelfAssessableCard";
+import { BookOpenIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import {
   Select,
@@ -19,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useInView } from "react-intersection-observer";
 
 interface Props {
   exams: Exam[];
@@ -27,20 +26,32 @@ interface Props {
 }
 
 export default function ExamList({ exams, role, subjects }: Props) {
-  const [activeExamId, setActiveExamId] = useState<number | null>(null);
   const [filter, setFilter] = useState<string>("date_asc");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [visibleCount, setVisibleCount] = useState<number>(10);
+
+  // Intersection Observer para detectar cuando el usuario llega al final
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0.1,
+    triggerOnce: false,
+  });
+
+  // Cargar más exámenes cuando el usuario llega al final
+  useEffect(() => {
+    if (inView) {
+      setVisibleCount((prev) => Math.min(prev + 10, filteredExams.length));
+    }
+  }, [inView]);
+
+  // Resetear el contador cuando cambian los filtros
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [filter, typeFilter]);
 
   // Ordenar y filtrar exámenes
   let filteredExams = [...exams];
   if (typeFilter !== "all") {
     filteredExams = filteredExams.filter((exam) => exam.type === typeFilter);
-  }
-  if (statusFilter !== "all") {
-    filteredExams = filteredExams.filter(
-      (exam) => exam.status === statusFilter
-    );
   }
   if (filter === "date_asc") {
     filteredExams.sort(
@@ -52,23 +63,15 @@ export default function ExamList({ exams, role, subjects }: Props) {
     );
   }
 
-  // Obtener tipos y estados únicos
+  // Obtener solo los exámenes visibles
+  const visibleExams = filteredExams.slice(0, visibleCount);
+
+  // Obtener tipos únicos
   const examTypes = Array.from(new Set(exams.map((e) => e.type)));
-  const examStatuses = Array.from(
-    new Set(exams.map((e) => e.status).filter(Boolean))
-  );
 
   const getSubjectName = (id: number) => {
     const subject = subjects.find((s) => s.id === id);
     return subject ? subject.name : `ID: ${id}`;
-  };
-
-  const isSelfAssessableExam = (exam: Exam): exam is SelfAssessableExam => {
-    return (
-      exam.type === "selfassessable" &&
-      "questions" in exam &&
-      Array.isArray(exam.questions)
-    );
   };
 
   const formatDate = (date: string) => {
@@ -116,31 +119,20 @@ export default function ExamList({ exams, role, subjects }: Props) {
             <SelectItem value="all">Todos los tipos</SelectItem>
             {examTypes.map((type) => (
               <SelectItem key={type} value={type}>
-                {type === "selfassessable"
-                  ? "Autoevaluable"
-                  : type.charAt(0).toUpperCase() + type.slice(1)}
+                {translateExamType(type)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {examStatuses.length > 0 && (
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              {examStatuses.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
       </div>
+
+      {/* Contador de exámenes mostrados */}
+      <div className="text-sm text-muted-foreground">
+        Mostrando {visibleExams.length} de {filteredExams.length} evaluaciones
+      </div>
+
       {/* Lista de exámenes filtrada y ordenada */}
-      {filteredExams.map((exam, index) =>
+      {visibleExams.map((exam, index) =>
         exam.type === "selfassessable" ? (
           <div
             key={exam.id}
@@ -162,9 +154,13 @@ export default function ExamList({ exams, role, subjects }: Props) {
             {/* Status indicator */}
             <div className="absolute top-6 right-6">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${getExamTypeIndicatorColor(
+                    exam.type
+                  )}`}
+                ></div>
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {exam.type}
+                  {translateExamType(exam.type)}
                 </span>
               </div>
             </div>
@@ -213,6 +209,23 @@ export default function ExamList({ exams, role, subjects }: Props) {
             </div>
           </div>
         )
+      )}
+
+      {/* Elemento "sentinela" para detectar cuando cargar más */}
+      {visibleCount < filteredExams.length && (
+        <div ref={loadMoreRef} className="flex justify-center py-8">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+            <span>Cargando más evaluaciones...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje cuando se han cargado todos */}
+      {visibleCount >= filteredExams.length && filteredExams.length > 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <span>Has visto todas las evaluaciones</span>
+        </div>
       )}
     </div>
   );

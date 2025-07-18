@@ -9,7 +9,7 @@ import {
   BookOpenIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
-import { Exam } from "@/utils/types";
+import { Exam, translateExamType, getExamTypeColor } from "@/utils/types";
 import axios from "axios";
 
 export default function DashStudentFather() {
@@ -51,13 +51,11 @@ export default function DashStudentFather() {
   };
 
   const getExamTypeLabel = (type: string) => {
-    return type === "selfassessable" ? "Autoevaluable" : "Oral";
+    return translateExamType(type);
   };
 
-  const getExamTypeColor = (type: string) => {
-    return type === "selfassessable"
-      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-      : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
+  const getExamTypeColorLocal = (type: string) => {
+    return getExamTypeColor(type);
   };
 
   if (loading) {
@@ -109,7 +107,7 @@ export default function DashStudentFather() {
                           <span>{formatDate(exam.due_date)}</span>
                         </div>
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getExamTypeColor(
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getExamTypeColorLocal(
                             exam.type
                           )}`}
                         >

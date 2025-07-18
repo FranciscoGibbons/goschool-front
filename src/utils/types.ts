@@ -5,7 +5,13 @@ export interface BaseExam {
   task: string;
   due_date: string;
   created_at: string;
-  type: "oral" | "selfassessable";
+  type:
+    | "exam"
+    | "homework"
+    | "project"
+    | "oral"
+    | "remedial"
+    | "selfassessable";
   questions?: string[];
 }
 
@@ -21,23 +27,18 @@ export type Exam = BaseExam | SelfAssessableExam;
 
 export type Role = "admin" | "teacher" | "student" | "preceptor" | "father";
 
-export interface MessageForm {
-  title: string;
-  message: string;
-  courses: string;
-}
-
 // Formulario base para examen (campos comunes)
 export interface BaseExamForm {
   subject: string;
   task: string;
   due_date: string;
-  type: "oral" | "selfassessable";
-}
-
-// Formulario para examen oral
-export interface OralExamForm extends BaseExamForm {
-  type: "oral";
+  type:
+    | "exam"
+    | "homework"
+    | "project"
+    | "oral"
+    | "remedial"
+    | "selfassessable";
 }
 
 // Formulario para examen autoevaluable
@@ -49,20 +50,26 @@ export interface SelfAssessableExamForm extends BaseExamForm {
   incorrect2: string[];
 }
 
-// Tipo unión para el formulario de examen
-export type ExamForm = OralExamForm | SelfAssessableExamForm;
+export type ExamForm = BaseExamForm | SelfAssessableExamForm;
 
-// Formulario para calificaciones
+// Tipos para mensajes
+export interface MessageForm {
+  title: string;
+  message: string;
+  courses: number[];
+}
+
+// Tipos para calificaciones
 export interface GradeForm {
   subject: string;
   assessment_id: string;
   student_id: string;
-  grade_type: "numerical" | "conceptual";
+  grade_type: "numerical" | "conceptual" | "percentage";
   description: string;
   grade: string;
 }
 
-// Formulario para mensajes de materia
+// Tipos para mensajes de materia
 export interface SubjectMessageForm {
   subject_id: string;
   title: string;
@@ -71,7 +78,7 @@ export interface SubjectMessageForm {
   file?: File;
 }
 
-// FormsObj corregido con tipos más precisos
+// Union type para todos los formularios
 export interface FormsObj {
   "Crear mensaje": MessageForm;
   "Crear examen": ExamForm;
@@ -79,61 +86,31 @@ export interface FormsObj {
   "Crear mensaje de materia": SubjectMessageForm;
 }
 
-export interface Messages {
-  title: string;
-  message: string;
-  courses: string;
-  id: number;
+// Type guards
+export function isMessageForm(form: any): form is MessageForm {
+  return "title" in form && "message" in form && "courses" in form;
 }
 
-export interface UserInfo {
-  full_name: string;
-  phone_number: string;
-  address: string;
-  birth_date: string;
-  role: string;
-  photo?: string;
+export function isExamForm(form: any): form is ExamForm {
+  return (
+    "subject" in form && "task" in form && "due_date" in form && "type" in form
+  );
 }
 
-// Tipos para los payloads de la API
-export interface MessagePayload {
-  title: string;
-  message: string;
-  courses: string;
+export function isGradeForm(form: any): form is GradeForm {
+  return "subject" in form && "grade_type" in form && "grade" in form;
 }
 
-export interface TaskPayload {
-  subject: number;
-  task: string;
-  due_date: string;
-  type: "oral" | "selfassessable";
+export function isSubjectMessageForm(form: any): form is SubjectMessageForm {
+  return "subject_id" in form && "title" in form && "content" in form;
 }
 
-export interface SelfAssessablePayload {
-  questions: string[];
-  correct: string[];
-  incorrect1: string[];
-  incorrect2: string[];
-}
-
-export interface ExamPayload {
-  newtask: TaskPayload;
-  newselfassessable?: SelfAssessablePayload;
-}
-
-export interface GradePayload {
-  subject: number;
-  assessment_id: number;
-  student_id: number;
-  grade_type: "numerical" | "conceptual";
-  description: string;
-  grade: number | string;
-}
-
-export interface SubjectMessagePayload {
-  subject_id: number;
-  title: string;
-  content: string;
-  type: "message" | "file";
-  file?: File;
-}
+// Re-exportar funciones de utilidad desde examUtils
+export {
+  translateExamType,
+  getExamTypeColor,
+  getExamTypeIndicatorColor,
+  getExamTypeDescription,
+  EXAM_TYPES,
+  type ExamType,
+} from "./examUtils";

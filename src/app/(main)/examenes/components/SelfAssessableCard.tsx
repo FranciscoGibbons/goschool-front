@@ -16,14 +16,29 @@ import {
   CheckIcon,
   ClockIcon,
   SparklesIcon,
+  IdentificationIcon,
 } from "@heroicons/react/24/outline";
-import AnswerSelfAssessable from "./AnswerSelfAssessable";
 import { Loader2 } from "lucide-react";
+import { StatusCard } from "@/components/StatusCard";
+import { SelfAssessableExam } from "@/utils/types";
+
+interface Question {
+  id: number;
+  question: string;
+  op1: string;
+  op2: string;
+  op3: string;
+  correct: string;
+}
+
+interface MCQQuestion extends Question {
+  options: string[];
+}
 
 interface SelfAssessableCardProps {
-  exam: any; // SelfAssessableExam
+  exam: SelfAssessableExam;
   subjectName: string;
-  role: string; // nuevo: recibe el rol
+  role: string;
 }
 
 export default function SelfAssessableCard({
@@ -33,433 +48,313 @@ export default function SelfAssessableCard({
 }: SelfAssessableCardProps) {
   const [answered, setAnswered] = useState<boolean | null>(null);
   const [showQuestions, setShowQuestions] = useState(false);
-  const [questions, setQuestions] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<string[]>(
-    Array(questions.length).fill("")
-  );
+  const [answers, setAnswers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  // Estructura de preguntas con opciones (sin mezclar)
-  const [mcQuestions, setMcQuestions] = useState<any[]>([]);
+  const [mcQuestions, setMcQuestions] = useState<MCQQuestion[]>([]);
 
-  useEffect(() => {
-    console.log("Procesando preguntas:", questions);
-    if (questions.length > 0 && typeof questions[0] === "object") {
-      // Si las preguntas ya tienen opciones (correct, incorrect1, ...)
-      const prepared = questions.map((q: any) => {
-        console.log("Procesando pregunta:", q);
-        const options = [q.op1, q.op2, q.op3].filter(Boolean);
-        console.log("Opciones encontradas:", options);
+  // Verificar si es estudiante
+  const isStudent = role === "student";
 
-        // NO MEZCLAR - mantener orden original
-        const preparedQuestion = {
-          ...q,
-          options: options, // Sin shuffle
-        };
-        console.log("Pregunta preparada:", preparedQuestion);
-        return preparedQuestion;
-      });
-      console.log("Preguntas preparadas:", prepared);
-      setMcQuestions(prepared);
-      setAnswers(Array(prepared.length).fill(""));
-    } else {
-      console.log("No se encontraron preguntas con opciones múltiples");
-      setMcQuestions([]);
-    }
-  }, [questions]);
+  // Fecha de hoy y due
+  const today = new Date();
+  const todayOnly = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
 
-  // Función para verificar si ya fue respondido usando exam.id directamente
+  const [year, month, day] = exam.due_date.split("-").map(Number);
+  const dueOnly = new Date(year, month - 1, day); // sin hora, sin desfase
+  const isBefore = todayOnly < dueOnly;
+  const isToday = todayOnly.getTime() === dueOnly.getTime();
+  const isAfter = todayOnly > dueOnly;
+
+  // Formatea fecha
+  const formatDate = (dateStr: string): string => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const monthNames = [
+      "ene",
+      "feb",
+      "mar",
+      "abr",
+      "may",
+      "jun",
+      "jul",
+      "ago",
+      "sep",
+      "oct",
+      "nov",
+      "dic",
+    ];
+    const monthName = monthNames[month - 1];
+    return `${day.toString().padStart(2, "0")} ${monthName}. ${year}`;
+  };
+
+  // Verifica si ya respondido (solo para estudiantes)
   const checkIfAnswered = async () => {
-    if (!exam.id) {
-      console.log("No exam.id available, setting answered to false");
-      setAnswered(false);
-      return;
-    }
-
+    if (!exam.id || !isStudent) return setAnswered(false);
     setLoading(true);
     try {
-      console.log("Checking if answered for exam.id:", exam.id);
       const res = await axios.post(
         "http://localhost:8080/api/v1/get_if_selfassessable_answered/",
-        { selfassessable_id: exam.id }, // Usar exam.id directamente
+        { selfassessable_id: exam.id },
         { withCredentials: true }
       );
-
-      console.log("API Response raw:", res.data);
-      console.log("Response type:", typeof res.data);
-      console.log("Response status:", res.status);
-      console.log("Response stringified:", JSON.stringify(res.data));
-
-      // Try different ways to parse the response
       let isAnswered = false;
-
-      if (typeof res.data === "boolean") {
-        isAnswered = res.data;
-      } else if (typeof res.data === "string") {
+      if (typeof res.data === "boolean") isAnswered = res.data;
+      else if (typeof res.data === "string")
         isAnswered = res.data.toLowerCase() === "true";
-      } else if (typeof res.data === "number") {
-        isAnswered = res.data === 1;
-      } else if (res.data && typeof res.data === "object") {
-        // If it's an object, check common property names
+      else if (typeof res.data === "number") isAnswered = res.data === 1;
+      else if (res.data && typeof res.data === "object")
         isAnswered =
           res.data.answered ||
           res.data.is_answered ||
           res.data.completed ||
           false;
-      }
-
-      console.log("Final isAnswered value:", isAnswered);
       setAnswered(isAnswered);
-    } catch (error) {
-      console.error("Error checking if answered:", error);
-      console.log("Setting answered to false due to error");
+    } catch {
       setAnswered(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Verificar si ya fue respondido al cargar
   useEffect(() => {
     checkIfAnswered();
-  }, [exam.id]);
+  }, [exam.id, isStudent]);
 
+  // Prepara preguntas MC
+  useEffect(() => {
+    if (questions.length && typeof questions[0] === "object") {
+      const prepared = questions.map((q: Question) => ({
+        ...q,
+        options: [q.op1, q.op2, q.op3].filter(Boolean),
+      }));
+      setMcQuestions(prepared);
+      setAnswers(Array(prepared.length).fill(""));
+    }
+  }, [questions]);
+
+  // Carga preguntas al abrir
+  const handleOpenQuestions = async () => {
+    setQuestionsLoading(true);
+    setQuestionsError(null);
+    try {
+      const res = await axios.get(
+        `http://localhost:8080/api/v1/selfassessables/?assessment_id=${exam.id}`,
+        { withCredentials: true }
+      );
+      const arr = Array.isArray(res.data) ? res.data : [];
+      if (arr.length) setQuestions(arr);
+      else throw new Error("Sin preguntas");
+    } catch {
+      setQuestionsError("No hay preguntas para este autoevaluable.");
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
+
+  // Cambio de respuestas
   const handleChange = (idx: number, value: string) => {
-    console.log(`handleChange: pregunta ${idx}, valor: ${value}`);
     setAnswers((prev) => {
-      const newAnswers = [...prev];
-      newAnswers[idx] = value;
-      console.log("Nuevas respuestas:", newAnswers);
-      return newAnswers;
+      const copy = [...prev];
+      copy[idx] = value;
+      return copy;
     });
   };
 
-  // Versión optimizada del handleSubmit con refresco automático
+  // Envía respuestas
   const handleSubmit = async () => {
     setSubmitting(true);
     setResult(null);
-
-    // Validación: todas las preguntas deben estar respondidas
-    const cleanAnswers = answers.map((a) => a.split("__")[0]);
-    if (
-      cleanAnswers.length !== questions.length ||
-      cleanAnswers.some((a) => !a)
-    ) {
+    const clean = answers.map((a) => a.split("__")[0]);
+    if (clean.length !== mcQuestions.length || clean.some((x) => !x)) {
       setResult("Debes responder todas las preguntas.");
       setSubmitting(false);
       return;
     }
-
     try {
-      console.log("Submitting answers:", cleanAnswers);
-      // 1. Enviar respuestas al servidor usando exam.id
       const res = await axios.post(
         "http://localhost:8080/api/v1/selfassessables/",
-        {
-          assessment_id: exam.id, // Usar exam.id directamente
-          answers: cleanAnswers,
-        },
+        { assessment_id: exam.id, answers: clean },
         { withCredentials: true }
       );
-
-      console.log("Submit response:", res.status, res.data);
-
-      if (res.status === 200 || res.status === 201) {
+      if (res.status < 300) {
         setResult("¡Respuestas enviadas correctamente!");
-
-        // 2. OPTIMIZACIÓN: Refrescar estado desde el servidor
-        // Esto garantiza que el estado sea consistente con la base de datos
         await checkIfAnswered();
-
-        // 3. Cerrar modal después de un breve delay para mostrar el mensaje
-        setTimeout(() => {
-          setShowQuestions(false);
-          setResult(null); // Limpiar mensaje
-        }, 1500);
-      } else {
-        setResult("Error al enviar respuestas");
-      }
-    } catch (error) {
-      console.error("Error al enviar respuestas:", error);
+        setTimeout(() => setShowQuestions(false), 1200);
+      } else setResult("Error al enviar respuestas");
+    } catch {
       setResult("Error de red o del servidor");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Cargar preguntas usando exam.id directamente
-  const handleOpenQuestions = async () => {
-    setQuestionsLoading(true);
-    setQuestionsError(null);
-
-    try {
-      if (!exam.id) throw new Error("No hay exam.id disponible");
-
-      const res = await axios.get(
-        `http://localhost:8080/api/v1/selfassessables/?assessment_id=${exam.id}`,
-        { withCredentials: true }
-      );
-
-      const questionsArr = Array.isArray(res.data) ? res.data : [];
-      if (questionsArr.length > 0) {
-        setQuestions(questionsArr);
-      } else {
-        setQuestions([]);
-        setQuestionsError("No hay preguntas para este autoevaluable.");
-      }
-      setShowQuestions(true);
-    } catch (error) {
-      setQuestionsError("Error al cargar preguntas");
-      console.error("Error al hacer fetch de preguntas:", error);
-    } finally {
-      setQuestionsLoading(false);
-    }
-  };
-
-  // Función para refrescar manualmente el estado (opcional)
-  const refreshAnsweredStatus = async () => {
-    console.log("Manually refreshing answered status");
-    await checkIfAnswered();
-  };
-
-  // Formato de fecha y hora
-  const formatDate = (date: string) => {
-    const d = new Date(date);
-    return d.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // DEBUG: Add this temporary button to manually refresh status
-  const DebugRefreshButton = () => (
-    <Button
-      onClick={refreshAnsweredStatus}
-      variant="outline"
-      size="sm"
-      className="ml-2 text-xs"
-    >
-      🔄 Debug Refresh
-    </Button>
-  );
-
-  if (loading) {
-    return (
-      <div className="bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 rounded-xl p-6 exam-card-hover">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 exam-skeleton rounded-lg"></div>
-            <div className="space-y-2 flex-1">
-              <div className="h-4 exam-skeleton rounded w-3/4"></div>
-              <div className="h-3 exam-skeleton rounded w-1/2"></div>
-            </div>
-          </div>
-          <div className="h-3 exam-skeleton rounded w-1/3"></div>
-        </div>
-      </div>
-    );
-  }
+  if (loading)
+    return <div className="p-6 bg-gray-100 rounded-xl animate-pulse" />;
 
   return (
-    <div className="group relative bg-white dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 rounded-xl p-6 hover:border-gray-300/50 dark:hover:border-gray-700/50 transition-all duration-200 hover:shadow-sm exam-card-hover">
-      {/* Status indicator */}
-      <div className="absolute top-6 right-6">
+    <div className="relative rounded-xl border border-border bg-card shadow-sm px-6 py-5 space-y-4 exam-fade-in hover:shadow-md transition-shadow">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-foreground">{exam.task}</h3>
+          <p className="text-sm text-muted-foreground">
+            Autoevaluación de {subjectName}
+          </p>
+        </div>
+        {/* Estado - Solo para estudiantes */}
+        {isStudent && (
+          <div className="text-sm">
+            {!answered && isBefore && (
+              <StatusCard
+                icon={<ClockIcon className="w-4 h-4 text-blue-500" />}
+                text={`Disponible el ${formatDate(exam.due_date)}`}
+                bg="bg-blue-50 dark:bg-blue-950/20"
+                border="border-blue-200 dark:border-blue-800"
+                textColor="text-blue-700 dark:text-blue-300"
+              />
+            )}
+            {!answered && isToday && (
+              <StatusCard
+                icon={<SparklesIcon className="w-4 h-4 text-yellow-500" />}
+                text="Hoy disponible"
+                bg="bg-yellow-50 dark:bg-yellow-950/20"
+                border="border-yellow-200 dark:border-yellow-800"
+                textColor="text-yellow-700 dark:text-yellow-300"
+              />
+            )}
+            {!answered && isAfter && (
+              <StatusCard
+                icon={<BookOpenIcon className="w-4 h-4 text-red-500" />}
+                text="Vencido"
+                bg="bg-red-50 dark:bg-red-950/20"
+                border="border-red-200 dark:border-red-800"
+                textColor="text-red-700 dark:text-red-300"
+              />
+            )}
+            {answered && (
+              <StatusCard
+                icon={<CheckIcon className="w-4 h-4 text-green-500" />}
+                text="Completado"
+                bg="bg-green-50 dark:bg-green-950/20"
+                border="border-green-200 dark:border-green-800"
+                textColor="text-green-700 dark:text-green-300"
+              />
+            )}
+          </div>
+        )}
+        {/* Indicador de rol para no estudiantes */}
+        {!isStudent && (
+          <div className="text-sm">
+            <StatusCard
+              icon={<IdentificationIcon className="w-4 h-4 text-gray-500" />}
+              text="Solo visualización"
+              bg="bg-gray-50 dark:bg-gray-950/20"
+              border="border-gray-200 dark:border-gray-800"
+              textColor="text-gray-700 dark:text-gray-300"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Metadata */}
+      <div className="flex items-center gap-6 text-sm text-muted-foreground">
         <div className="flex items-center gap-2">
-          <div className="exam-status-indicator"></div>
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Autoevaluable
-          </span>
+          <CalendarIcon className="w-4 h-4" />
+          <span>Entrega: {formatDate(exam.due_date)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <BookOpenIcon className="w-4 h-4" />
+          <span>{subjectName}</span>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="space-y-4">
-        <div className="flex items-start gap-4">
-          <div className="p-3 exam-green-gradient rounded-xl border border-green-200/20 dark:border-green-800/20">
-            <SparklesIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-          </div>
-          <div className="flex-1 space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-              {exam.task}
-            </h3>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                <BookOpenIcon className="w-4 h-4" />
-                <span>{subjectName}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                <CalendarIcon className="w-4 h-4" />
-                <span>Entrega: {formatDate(exam.due_date)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Status section */}
-        <div className="flex items-center justify-between">
-          {answered === true ? (
-            <div className="flex items-center gap-3 p-4 bg-green-50/50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-800/50 rounded-lg">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                <CheckIcon className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                  Completado
-                </p>
-                <p className="text-xs text-green-700 dark:text-green-300">
-                  Ya has respondido este autoevaluable
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 p-4 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200/50 dark:border-orange-800/50 rounded-lg">
-              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                <ClockIcon className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
-                  Pendiente
-                </p>
-                <p className="text-xs text-orange-700 dark:text-orange-300">
-                  Aún no has respondido
-                </p>
-              </div>
-            </div>
-          )}
-
-          {answered !== true && (
-            <Dialog open={showQuestions} onOpenChange={setShowQuestions}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={handleOpenQuestions}
-                  disabled={questionsLoading}
-                  className="exam-btn-vercel px-6 py-2 rounded-lg hover:scale-105"
-                >
-                  {questionsLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Cargando...
-                    </>
-                  ) : (
-                    <>
-                      <PlayIcon className="h-4 w-4 mr-2" />
-                      Comenzar
-                    </>
-                  )}
-                </Button>
-              </DialogTrigger>
-
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900 border border-gray-200/50 dark:border-gray-800/50 exam-scrollbar">
-                <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Autoevaluación: {exam.task}
-                </DialogTitle>
-
-                {questionsError && (
-                  <div className="p-4 bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/50 rounded-lg mb-4">
-                    <p className="text-red-700 dark:text-red-400 text-sm">
-                      {questionsError}
-                    </p>
-                  </div>
+      {/* Acción - Solo para estudiantes */}
+      <div className="text-end">
+        {isStudent && answered !== true && isToday && (
+          <Dialog open={showQuestions} onOpenChange={setShowQuestions}>
+            <DialogTrigger asChild>
+              <Button
+                onClick={handleOpenQuestions}
+                disabled={questionsLoading}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center space-x-2"
+              >
+                {questionsLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <PlayIcon className="w-4 h-4" />
                 )}
-
-                {mcQuestions.length > 0 && (
-                  <div className="space-y-6">
-                    {mcQuestions.map((question, idx) => (
-                      <div key={idx} className="space-y-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white text-lg">
-                          Pregunta {idx + 1}
-                        </h4>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                          {question.question}
-                        </p>
-                        <RadioGroup
-                          value={answers[idx]}
-                          onValueChange={(value) => handleChange(idx, value)}
-                          className="space-y-3"
-                        >
-                          {question.options.map(
-                            (option: string, optIdx: number) => (
-                              <div
-                                key={optIdx}
-                                className="flex items-center space-x-3 p-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
-                              >
-                                <input
-                                  type="radio"
-                                  id={`q${idx}-opt${optIdx}`}
-                                  name={`question-${idx}`}
-                                  value={option}
-                                  checked={answers[idx] === option}
-                                  onChange={(e) =>
-                                    handleChange(idx, e.target.value)
-                                  }
-                                  className="h-4 w-4 text-green-600 focus:ring-green-500 focus:ring-2"
-                                />
-                                <label
-                                  htmlFor={`q${idx}-opt${optIdx}`}
-                                  className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer flex-1"
-                                >
-                                  {option}
-                                </label>
-                              </div>
-                            )
-                          )}
-                        </RadioGroup>
-                      </div>
+                <span>{questionsLoading ? "Cargando..." : "Comenzar"}</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+              <DialogTitle className="text-2xl font-semibold mb-4">
+                Autoevaluación: {exam.task}
+              </DialogTitle>
+              {questionsError && (
+                <p className="text-red-600 mb-4">{questionsError}</p>
+              )}
+              {mcQuestions.map((q, i) => (
+                <div key={i} className="mb-6">
+                  <p className="font-medium mb-2">
+                    {i + 1}. {q.question}
+                  </p>
+                  <RadioGroup
+                    value={answers[i] ?? ""}
+                    onValueChange={(v) => handleChange(i, v)}
+                    className="space-y-3"
+                  >
+                    {q.options.map((opt: string, idx: number) => (
+                      <label
+                        key={idx}
+                        className="flex items-center p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                      >
+                        <input
+                          type="radio"
+                          value={opt}
+                          checked={answers[i] === opt}
+                          onChange={() => handleChange(i, opt)}
+                          className="h-4 w-4 text-indigo-600 mr-3"
+                        />
+                        <span>{opt}</span>
+                      </label>
                     ))}
-
-                    <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={submitting || answers.some((a) => !a)}
-                        className="exam-btn-vercel transition-all duration-200"
-                      >
-                        {submitting ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Enviando...
-                          </>
-                        ) : (
-                          <>
-                            <CheckIcon className="h-4 w-4 mr-2" />
-                            Enviar respuestas
-                          </>
-                        )}
-                      </Button>
-                      <DialogClose asChild>
-                        <Button
-                          variant="outline"
-                          className="border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
-                        >
-                          Cancelar
-                        </Button>
-                      </DialogClose>
-                    </div>
-
-                    {result && (
-                      <div
-                        className={`p-4 rounded-lg text-sm border ${
-                          result.includes("correctamente")
-                            ? "bg-green-50/50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200/50 dark:border-green-800/50"
-                            : "bg-red-50/50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200/50 dark:border-red-800/50"
-                        }`}
-                      >
-                        {result}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
+                  </RadioGroup>
+                </div>
+              ))}
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting || answers.some((a) => !a)}
+                >
+                  {submitting ? "Enviando..." : "Enviar respuestas"}
+                </Button>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancelar</Button>
+                </DialogClose>
+              </div>
+              {result && (
+                <p
+                  className={`mt-4 p-3 rounded-lg text-sm border ${
+                    result.includes("correctamente")
+                      ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 text-green-700"
+                      : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-700"
+                  }`}
+                >
+                  {result}
+                </p>
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
-
-      {/* Hover effect overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
     </div>
   );
 }

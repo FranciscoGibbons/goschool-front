@@ -8,9 +8,6 @@ import {
   SelfAssessableExamForm,
   GradeForm,
   SubjectMessageForm,
-  MessagePayload,
-  ExamPayload,
-  GradePayload,
 } from "@/utils/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,6 +53,14 @@ interface ActionFormProps {
   onClose: () => void;
 }
 
+type SubjectWithCourseName = {
+  id: number;
+  name: string;
+  course_id: number;
+  teacher_id: number;
+  course_name?: string;
+};
+
 export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   // Estados iniciales más específicos
   const getInitialState = (): FormsObj[typeof action] => {
@@ -66,7 +71,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         subject: "",
         task: "",
         due_date: "",
-        type: "oral",
+        type: "exam",
         questions: Array(10).fill(""),
         correct: Array(10).fill(""),
         incorrect1: Array(10).fill(""),
@@ -89,7 +94,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         type: "message" as "message" | "file",
       } as SubjectMessageForm;
     } else {
-      return { title: "", message: "", courses: "" } as MessageForm;
+      return { title: "", message: "", courses: [] } as MessageForm;
     }
   };
 
@@ -103,10 +108,20 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     subjects,
     fetchSubjects,
     isLoading: isLoadingSubjects,
-  } = subjectsStore;
-  const [courses, setCourses] = useState<Array<{ id: number; name: string }>>(
-    []
-  );
+  } = subjectsStore as {
+    subjects: SubjectWithCourseName[];
+    fetchSubjects: () => void;
+    isLoading: boolean;
+  };
+  const [courses, setCourses] = useState<
+    Array<{
+      id: number;
+      name: string;
+      year: number;
+      division: string;
+      shift: string;
+    }>
+  >([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
 
   // Nuevos estados para el formulario de calificaciones
@@ -154,23 +169,53 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         }),
       ]);
 
-      const subjectsData = subjectsResponse.data;
-      const coursesData = coursesResponse.data;
+      const subjectsData: Array<{
+        id: number;
+        name: string;
+        course_id: number;
+      }> = subjectsResponse.data;
+      const coursesData: Array<{
+        id: number;
+        name: string;
+        year: number;
+        division: string;
+        shift: string;
+      }> = coursesResponse.data;
 
       // Crear un mapa de cursos para acceso rápido
-      const coursesMap = new Map(
-        coursesData.map((course: any) => [course.id, course])
+      const coursesMap: Map<
+        number,
+        {
+          id: number;
+          name: string;
+          year: number;
+          division: string;
+          shift: string;
+        }
+      > = new Map(
+        coursesData.map(
+          (course: {
+            id: number;
+            name: string;
+            year: number;
+            division: string;
+            shift: string;
+          }) => [course.id, course]
+        )
       );
 
       // Agregar información del curso a cada materia
-      const subjectsWithCourses = subjectsData.map((subject: any) => ({
-        ...subject,
-        course_name: coursesMap.get(subject.course_id)
-          ? `${coursesMap.get(subject.course_id).year}°${
-              coursesMap.get(subject.course_id).division
-            }`
-          : `Curso ${subject.course_id}`,
-      }));
+      const subjectsWithCourses: SubjectWithCourseName[] = subjectsData.map(
+        (subject: { id: number; name: string; course_id: number }) => ({
+          ...subject,
+          teacher_id: 0, // Valor dummy para cumplir con el tipo Subject
+          course_name: coursesMap.get(subject.course_id)
+            ? `${coursesMap.get(subject.course_id)!.year}°${
+                coursesMap.get(subject.course_id)!.division
+              }`
+            : `Curso ${subject.course_id}`,
+        })
+      );
 
       console.log("Respuesta de materias con cursos:", subjectsWithCourses);
       subjectsStore.setSubjects(subjectsWithCourses);
@@ -317,32 +362,38 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
   // Efecto para cargar evaluaciones cuando cambia la materia seleccionada
   useEffect(() => {
-    if (action === "Cargar calificación" && formData.subject) {
+    if (
+      action === "Cargar calificación" &&
+      isGradeForm(formData) &&
+      formData.subject
+    ) {
       loadAssessments(formData.subject);
       // Limpiar evaluación seleccionada cuando cambia la materia
-      setFormData((prev) => ({
-        ...prev,
-        assessment_id: "",
-      }));
+      setFormData((prev) =>
+        isGradeForm(prev) ? { ...prev, assessment_id: "" } : prev
+      );
     }
-  }, [formData.subject, action]);
+  }, [formData, action]);
 
   // Efecto para cargar estudiantes cuando cambia la materia seleccionada
   useEffect(() => {
-    if (action === "Cargar calificación" && formData.subject) {
+    if (
+      action === "Cargar calificación" &&
+      isGradeForm(formData) &&
+      formData.subject
+    ) {
       const selectedSubject = subjects.find(
         (s) => s.id.toString() === formData.subject
       );
       if (selectedSubject) {
         loadStudents(selectedSubject.course_id);
         // Limpiar estudiante seleccionado cuando cambia la materia
-        setFormData((prev) => ({
-          ...prev,
-          student_id: "",
-        }));
+        setFormData((prev) =>
+          isGradeForm(prev) ? { ...prev, student_id: "" } : prev
+        );
       }
     }
-  }, [formData.subject, subjects, action]);
+  }, [formData, subjects, action]);
 
   // Manejo de cambios para campos individuales
   const handleChange = <T extends FormsObj[typeof action]>(
@@ -423,7 +474,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         }
       }
 
-      let payload: MessagePayload | ExamPayload | GradePayload | FormData;
+      let payload: any;
       let url: string;
 
       if (action === "Crear mensaje" && isMessageForm(formData)) {
@@ -431,9 +482,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           title: formData.title,
           message: formData.message,
           courses: Array.isArray(formData.courses)
-            ? formData.courses.join(",")
-            : formData.courses,
-        } satisfies MessagePayload;
+            ? formData.courses.map(String).join(",")
+            : String(formData.courses),
+        };
         url = "http://localhost:8080/api/v1/messages/";
       } else if (action === "Crear examen" && isExamForm(formData)) {
         if (isSelfAssessableExamForm(formData)) {
@@ -473,7 +524,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
               incorrect1: completedIncorrect1,
               incorrect2: completedIncorrect2,
             },
-          } satisfies ExamPayload;
+          };
           url = "http://localhost:8080/api/v1/assessments/";
         } else {
           payload = {
@@ -483,7 +534,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
               due_date: formData.due_date,
               type: formData.type,
             },
-          } satisfies ExamPayload;
+          };
           url = "http://localhost:8080/api/v1/assessments/";
         }
       } else if (action === "Cargar calificación" && isGradeForm(formData)) {
@@ -497,7 +548,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             formData.grade_type === "numerical"
               ? Number(formData.grade)
               : formData.grade,
-        } satisfies GradePayload;
+        };
         url = "http://localhost:8080/api/v1/grades/";
       } else if (
         action === "Crear mensaje de materia" &&
@@ -627,7 +678,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                   : formData.courses.length > 3
                   ? `${formData.courses.length} cursos seleccionados`
                   : courses
-                      .filter((c) => formData.courses.includes(c.id.toString()))
+                      .filter((c) => formData.courses.includes(c.id))
                       .map(getCourseLabel)
                       .join(", ")}
               </Button>
@@ -639,7 +690,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                   variant="secondary"
                   className="w-full"
                   onClick={() => {
-                    const allIds = courses.map((c) => c.id.toString());
+                    const allIds = courses.map((c) => c.id);
                     handleChange<MessageForm>("courses", allIds);
                   }}
                 >
@@ -653,7 +704,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                     onClick={() => {
                       const primariaIds = courses
                         .filter((c) => c.year < 8)
-                        .map((c) => c.id.toString());
+                        .map((c) => c.id);
                       handleChange<MessageForm>("courses", primariaIds);
                     }}
                   >
@@ -666,7 +717,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                     onClick={() => {
                       const secundariaIds = courses
                         .filter((c) => c.year >= 8)
-                        .map((c) => c.id.toString());
+                        .map((c) => c.id);
                       handleChange<MessageForm>("courses", secundariaIds);
                     }}
                   >
@@ -678,20 +729,20 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                 <div className="text-muted-foreground">Cargando cursos...</div>
               ) : (
                 courses.map((course) => {
-                  const idStr = course.id.toString();
+                  const idNum = course.id;
                   return (
                     <DropdownMenuCheckboxItem
                       key={course.id}
-                      checked={formData.courses.includes(idStr)}
+                      checked={formData.courses.includes(idNum)}
                       onCheckedChange={(checked) => {
                         let newCourses = Array.isArray(formData.courses)
                           ? [...formData.courses]
                           : [];
                         if (checked) {
-                          if (!newCourses.includes(idStr))
-                            newCourses.push(idStr);
+                          if (!newCourses.includes(idNum))
+                            newCourses.push(idNum);
                         } else {
-                          newCourses = newCourses.filter((c) => c !== idStr);
+                          newCourses = newCourses.filter((c) => c !== idNum);
                         }
                         handleChange<MessageForm>("courses", newCourses);
                       }}
@@ -728,6 +779,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
               {subjects.map((subject) => (
                 <SelectItem key={subject.id} value={subject.id.toString()}>
                   {subject.name}
+                  {"course_name" in subject ? ` - ${subject.course_name}` : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -744,15 +796,25 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           />
           <Select
             value={formData.type}
-            onValueChange={(value: "oral" | "selfassessable") =>
-              handleChange<ExamForm>("type", value)
-            }
+            onValueChange={(
+              value:
+                | "exam"
+                | "homework"
+                | "project"
+                | "oral"
+                | "remedial"
+                | "selfassessable"
+            ) => handleChange<ExamForm>("type", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Tipo de evaluación" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="oral">Oral / Tradicional</SelectItem>
+              <SelectItem value="exam">Examen</SelectItem>
+              <SelectItem value="homework">Tarea</SelectItem>
+              <SelectItem value="project">Proyecto</SelectItem>
+              <SelectItem value="oral">Oral</SelectItem>
+              <SelectItem value="remedial">Recuperatorio</SelectItem>
               <SelectItem value="selfassessable">
                 Autoevaluable (quiz)
               </SelectItem>
