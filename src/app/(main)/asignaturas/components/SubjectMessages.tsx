@@ -59,7 +59,9 @@ function formatDateHeader(dateString: string) {
 export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   const [messages, setMessages] = useState<SubjectMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingMessage, setEditingMessage] = useState<SubjectMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<SubjectMessage | null>(
+    null
+  );
   const [editData, setEditData] = useState<Partial<SubjectMessage>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -98,21 +100,49 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
     );
   });
 
-  const getIconBg = (type: string) =>
-    type === "file"
-      ? "bg-blue-100 text-blue-600 border-blue-300"
-      : "bg-green-100 text-green-600 border-green-300";
-  const getIcon = (type: string) =>
-    type === "file" ? (
-      <DocumentIcon className="w-6 h-6" />
-    ) : (
-      <ChatBubbleLeftIcon className="w-6 h-6" />
-    );
-  const getLabel = (type: string) => (type === "file" ? "Archivo" : "Mensaje");
-  const getLabelBg = (type: string) =>
-    type === "file"
-      ? "bg-blue-100 text-blue-800"
-      : "bg-green-100 text-green-800";
+  const getIconBg = (type: string) => {
+    switch (type) {
+      case "file":
+        return "bg-blue-100 text-blue-600 border-blue-300";
+      case "link":
+        return "bg-purple-100 text-purple-600 border-purple-300";
+      default:
+        return "bg-green-100 text-green-600 border-green-300";
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "file":
+        return <DocumentIcon className="w-6 h-6" />;
+      case "link":
+        return <ArrowDownTrayIcon className="w-6 h-6" />;
+      default:
+        return <ChatBubbleLeftIcon className="w-6 h-6" />;
+    }
+  };
+
+  const getLabel = (type: string) => {
+    switch (type) {
+      case "file":
+        return "Archivo";
+      case "link":
+        return "Link";
+      default:
+        return "Mensaje";
+    }
+  };
+
+  const getLabelBg = (type: string) => {
+    switch (type) {
+      case "file":
+        return "bg-blue-100 text-blue-800";
+      case "link":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-green-100 text-green-800";
+    }
+  };
 
   const formatTime = (dateString: string) => {
     const d = new Date(dateString);
@@ -187,6 +217,53 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                     >
                       {getLabel(message.type)}
                     </span>
+                    <div className="flex-1" />
+                    {userInfo?.role &&
+                      ["admin", "teacher", "preceptor"].includes(
+                        userInfo.role
+                      ) && (
+                        <div className="flex gap-1 ml-2">
+                          <button
+                            className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                            title="Editar"
+                            onClick={() => {
+                              setEditingMessage(message);
+                              setEditData({ ...message });
+                            }}
+                          >
+                            <PencilIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                            title="Borrar"
+                            onClick={async () => {
+                              if (
+                                !confirm(
+                                  "¿Seguro que quieres borrar este mensaje?"
+                                )
+                              )
+                                return;
+                              setDeletingId(message.id);
+                              try {
+                                await axios.delete(
+                                  `http://localhost:8080/api/v1/subject_messages/${message.id}`,
+                                  { withCredentials: true }
+                                );
+                                setMessages((prev) =>
+                                  prev.filter((m) => m.id !== message.id)
+                                );
+                              } catch {
+                                alert("Error al borrar el mensaje");
+                              } finally {
+                                setDeletingId(null);
+                              }
+                            }}
+                            disabled={deletingId === message.id}
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
                   </div>
                   {message.type === "message" && (
                     <p className="text-muted-foreground mb-2 whitespace-pre-line">
@@ -224,43 +301,33 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                       )}
                     </>
                   )}
+                  {message.type === "link" && (
+                    <>
+                      {message.content && (
+                        <p className="text-muted-foreground mb-2 whitespace-pre-line">
+                          {message.content}
+                        </p>
+                      )}
+                      {message.content &&
+                        message.content.startsWith("http") && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <a
+                              href={message.content}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                            >
+                              <ArrowDownTrayIcon className="size-4" />
+                              Abrir enlace
+                            </a>
+                          </div>
+                        )}
+                    </>
+                  )}
                   <div className="flex justify-end gap-2 mt-2">
                     <span className="text-xs text-muted-foreground">
                       {formatTime(message.created_at)}
                     </span>
-                    {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
-                      <>
-                        <button
-                          className="p-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center justify-center w-7 h-7"
-                          title="Editar"
-                          onClick={() => {
-                            setEditingMessage(message);
-                            setEditData({ ...message });
-                          }}
-                        >
-                          <PencilIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                          className="p-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center justify-center w-7 h-7"
-                          title="Borrar"
-                          onClick={async () => {
-                            if (!confirm("¿Seguro que quieres borrar este mensaje?")) return;
-                            setDeletingId(message.id);
-                            try {
-                              await axios.delete(`http://localhost:8080/api/v1/subject_messages/${message.id}`, { withCredentials: true });
-                              setMessages((prev) => prev.filter((m) => m.id !== message.id));
-                            } catch {
-                              alert("Error al borrar el mensaje");
-                            } finally {
-                              setDeletingId(null);
-                            }
-                          }}
-                          disabled={deletingId === message.id}
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
@@ -271,7 +338,9 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
       {editingMessage && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
-            <h2 className="text-lg font-bold mb-4">Editar mensaje de materia</h2>
+            <h2 className="text-lg font-bold mb-4">
+              Editar mensaje de materia
+            </h2>
             <form
               className="space-y-4"
               onSubmit={async (e) => {
@@ -309,7 +378,9 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 <input
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editData.title || ""}
-                  onChange={e => setEditData({ ...editData, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditData({ ...editData, title: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -318,7 +389,12 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 <select
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editData.type || "message"}
-                  onChange={e => setEditData({ ...editData, type: e.target.value as 'message' | 'file' | 'link' })}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      type: e.target.value as "message" | "file" | "link",
+                    })
+                  }
                   required
                 >
                   <option value="message">Mensaje</option>
@@ -327,11 +403,15 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Contenido</label>
+                <label className="block text-sm font-medium mb-1">
+                  Contenido
+                </label>
                 <textarea
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editData.content || ""}
-                  onChange={e => setEditData({ ...editData, content: e.target.value })}
+                  onChange={(e) =>
+                    setEditData({ ...editData, content: e.target.value })
+                  }
                   required
                   rows={4}
                 />
@@ -350,7 +430,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                   type="submit"
                   disabled={isSaving}
                 >
-                  <PencilIcon className="w-4 h-4" /> {isSaving ? "Guardando..." : "Guardar cambios"}
+                  <PencilIcon className="w-4 h-4" />{" "}
+                  {isSaving ? "Guardando..." : "Guardar cambios"}
                 </button>
               </div>
             </form>

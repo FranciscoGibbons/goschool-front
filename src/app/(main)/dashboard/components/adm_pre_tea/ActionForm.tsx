@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FormsObj,
   MessageForm,
@@ -28,7 +28,6 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useSubjectsStore from "@/store/subjectsStore";
 import React from "react";
@@ -92,7 +91,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         subject_id: "",
         title: "",
         content: "",
-        type: "message" as "message" | "file",
+        type: "message" as "message" | "file" | "link",
       } as SubjectMessageForm;
     } else {
       return { title: "", message: "", courses: [] } as MessageForm;
@@ -304,7 +303,11 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       }));
 
       console.log("Datos de estudiantes:", studentsData);
-      setStudents(studentsData);
+      // Remove duplicates by id
+      const uniqueStudents = studentsData.filter(
+        (student, idx, arr) => arr.findIndex((s) => s.id === student.id) === idx
+      );
+      setStudents(uniqueStudents);
     } catch (error) {
       console.error("Error loading students:", error);
       toast.error("Error al cargar estudiantes");
@@ -361,40 +364,43 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   }, [action]);
 
-  // Efecto para cargar evaluaciones cuando cambia la materia seleccionada
-  useEffect(() => {
-    if (
-      action === "Cargar calificación" &&
-      isGradeForm(formData) &&
-      formData.subject
-    ) {
-      loadAssessments(formData.subject);
-      // Limpiar evaluación seleccionada cuando cambia la materia
-      setFormData((prev) =>
-        isGradeForm(prev) ? { ...prev, assessment_id: "" } : prev
-      );
-    }
-  }, [formData, action]);
+  // Ref to track previous subject for each effect
+  const prevSubjectAssessmentsRef = useRef<string | null>(null);
+  const prevSubjectStudentsRef = useRef<string | null>(null);
 
-  // Elimina el import de React y el useRef prevSubjectRef
-  // Restaura el useEffect original para cargar estudiantes:
+  // Effect to load assessments only when subject changes
   useEffect(() => {
-    if (
-      action === "Cargar calificación" &&
-      isGradeForm(formData) &&
-      formData.subject
-    ) {
-      const selectedSubject = subjects.find(
-        (s) => s.id.toString() === formData.subject
-      );
-      if (selectedSubject) {
-        loadStudents(selectedSubject.course_id);
-        // Limpiar estudiante seleccionado cuando cambia la materia
+    if (action === "Cargar calificación" && isGradeForm(formData)) {
+      const subject = formData.subject;
+      if (subject && subject !== prevSubjectAssessmentsRef.current) {
+        loadAssessments(subject);
         setFormData((prev) =>
-          isGradeForm(prev) ? { ...prev, student_id: "" } : prev
+          isGradeForm(prev) ? { ...prev, assessment_id: "" } : prev
         );
+        prevSubjectAssessmentsRef.current = subject;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, action]);
+
+  // Effect to load students only when subject changes
+  useEffect(() => {
+    if (action === "Cargar calificación" && isGradeForm(formData)) {
+      const subject = formData.subject;
+      if (subject && subject !== prevSubjectStudentsRef.current) {
+        const selectedSubject = subjects.find(
+          (s) => s.id.toString() === subject
+        );
+        if (selectedSubject) {
+          loadStudents(selectedSubject.course_id);
+          setFormData((prev) =>
+            isGradeForm(prev) ? { ...prev, student_id: "" } : prev
+          );
+        }
+        prevSubjectStudentsRef.current = subject;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData, subjects, action]);
 
   // Manejo de cambios para campos individuales
@@ -476,7 +482,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         }
       }
 
-      let payload: any;
+      let payload: unknown;
       let url: string;
 
       if (action === "Crear mensaje" && isMessageForm(formData)) {
@@ -540,18 +546,68 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           url = "http://localhost:8080/api/v1/assessments/";
         }
       } else if (action === "Cargar calificación" && isGradeForm(formData)) {
+        // Validar que todos los campos requeridos estén presentes
+        if (
+          !formData.subject ||
+          !formData.student_id ||
+          !formData.grade ||
+          !formData.description
+        ) {
+          toast.error("Por favor completa todos los campos requeridos");
+          setIsLoading(false);
+          return;
+        }
+
+        // Convertir grade_type al formato que espera el backend
+        let gradeType: "numerical" | "conceptual" | "percentage";
+        switch (formData.grade_type) {
+          case "numerical":
+            gradeType = "numerical";
+            break;
+          case "conceptual":
+            gradeType = "conceptual";
+            break;
+          default:
+            gradeType = "numerical";
+        }
+
+        // Validar que la nota sea un número válido para notas numéricas
+        if (formData.grade_type === "numerical") {
+          const gradeNum = Number(formData.grade);
+          if (isNaN(gradeNum) || gradeNum < 1 || gradeNum > 10) {
+            toast.error("La nota debe ser un número entre 1 y 10");
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Para notas conceptuales, asegurar que sea string
+        if (formData.grade_type === "conceptual") {
+          if (!formData.grade || typeof formData.grade !== "string") {
+            toast.error("La nota conceptual debe ser un texto válido");
+            setIsLoading(false);
+            return;
+          }
+        }
+
         payload = {
           subject: Number(formData.subject),
-          assessment_id: Number(formData.assessment_id),
+          assessment_id: formData.assessment_id
+            ? Number(formData.assessment_id)
+            : null,
           student_id: Number(formData.student_id),
-          grade_type: formData.grade_type,
+          grade_type: gradeType,
           description: formData.description,
-          grade:
-            formData.grade_type === "numerical"
-              ? Number(formData.grade)
-              : formData.grade,
+          grade: formData.grade, // Enviar como string para que sea convertido a Decimal
         };
         url = "http://localhost:8080/api/v1/grades/";
+        console.log("Payload enviado:", payload);
+        console.log("Payload JSON:", JSON.stringify(payload, null, 2));
+        console.log("URL:", url);
+        console.log("Headers:", {
+          "Content-Type": "application/json",
+          withCredentials: true,
+        });
       } else if (
         action === "Crear mensaje de materia" &&
         isSubjectMessageForm(formData)
@@ -616,8 +672,31 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         toast.error("Error en la creación");
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Error en la creación");
+      console.error("Error completo:", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Error de Axios:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers,
+        });
+        // Manejar errores específicos
+        if (error.response?.status === 401) {
+          toast.error("No tienes autorización para realizar esta acción");
+        } else if (error.response?.status === 409) {
+          toast.error(
+            "Ya existe una calificación para este assessment y estudiante"
+          );
+        } else {
+          toast.error(
+            `Error ${error.response?.status}: ${
+              error.response?.data || error.message
+            }`
+          );
+        }
+      } else {
+        toast.error("Error en la creación");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -977,7 +1056,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                 <SelectContent>
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id.toString()}>
-                      {subject.name} - {subject.course_name}
+                      {subject.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1145,7 +1224,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                         key={subject.id}
                         value={subject.id.toString()}
                       >
-                        {subject.name} - {subject.course_name}
+                        {subject.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1168,7 +1247,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                 <Label htmlFor="type">Tipo</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value: "message" | "file") =>
+                  onValueChange={(value: "message" | "file" | "link") =>
                     handleChange<SubjectMessageForm>("type", value)
                   }
                 >
@@ -1178,6 +1257,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                   <SelectContent>
                     <SelectItem value="message">Mensaje</SelectItem>
                     <SelectItem value="file">Archivo</SelectItem>
+                    <SelectItem value="link">Link</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1225,6 +1305,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           disabled={
             isLoading ||
             (action === "Crear examen" &&
+              isExamForm(formData) &&
               isSelfAssessableExamForm(formData) &&
               !canCreateSelfAssessable())
           }

@@ -12,12 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AcademicCapIcon, CalendarIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+  AcademicCapIcon,
+  CalendarIcon,
+  PencilIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import { toast } from "sonner";
 import userInfoStore from "@/store/userInfoStore";
-import { useRouter } from "next/navigation";
 
 interface Grade {
   id: number;
@@ -38,10 +42,17 @@ interface Assessment {
   type: string;
 }
 
-export default function GradesDisplay() {
+interface GradesDisplayProps {
+  selectedStudentId?: number;
+}
+
+export default function GradesDisplay({
+  selectedStudentId,
+}: GradesDisplayProps) {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [orderBy, setOrderBy] = useState<string>("date_desc");
@@ -51,50 +62,69 @@ export default function GradesDisplay() {
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
-  const router = useRouter();
 
-  const subjectsStore = useSubjectsStore();
-  const { subjects, fetchSubjects } = subjectsStore;
+  const { subjects, fetchSubjects } = useSubjectsStore();
 
   useEffect(() => {
-    const fetchAll = async () => {
-      setIsLoading(true);
-      try {
-        if (subjects.length === 0) await fetchSubjects();
-        const [gradesRes, assessmentsRes] = await Promise.all([
-          axios.get("http://localhost:8080/api/v1/grades/", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:8080/api/v1/assessments/", {
-            withCredentials: true,
-          }),
-        ]);
-        setGrades(gradesRes.data || []);
-        setAssessments(assessmentsRes.data || []);
+    // Para estudiantes, siempre cargar las calificaciones (sin selectedStudentId)
+    // Para otros roles, solo cargar si hay selectedStudentId
+    const shouldFetch = userInfo?.role === "student" || selectedStudentId;
+
+    if (shouldFetch) {
+      setSelectedSubject(null); // Reset subject on student change
+
+      const fetchAll = async () => {
+        setIsLoading(true);
         setErrorMsg("");
-      } catch {
-        setGrades([]);
-        setAssessments([]);
-        setErrorMsg("Error al cargar calificaciones.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subjects.length]);
+        try {
+          await fetchSubjects();
 
-  // Seleccionar automáticamente la primera materia al cargar
+          // Para estudiantes, no incluir student_id en la URL
+          const gradesUrl =
+            userInfo?.role === "student"
+              ? "http://localhost:8080/api/v1/grades/"
+              : `http://localhost:8080/api/v1/grades/?student_id=${selectedStudentId}`;
+
+          const assessmentsUrl =
+            userInfo?.role === "student"
+              ? "http://localhost:8080/api/v1/assessments/"
+              : `http://localhost:8080/api/v1/assessments/?student_id=${selectedStudentId}`;
+
+          const [gradesRes, assessmentsRes] = await Promise.all([
+            axios.get(gradesUrl, { withCredentials: true }),
+            axios.get(assessmentsUrl, { withCredentials: true }),
+          ]);
+
+          setGrades(Array.isArray(gradesRes.data) ? gradesRes.data : []);
+          setAssessments(
+            Array.isArray(assessmentsRes.data) ? assessmentsRes.data : []
+          );
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          setErrorMsg("Error al cargar los datos.");
+          toast.error("Error al cargar los datos");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchAll();
+    } else {
+      setGrades([]);
+      setAssessments([]);
+    }
+  }, [selectedStudentId, userInfo?.role, fetchSubjects]);
+
+  // ⚠️ Aquí seteamos automáticamente la materia si no hay una seleccionada aún
   useEffect(() => {
-    if (subjects.length > 0 && selectedSubject == null) {
+    if (selectedSubject === null && subjects.length > 0) {
       setSelectedSubject(subjects[0].id);
     }
-  }, [subjects, selectedSubject]);
+  }, [selectedSubject, subjects]);
 
-  // Eliminar filteredSubjects porque ya no se usa
+  const currentSubject = selectedSubject;
 
-  // Ordenar y filtrar calificaciones
-  let subjectGrades = grades.filter((g) => g.subject_id === selectedSubject);
+  let subjectGrades = grades.filter((g) => g.subject_id === currentSubject);
   if (typeFilter !== "all") {
     subjectGrades = subjectGrades.filter((g) => {
       const assessment = assessments.find((a) => a.id === g.assessment_id);
@@ -116,11 +146,11 @@ export default function GradesDisplay() {
   } else if (orderBy === "grade_asc") {
     subjectGrades.sort((a, b) => Number(a.grade) - Number(b.grade));
   }
-  // Obtener tipos únicos de evaluación SOLO de las calificaciones filtradas
+
   const filteredAssessmentTypes = Array.from(
     new Set(
       grades
-        .filter((g) => g.subject_id === selectedSubject)
+        .filter((g) => g.subject_id === currentSubject)
         .map((g) => {
           const assessment = assessments.find((a) => a.id === g.assessment_id);
           return assessment ? assessment.type : null;
@@ -129,10 +159,8 @@ export default function GradesDisplay() {
     )
   );
 
-  // Mostrar solo las calificaciones filtradas y ordenadas
   const filteredGrades = subjectGrades;
 
-  // Agrupar por assessment_id si existe, si no por descripción
   const gradesByAssessment: Record<
     string,
     { assessment?: Assessment; grades: Grade[] }
@@ -166,7 +194,6 @@ export default function GradesDisplay() {
       ? "bg-green-100 text-green-800"
       : "bg-blue-100 text-blue-800";
 
-  // Función para borrar una calificación
   const handleDelete = async (id: number) => {
     if (!confirm("¿Seguro que quieres borrar esta calificación?")) return;
     setDeletingId(id);
@@ -190,11 +217,10 @@ export default function GradesDisplay() {
 
   return (
     <div className="space-y-8">
-      {/* Selectores de materia y ordenamiento */}
       <div className="flex flex-col md:flex-row md:items-center gap-4">
         <div className="w-full max-w-xs">
           <Select
-            value={selectedSubject?.toString() || ""}
+            value={selectedSubject !== null ? String(selectedSubject) : ""}
             onValueChange={(value) => setSelectedSubject(Number(value))}
           >
             <SelectTrigger className="w-full">
@@ -202,7 +228,7 @@ export default function GradesDisplay() {
             </SelectTrigger>
             <SelectContent>
               {subjects.map((subject) => (
-                <SelectItem key={subject.id} value={subject.id.toString()}>
+                <SelectItem key={subject.id} value={String(subject.id)}>
                   <div className="flex items-center gap-2">
                     <BookOpenIcon className="size-4" />
                     {subject.name}
@@ -313,26 +339,31 @@ export default function GradesDisplay() {
                     </span>
                   )}
                   {/* Botones de acciones solo para admin/teacher/preceptor */}
-                  {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        className="p-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center justify-center w-7 h-7"
-                        onClick={() => {
-                          setUpdatingGrade(grade);
-                          setEditGrade({ ...grade });
-                        }}
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="p-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center justify-center w-7 h-7"
-                        onClick={() => handleDelete(Number(grade.id))}
-                        disabled={deletingId === Number(grade.id)}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                  {userInfo?.role &&
+                    ["admin", "teacher", "preceptor"].includes(
+                      userInfo.role
+                    ) && (
+                      <div className="flex gap-1 mt-1 justify-end">
+                        <button
+                          className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                          title="Editar"
+                          onClick={() => {
+                            setUpdatingGrade(grade);
+                            setEditGrade({ ...grade });
+                          }}
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                          title="Borrar"
+                          onClick={() => handleDelete(Number(grade.id))}
+                          disabled={deletingId === Number(grade.id)}
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                 </div>
               ))}
             </div>
@@ -344,45 +375,54 @@ export default function GradesDisplay() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
             <h2 className="text-lg font-bold mb-4">Actualizar calificación</h2>
-            <form className="space-y-4" onSubmit={async (e) => {
-              e.preventDefault();
-              setIsSaving(true);
-              try {
-                const res = await fetch(`http://localhost:8080/api/v1/grades/${updatingGrade.id}`, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                  body: JSON.stringify({
-                    grade: editGrade.grade,
-                    grade_type: editGrade.grade_type,
-                    description: editGrade.description,
-                  }),
-                });
-                if (res.ok) {
-                  toast.success("Calificación actualizada");
-                  setGrades((prev) =>
-                    prev.map((g) =>
-                      Number(g.id) === Number(updatingGrade.id)
-                        ? { ...g, ...editGrade }
-                        : g
-                    )
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSaving(true);
+                try {
+                  const res = await fetch(
+                    `http://localhost:8080/api/v1/grades/${updatingGrade.id}`,
+                    {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({
+                        grade: editGrade.grade,
+                        grade_type: editGrade.grade_type,
+                        description: editGrade.description,
+                      }),
+                    }
                   );
-                  setUpdatingGrade(null);
-                } else {
-                  toast.error("Error al actualizar la calificación");
+                  if (res.ok) {
+                    toast.success("Calificación actualizada");
+                    setGrades((prev) =>
+                      prev.map((g) =>
+                        Number(g.id) === Number(updatingGrade.id)
+                          ? { ...g, ...editGrade }
+                          : g
+                      )
+                    );
+                    setUpdatingGrade(null);
+                  } else {
+                    toast.error("Error al actualizar la calificación");
+                  }
+                } catch {
+                  toast.error("Error de red al actualizar");
+                } finally {
+                  setIsSaving(false);
                 }
-              } catch {
-                toast.error("Error de red al actualizar");
-              } finally {
-                setIsSaving(false);
-              }
-            }}>
+              }}
+            >
               <div>
                 <label className="block text-sm font-medium mb-1">Nota</label>
                 <input
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editGrade.grade}
-                  onChange={e => setEditGrade({ ...editGrade, grade: e.target.value })}
+                  onChange={(e) =>
+                    editGrade &&
+                    setEditGrade({ ...editGrade, grade: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -391,7 +431,13 @@ export default function GradesDisplay() {
                 <select
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editGrade.grade_type}
-                  onChange={e => setEditGrade({ ...editGrade, grade_type: e.target.value as 'numerical' | 'conceptual' })}
+                  onChange={(e) =>
+                    editGrade &&
+                    setEditGrade({
+                      ...editGrade,
+                      grade_type: e.target.value as "numerical" | "conceptual",
+                    })
+                  }
                   required
                 >
                   <option value="numerical">Numérica</option>
@@ -399,11 +445,15 @@ export default function GradesDisplay() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Descripción</label>
+                <label className="block text-sm font-medium mb-1">
+                  Descripción
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editGrade.description}
-                  onChange={e => setEditGrade({ ...editGrade, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditGrade({ ...editGrade, description: e.target.value })
+                  }
                 />
               </div>
               <div className="flex gap-2 mt-4 justify-end">
@@ -420,7 +470,8 @@ export default function GradesDisplay() {
                   type="submit"
                   disabled={isSaving}
                 >
-                  <PencilIcon className="w-4 h-4" /> {isSaving ? "Guardando..." : "Guardar cambios"}
+                  <PencilIcon className="w-4 h-4" />{" "}
+                  {isSaving ? "Guardando..." : "Guardar cambios"}
                 </button>
               </div>
             </form>

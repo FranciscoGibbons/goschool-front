@@ -11,6 +11,7 @@ import {
   PencilIcon,
 } from "@heroicons/react/24/outline";
 import ProfileAccount from "./ProfileAccount";
+import ChildSelector from "./ChildSelector";
 
 const menuItems = [
   { name: "Inicio", icon: HomeIcon, href: "/dashboard" },
@@ -45,6 +46,8 @@ export default function Sidebar({ className = "" }: { className?: string }) {
           </Link>
         </div>
 
+        <ChildSelector />
+        
         <nav className="space-y-2" role="navigation">
           <ul>
             {menuItems.map((item) => (

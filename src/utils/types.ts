@@ -27,6 +27,27 @@ export type Exam = BaseExam | SelfAssessableExam;
 
 export type Role = "admin" | "teacher" | "student" | "preceptor" | "father";
 
+// Interfaz para hijos del padre
+export interface Child {
+  id: number;
+  name: string;
+  last_name: string;
+  course_id: number;
+  course_name?: string;
+}
+
+// Interfaz para información del usuario
+export interface UserInfo {
+  id: number;
+  name: string;
+  last_name: string;
+  email: string;
+  role: Role;
+  photo?: string;
+  children?: Child[]; // Solo para padres
+  course_id?: number; // Solo para estudiantes
+}
+
 // Formulario base para examen (campos comunes)
 export interface BaseExamForm {
   subject: string;
@@ -74,7 +95,7 @@ export interface SubjectMessageForm {
   subject_id: string;
   title: string;
   content: string;
-  type: "message" | "file";
+  type: "message" | "file" | "link";
   file?: File;
 }
 

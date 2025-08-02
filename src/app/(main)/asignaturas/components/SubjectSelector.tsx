@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BookOpenIcon } from "@heroicons/react/24/outline";
+import { BookOpenIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
 import SubjectMessages from "./SubjectMessages";
 import axios from "axios";
 import useSubjectsStore from "@/store/subjectsStore";
@@ -17,9 +17,25 @@ import useSubjectsStore from "@/store/subjectsStore";
 interface Subject {
   id: number;
   name: string;
+  course_id?: number;
 }
 
-export default function SubjectSelector() {
+interface Course {
+  id: number;
+  name: string;
+  year: number;
+  section: string;
+}
+
+interface SubjectSelectorProps {
+  selectedStudentId?: number;
+  selectedCourseId?: number;
+}
+
+export default function SubjectSelector({
+  selectedStudentId,
+  selectedCourseId,
+}: SubjectSelectorProps) {
   const subjectsStore = useSubjectsStore();
   const {
     subjects,
@@ -27,7 +43,26 @@ export default function SubjectSelector() {
     isLoading: isLoadingSubjects,
   } = subjectsStore;
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Cargar información del curso
+  useEffect(() => {
+    if (selectedCourseId) {
+      const fetchCourse = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:8080/api/v1/courses/${selectedCourseId}`,
+            { withCredentials: true }
+          );
+          setCourse(response.data);
+        } catch (error) {
+          console.error("Error loading course:", error);
+        }
+      };
+      fetchCourse();
+    }
+  }, [selectedCourseId]);
 
   useEffect(() => {
     if (subjects.length === 0) {
@@ -48,6 +83,23 @@ export default function SubjectSelector() {
         <div className="text-red-500 text-center py-4">{errorMsg}</div>
       )}
 
+      {/* Header con información del curso */}
+      {course && (
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border">
+          <div className="flex items-center gap-3">
+            <AcademicCapIcon className="h-6 w-6 text-primary" />
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {course.name}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {course.year}° Año - Sección {course.section}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="flex justify-start">
           <Select
@@ -65,7 +117,12 @@ export default function SubjectSelector() {
                 <SelectItem key={subject.id} value={subject.id.toString()}>
                   <div className="flex items-center gap-2">
                     <BookOpenIcon className="size-4" />
-                    {subject.name}
+                    <span>{subject.name}</span>
+                    {course && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({course.name})
+                      </span>
+                    )}
                   </div>
                 </SelectItem>
               ))}

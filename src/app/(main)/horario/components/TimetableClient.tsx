@@ -15,7 +15,7 @@ interface Course {
 
 interface TimetableClientProps {
   courses: Course[];
-  initialCourseId?: number | null;
+  initialCourseId?: number | undefined;
   initialTimetables?: any[];
 }
 

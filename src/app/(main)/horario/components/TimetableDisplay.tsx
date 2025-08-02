@@ -16,15 +16,6 @@ interface Timetable {
   end_time: string;
 }
 
-interface Course {
-  id: number;
-  year: number;
-  division: string;
-  level: string;
-  shift: string;
-  preceptor_id?: number;
-}
-
 interface TimetableDisplayProps {
   courseId: number;
   onBack: () => void;
@@ -45,11 +36,6 @@ const timeBlocks = [
   { num: 8, range: "12:30-13:00" },
 ];
 
-function capitalize(str: string) {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
 const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
   courseId,
   onBack,
@@ -58,10 +44,10 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
   const [timetables, setTimetables] = useState<Timetable[]>(
     initialTimetables || []
   );
-  const [course, setCourse] = useState<Course | null>(null);
+
   const [loading, setLoading] = useState(!initialTimetables);
   const subjectsStore = useSubjectsStore();
-  const { subjects, fetchSubjects } = subjectsStore;
+  const { subjects, setSubjects } = subjectsStore;
 
   useEffect(() => {
     if (initialTimetables && initialTimetables.length > 0) {
@@ -73,22 +59,7 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log("Fetching timetables for courseId:", courseId);
-        console.log("Current cookies:", document.cookie);
 
-        // Verificar si hay JWT cookie
-        const jwtCookie = document.cookie
-          .split(";")
-          .find((c) => c.trim().startsWith("jwt="));
-        console.log("JWT cookie found:", !!jwtCookie);
-        if (jwtCookie) {
-          console.log(
-            "JWT cookie value:",
-            jwtCookie.split("=")[1].substring(0, 20) + "..."
-          );
-        }
-
-        // Solo hacer la llamada de timetables por ahora
         const timetableRes = await axios.get(
           `http://localhost:8080/api/v1/timetables/?course_id=${courseId}`,
           {
@@ -96,45 +67,29 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
           }
         );
 
-        console.log("Timetables response status:", timetableRes.status);
-        console.log("Timetables response headers:", timetableRes.headers);
-        console.log("Timetables response:", timetableRes);
-        console.log("Timetables data:", timetableRes.data);
-        console.log("Timetables data type:", typeof timetableRes.data);
-        console.log(
-          "Timetables data length:",
-          Array.isArray(timetableRes.data)
-            ? timetableRes.data.length
-            : "not array"
-        );
-
+        console.log("Timetables recibidos:", timetableRes.data);
         setTimetables(timetableRes.data);
 
-        // Cargar subjects si no están cargados
-        if (subjects.length === 0) {
-          console.log("Fetching subjects...");
-          await fetchSubjects();
-        }
+        // Cargar subjects específicos del curso
+        const subjectsRes = await axios.get(
+          `http://localhost:8080/api/v1/subjects/?course_id=${courseId}`,
+          {
+            withCredentials: true,
+          }
+        );
+        console.log("Subjects cargados:", subjectsRes.data);
+        setSubjects(subjectsRes.data);
 
         toast.success("Horario cargado exitosamente");
       } catch (error) {
         console.error("Error loading timetable:", error);
-        if (axios.isAxiosError(error)) {
-          console.error("Axios error details:", {
-            status: error.response?.status,
-            data: error.response?.data,
-            message: error.message,
-            url: error.config?.url,
-            headers: error.response?.headers,
-          });
-        }
         toast.error("Error al cargar el horario");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [courseId, subjects.length, fetchSubjects, initialTimetables]);
+  }, [courseId, initialTimetables]);
 
   // Construir matriz [bloque][día] => array de clases
   const table: Timetable[][][] = Array.from({ length: timeBlocks.length }, () =>
@@ -166,29 +121,14 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
 
   function getSubjectName(subjectId: number) {
     const subject = subjects.find((s) => s.id === subjectId);
-    return subject ? subject.name : "Sin materia";
-  }
-
-  const getCourseLabel = (course: Course) => {
-    let yearLabel = "";
-    let divisionLabel = "";
-
-    if (course.year >= 8) {
-      yearLabel = `${course.year - 7}° secundaria`;
-      if (course.division === "1") divisionLabel = "a";
-      else if (course.division === "2") divisionLabel = "b";
-      else if (course.division === "3") divisionLabel = "c";
-      else divisionLabel = course.division;
-    } else {
-      yearLabel = `${course.year}° primaria`;
-      if (course.division === "1") divisionLabel = "Mar";
-      else if (course.division === "2") divisionLabel = "Gaviota";
-      else if (course.division === "3") divisionLabel = "Estrella";
-      else divisionLabel = course.division;
+    if (!subject) {
+      console.log(
+        `Subject no encontrado para ID: ${subjectId}. Subjects disponibles:`,
+        subjects
+      );
     }
-
-    return `${yearLabel} ${divisionLabel}`;
-  };
+    return subject ? subject.name : `ID: ${subjectId}`;
+  }
 
   if (loading) {
     return (
@@ -203,7 +143,7 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header con botón de regreso y título del curso */}
+      {/* Header con botón de regreso */}
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
@@ -213,76 +153,72 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
           <ArrowLeftIcon className="w-4 h-4" />
           Volver
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Horario - Curso {courseId}
-          </h1>
-          <p className="text-muted-foreground">
-            Timetables encontrados: {timetables.length}
-          </p>
-        </div>
       </div>
 
-      {/* Debug info */}
-      <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded">
-        <h3 className="font-semibold mb-2">Debug Info:</h3>
-        <p>
-          <strong>Course ID:</strong> {courseId}
-        </p>
-        <p>
-          <strong>Timetables count:</strong> {timetables.length}
-        </p>
-        <p>
-          <strong>Subjects count:</strong> {subjects.length}
-        </p>
-        <p>
-          <strong>Timetables:</strong>
-        </p>
-        <ul className="ml-4">
-          {timetables.map((tt, index) => (
-            <li key={tt.id}>
-              {index + 1}. ID: {tt.id}, Subject: {tt.subject_id}, Day: {tt.day},
-              Time: {tt.start_time}-{tt.end_time}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Tabla del horario */}
+      {timetables.length > 0 ? (
+        <div className="bg-card border border-border rounded-lg p-6">
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-6 gap-1 text-sm min-w-[600px]">
+              <div className="font-bold p-3 bg-muted rounded text-center">Hora</div>
+              <div className="font-bold p-3 bg-muted rounded text-center">Lunes</div>
+              <div className="font-bold p-3 bg-muted rounded text-center">Martes</div>
+              <div className="font-bold p-3 bg-muted rounded text-center">Miércoles</div>
+              <div className="font-bold p-3 bg-muted rounded text-center">Jueves</div>
+              <div className="font-bold p-3 bg-muted rounded text-center">Viernes</div>
 
-      {/* Tabla del horario simplificada */}
-      {timetables.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 p-4 rounded border">
-          <h3 className="font-semibold mb-4">Horario:</h3>
-          <div className="grid grid-cols-6 gap-2 text-sm">
-            <div className="font-bold">Hora</div>
-            <div className="font-bold">Lunes</div>
-            <div className="font-bold">Martes</div>
-            <div className="font-bold">Miércoles</div>
-            <div className="font-bold">Jueves</div>
-            <div className="font-bold">Viernes</div>
+              {timeBlocks.map((block) => (
+                <React.Fragment key={block.num}>
+                  <div className="font-bold p-3 bg-muted/50 rounded text-center">
+                    {block.num}
+                  </div>
+                  {days.map((_, j) => {
+                    // Buscar el horario que coincide con este bloque
+                    const blockStartTime = block.range.split("-")[0] + ":00";
+                    const matchingTimetable = timetables.find(
+                      (tt) =>
+                        tt.day === daysEnglish[j] &&
+                        tt.start_time === blockStartTime
+                    );
 
-            {timeBlocks.map((block, i) => (
-              <React.Fragment key={block.num}>
-                <div className="font-bold">{block.num}</div>
-                {days.map((_, j) => {
-                  const dayTimetables = timetables.filter(
-                    (tt) =>
-                      tt.day === daysEnglish[j] &&
-                      tt.start_time <= block.range.split("-")[1] &&
-                      tt.end_time >= block.range.split("-")[0]
-                  );
-                  return (
-                    <div key={j} className="p-2 border min-h-[40px]">
-                      {dayTimetables.map((tt, idx) => (
-                        <div key={idx} className="text-xs">
-                          {getSubjectName(tt.subject_id)}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+                    // Debug log para el primer bloque del lunes
+                    if (block.num === 1 && j === 0) {
+                      console.log(
+                        `Bloque 1, Lunes - blockStartTime: "${blockStartTime}"`
+                      );
+                      console.log(
+                        `Timetables para Monday:`,
+                        timetables.filter((tt) => tt.day === "Monday")
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={j}
+                        className="p-3 border border-border rounded min-h-[60px] flex items-center justify-center"
+                      >
+                        {matchingTimetable ? (
+                          <div className="text-center text-xs font-medium">
+                            {getSubjectName(matchingTimetable.subject_id)}
+                          </div>
+                        ) : (
+                          <div className="text-center text-xs text-muted-foreground">
+                            -
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground text-lg">
+            No hay horarios disponibles para este curso.
+          </p>
         </div>
       )}
     </div>

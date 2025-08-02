@@ -6,7 +6,6 @@ import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import { useInView } from "react-intersection-observer";
 import axios from "axios";
 import userInfoStore from "@/store/userInfoStore";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
@@ -35,7 +34,6 @@ export default function MessageList() {
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
-  const router = useRouter();
   const [hasMore, setHasMore] = useState(true);
 
   // Intersection Observer para detectar cuando el usuario llega al final
@@ -217,9 +215,30 @@ export default function MessageList() {
                       {sender?.full_name || "Usuario Desconocido"}
                     </p>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    ID: {message.sender_id}
-                  </div>
+                  {/* ID eliminado */}
+                  {(userInfo?.role === "admin" ||
+                    userInfo?.role === "preceptor") && (
+                    <div className="flex gap-1 ml-2">
+                      <button
+                        className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                        title="Editar"
+                        onClick={() => {
+                          setUpdatingMessage(message);
+                          setEditMessage({ ...message });
+                        }}
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                        title="Borrar"
+                        onClick={() => handleDelete(Number(message.id))}
+                        disabled={deletingId === Number(message.id)}
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-1">
@@ -235,27 +254,6 @@ export default function MessageList() {
                     </p>
                   )}
                 </div>
-                {/* Botones de acciones solo para admin/teacher/preceptor */}
-                {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
-                      onClick={() => {
-                        setUpdatingMessage(message);
-                        setEditMessage({ ...message });
-                      }}
-                    >
-                      <PencilIcon className="w-4 h-4" /> Actualizar
-                    </button>
-                    <button
-                      className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
-                      onClick={() => handleDelete(Number(message.id))}
-                      disabled={deletingId === Number(message.id)}
-                    >
-                      <TrashIcon className="w-4 h-4" /> {deletingId === Number(message.id) ? "Borrando..." : "Borrar"}
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           );
@@ -284,53 +282,65 @@ export default function MessageList() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
             <h2 className="text-lg font-bold mb-4">Actualizar mensaje</h2>
-            <form className="space-y-4" onSubmit={async (e) => {
-              e.preventDefault();
-              setIsSaving(true);
-              try {
-                const res = await fetch(`http://localhost:8080/api/v1/messages/${updatingMessage.id}`, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                  body: JSON.stringify({
-                    title: editMessage.title,
-                    message: editMessage.message,
-                  }),
-                });
-                if (res.ok) {
-                  toast.success("Mensaje actualizado");
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      Number(msg.id) === Number(updatingMessage.id)
-                        ? { ...msg, ...editMessage }
-                        : msg
-                    )
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsSaving(true);
+                try {
+                  const res = await fetch(
+                    `http://localhost:8080/api/v1/messages/${updatingMessage.id}`,
+                    {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({
+                        title: editMessage.title,
+                        message: editMessage.message,
+                      }),
+                    }
                   );
-                  setUpdatingMessage(null);
-                } else {
-                  toast.error("Error al actualizar el mensaje");
+                  if (res.ok) {
+                    toast.success("Mensaje actualizado");
+                    setMessages((prev) =>
+                      prev.map((msg) =>
+                        Number(msg.id) === Number(updatingMessage.id)
+                          ? { ...msg, ...editMessage }
+                          : msg
+                      )
+                    );
+                    setUpdatingMessage(null);
+                  } else {
+                    toast.error("Error al actualizar el mensaje");
+                  }
+                } catch {
+                  toast.error("Error de red al actualizar");
+                } finally {
+                  setIsSaving(false);
                 }
-              } catch {
-                toast.error("Error de red al actualizar");
-              } finally {
-                setIsSaving(false);
-              }
-            }}>
+              }}
+            >
               <div>
                 <label className="block text-sm font-medium mb-1">Título</label>
                 <input
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editMessage.title}
-                  onChange={e => setEditMessage({ ...editMessage, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditMessage({ ...editMessage, title: e.target.value })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Mensaje</label>
+                <label className="block text-sm font-medium mb-1">
+                  Mensaje
+                </label>
                 <textarea
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editMessage.message}
-                  onChange={e => setEditMessage({ ...editMessage, message: e.target.value })}
+                  onChange={(e) =>
+                    setEditMessage({ ...editMessage, message: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -348,7 +358,8 @@ export default function MessageList() {
                   type="submit"
                   disabled={isSaving}
                 >
-                  <PencilIcon className="w-4 h-4" /> {isSaving ? "Guardando..." : "Guardar cambios"}
+                  <PencilIcon className="w-4 h-4" />{" "}
+                  {isSaving ? "Guardando..." : "Guardar cambios"}
                 </button>
               </div>
             </form>

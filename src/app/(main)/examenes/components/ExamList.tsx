@@ -8,7 +8,12 @@ import {
   getExamTypeIndicatorColor,
 } from "@/utils/types";
 import SelfAssessableCard from "./SelfAssessableCard";
-import { BookOpenIcon, CalendarIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+  BookOpenIcon,
+  CalendarIcon,
+  PencilIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import {
   Select,
@@ -181,23 +186,26 @@ export default function ExamList({ exams, role, subjects }: Props) {
               role={role}
             />
             {/* Botones de acciones solo para admin/teacher/preceptor */}
-            {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
-              <div className="flex gap-2 mt-2">
-                <button
-                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
-                  onClick={() => setUpdatingExam(exam)}
-                >
-                  <PencilIcon className="w-4 h-4" /> Actualizar
-                </button>
-                <button
-                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
-                  onClick={() => handleDelete(exam.id)}
-                  disabled={deletingId === exam.id}
-                >
-                  <TrashIcon className="w-4 h-4" /> {deletingId === exam.id ? "Borrando..." : "Borrar"}
-                </button>
-              </div>
-            )}
+            {userInfo?.role &&
+              ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
+                <div className="flex gap-1 mt-2 justify-end">
+                  <button
+                    className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                    title="Editar"
+                    onClick={() => setUpdatingExam(exam)}
+                  >
+                    <PencilIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                    title="Borrar"
+                    onClick={() => handleDelete(exam.id)}
+                    disabled={deletingId === exam.id}
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
           </div>
         ) : (
           <div
@@ -262,23 +270,26 @@ export default function ExamList({ exams, role, subjects }: Props) {
               )}
             </div>
             {/* Botones de acciones solo para admin/teacher/preceptor */}
-            {userInfo?.role && ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
-              <div className="flex gap-2 mt-2">
-                <button
-                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
-                  onClick={() => setUpdatingExam(exam)}
-                >
-                  <PencilIcon className="w-4 h-4" /> Actualizar
-                </button>
-                <button
-                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
-                  onClick={() => handleDelete(exam.id)}
-                  disabled={deletingId === exam.id}
-                >
-                  <TrashIcon className="w-4 h-4" /> {deletingId === exam.id ? "Borrando..." : "Borrar"}
-                </button>
-              </div>
-            )}
+            {userInfo?.role &&
+              ["admin", "teacher", "preceptor"].includes(userInfo.role) && (
+                <div className="flex gap-1 mt-2 justify-end">
+                  <button
+                    className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                    title="Editar"
+                    onClick={() => setUpdatingExam(exam)}
+                  >
+                    <PencilIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
+                    title="Borrar"
+                    onClick={() => handleDelete(exam.id)}
+                    disabled={deletingId === exam.id}
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
           </div>
         )
       )}
@@ -311,17 +322,20 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 e.preventDefault();
                 setIsSaving(true);
                 try {
-                  const res = await fetch(`http://localhost:8080/api/v1/assessments/${updatingExam.id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                      subject_id: Number(editExam.subject_id),
-                      task: editExam.task,
-                      due_date: editExam.due_date,
-                      type: editExam.type,
-                    }),
-                  });
+                  const res = await fetch(
+                    `http://localhost:8080/api/v1/assessments/${updatingExam.id}`,
+                    {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({
+                        subject_id: Number(editExam.subject_id),
+                        task: editExam.task,
+                        due_date: editExam.due_date,
+                        type: editExam.type,
+                      }),
+                    }
+                  );
                   if (res.ok) {
                     toast.success("Examen actualizado");
                     setUpdatingExam(null);
@@ -337,15 +351,21 @@ export default function ExamList({ exams, role, subjects }: Props) {
               }}
             >
               <div>
-                <label className="block text-sm font-medium mb-1">Materia</label>
+                <label className="block text-sm font-medium mb-1">
+                  Materia
+                </label>
                 <select
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editExam.subject_id}
-                  onChange={e => setEditExam({ ...editExam, subject_id: e.target.value })}
+                  onChange={(e) =>
+                    setEditExam({ ...editExam, subject_id: e.target.value })
+                  }
                   required
                   disabled={subjects.length === 0}
                 >
-                  {subjects.length === 0 && <option value="">No hay materias disponibles</option>}
+                  {subjects.length === 0 && (
+                    <option value="">No hay materias disponibles</option>
+                  )}
                   {subjects.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
@@ -358,17 +378,23 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 <input
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editExam.task}
-                  onChange={e => setEditExam({ ...editExam, task: e.target.value })}
+                  onChange={(e) =>
+                    setEditExam({ ...editExam, task: e.target.value })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Fecha de entrega</label>
+                <label className="block text-sm font-medium mb-1">
+                  Fecha de entrega
+                </label>
                 <input
                   type="date"
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editExam.due_date}
-                  onChange={e => setEditExam({ ...editExam, due_date: e.target.value })}
+                  onChange={(e) =>
+                    setEditExam({ ...editExam, due_date: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -377,9 +403,11 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 <select
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editExam.type}
-                  onChange={e => setEditExam({ ...editExam, type: e.target.value })}
+                  onChange={(e) =>
+                    setEditExam({ ...editExam, type: e.target.value })
+                  }
                   required
-                  disabled={editExam.type === 'selfassessable'}
+                  disabled={editExam.type === "selfassessable"}
                 >
                   <option value="exam">Examen</option>
                   <option value="homework">Tarea</option>
@@ -388,8 +416,10 @@ export default function ExamList({ exams, role, subjects }: Props) {
                   <option value="remedial">Recuperatorio</option>
                   <option value="selfassessable">Autoevaluable</option>
                 </select>
-                {editExam.type === 'selfassessable' && (
-                  <p className="text-xs text-muted-foreground mt-1">No se puede cambiar el tipo de un autoevaluable.</p>
+                {editExam.type === "selfassessable" && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No se puede cambiar el tipo de un autoevaluable.
+                  </p>
                 )}
               </div>
               <div className="flex gap-2 mt-4 justify-end">
@@ -406,7 +436,8 @@ export default function ExamList({ exams, role, subjects }: Props) {
                   type="submit"
                   disabled={isSaving}
                 >
-                  <PencilIcon className="w-4 h-4" /> {isSaving ? "Guardando..." : "Guardar cambios"}
+                  <PencilIcon className="w-4 h-4" />{" "}
+                  {isSaving ? "Guardando..." : "Guardar cambios"}
                 </button>
               </div>
             </form>

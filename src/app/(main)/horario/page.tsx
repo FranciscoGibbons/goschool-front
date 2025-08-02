@@ -1,104 +1,177 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import axios from "axios";
+"use client";
+
+import { CalendarIcon } from "@heroicons/react/24/outline";
+import { useState, useEffect } from "react";
+import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import CourseSelector from "@/components/CourseSelector";
 import TimetableClient from "./components/TimetableClient";
+import userInfoStore from "@/store/userInfoStore";
+import childSelectionStore from "@/store/childSelectionStore";
 
-interface Course {
-  id: number;
-  year: number;
-  division: string;
-  level: string;
-  shift: string;
-  preceptor_id?: number;
-}
+export default function Horario() {
+  const { userInfo } = userInfoStore();
+  const { selectedChild } = childSelectionStore();
+  const {
+    courses,
+    selectedCourseId,
+    isLoading,
+    error,
+    setSelectedCourseId,
+    resetSelection,
+  } = useCourseStudentSelection(userInfo?.role || null);
 
-interface Timetable {
-  id: number;
-  course_id: number;
-  subject_id: number;
-  day: string;
-  start_time: string;
-  end_time: string;
-}
+  const [currentStep, setCurrentStep] = useState<"course" | "timetable">(
+    "course"
+  );
 
-async function getCourses(): Promise<Course[]> {
-  const cookieStore = await cookies();
-  const jwtCookie = cookieStore.get("jwt");
+  // Determinar el paso inicial según el rol
+  useEffect(() => {
+    if (!userInfo?.role) return;
 
-  if (!jwtCookie) {
-    redirect("/login");
-  }
-
-  try {
-    const response = await axios.get("http://localhost:8080/api/v1/courses/", {
-      headers: {
-        Cookie: `jwt=${jwtCookie.value}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching courses:", error);
-    redirect("/login");
-  }
-}
-
-async function getTimetables(courseId: number): Promise<Timetable[]> {
-  const cookieStore = await cookies();
-  const jwtCookie = cookieStore.get("jwt");
-
-  if (!jwtCookie) {
-    redirect("/login");
-  }
-
-  try {
-    const response = await axios.get(
-      `http://localhost:8080/api/v1/timetables/?course_id=${courseId}`,
-      {
-        headers: {
-          Cookie: `jwt=${jwtCookie.value}`,
-        },
+    if (userInfo.role === "student") {
+      // Para estudiantes, ir directamente al horario
+      setCurrentStep("timetable");
+    } else if (userInfo.role === "father") {
+      if (selectedChild) {
+        // Si ya hay un hijo seleccionado, ir directamente al horario
+        setCurrentStep("timetable");
+      } else {
+        // Si no hay hijo seleccionado, esperar a que se seleccione en el sidebar
+        setCurrentStep("course");
       }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching timetables:", error);
-    return [];
-  }
-}
+    } else {
+      // Para admin, teacher, preceptor: empezar con selección de curso
+      setCurrentStep("course");
+    }
+  }, [userInfo?.role, selectedChild]);
 
-export default async function TimetablePage() {
-  const courses = await getCourses();
+  // Para padres: cuando se selecciona un hijo, ir al horario
+  useEffect(() => {
+    if (
+      userInfo?.role === "father" &&
+      selectedChild &&
+      currentStep !== "timetable"
+    ) {
+      setCurrentStep("timetable");
+    }
+  }, [userInfo?.role, selectedChild, currentStep]);
 
-  if (courses.length === 0) {
+  const handleCourseSelect = (courseId: number) => {
+    setSelectedCourseId(courseId);
+    setCurrentStep("timetable");
+  };
+
+  const handleBackToCourses = () => {
+    setCurrentStep("course");
+    resetSelection();
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <p className="text-muted-foreground">No hay cursos disponibles</p>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <CalendarIcon className="size-8 text-primary" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Horario
+          </h1>
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
+        </div>
       </div>
     );
   }
 
-  // Si solo hay un curso, obtener sus timetables directamente
-  if (courses.length === 1) {
-    const timetables = await getTimetables(courses[0].id);
+  if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <CalendarIcon className="size-8 text-primary" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Horario
+          </h1>
+        </div>
+        <div className="text-center py-8 text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  // Para estudiantes, mostrar directamente el horario
+  if (userInfo?.role === "student") {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <CalendarIcon className="size-8 text-primary" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Horario
+          </h1>
+        </div>
         <TimetableClient
           courses={courses}
-          initialCourseId={courses[0].id}
-          initialTimetables={timetables}
+          initialCourseId={undefined}
+          initialTimetables={[]}
         />
       </div>
     );
   }
 
-  // Si hay múltiples cursos, mostrar selector
+  // Para padres sin hijo seleccionado
+  if (userInfo?.role === "father" && !selectedChild) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <CalendarIcon className="size-8 text-primary" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Horario
+          </h1>
+        </div>
+        <div className="text-center py-12">
+          <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">
+            Selecciona un hijo
+          </h3>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">
+            Usa el selector en la barra lateral para elegir el hijo cuyo horario
+            deseas ver.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <TimetableClient
-        courses={courses}
-        initialCourseId={null}
-        initialTimetables={[]}
-      />
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <CalendarIcon className="size-8 text-primary" />
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Horario
+        </h1>
+      </div>
+
+      {currentStep === "course" && (
+        <CourseSelector
+          courses={courses}
+          onCourseSelect={handleCourseSelect}
+          selectedCourseId={selectedCourseId}
+          title="Seleccionar Curso"
+          subtitle="Elige el curso para ver el horario"
+        />
+      )}
+
+      {currentStep === "timetable" &&
+        (selectedCourseId ||
+          userInfo?.role === "student" ||
+          userInfo?.role === "father") && (
+          <TimetableClient
+            courses={courses}
+            initialCourseId={selectedCourseId || selectedChild?.course_id}
+            initialTimetables={[]}
+            onBack={
+              userInfo?.role === "father" ? undefined : handleBackToCourses
+            }
+          />
+        )}
     </div>
   );
 }
