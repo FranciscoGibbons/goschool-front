@@ -13,10 +13,19 @@ interface Course {
   preceptor_id?: number;
 }
 
+interface Timetable {
+  id: number;
+  course_id: number;
+  subject_id: number;
+  day: string;
+  start_time: string;
+  end_time: string;
+}
+
 interface TimetableClientProps {
   courses: Course[];
   initialCourseId?: number | undefined;
-  initialTimetables?: any[];
+  initialTimetables?: Timetable[];
 }
 
 const TimetableClient: React.FC<TimetableClientProps> = ({

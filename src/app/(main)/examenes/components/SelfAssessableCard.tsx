@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,12 +95,8 @@ export default function SelfAssessableCard({
     return `${day.toString().padStart(2, "0")} ${monthName}. ${year}`;
   };
 
-  // Utilidad para obtener la zona horaria local
-  const getUserTimezone = () =>
-    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-
   // Verifica si ya respondido (solo para estudiantes)
-  const checkIfAnswered = async () => {
+  const checkIfAnswered = useCallback(async () => {
     if (!exam.id || !isStudent) return setAnswered(false);
     setLoading(true);
     try {
@@ -126,11 +122,11 @@ export default function SelfAssessableCard({
     } finally {
       setLoading(false);
     }
-  };
+  }, [exam.id, isStudent]);
 
   useEffect(() => {
     checkIfAnswered();
-  }, [exam.id, isStudent]);
+  }, [exam.id, isStudent, checkIfAnswered]);
 
   // Prepara preguntas MC
   useEffect(() => {

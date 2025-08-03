@@ -20,9 +20,10 @@ interface Course {
 interface CourseSelectorProps {
   courses: Course[];
   onCourseSelect: (courseId: number) => void;
-  selectedCourseId?: number;
+  selectedCourseId?: number | null;
   title?: string;
   description?: string;
+  subtitle?: string;
 }
 
 export default function CourseSelector({
@@ -31,6 +32,7 @@ export default function CourseSelector({
   selectedCourseId,
   title = "Selecciona un curso",
   description = "Elige el curso para continuar",
+  subtitle,
 }: CourseSelectorProps) {
   const getCourseLabel = (course: Course) => {
     let yearLabel = "";
@@ -83,7 +85,7 @@ export default function CourseSelector({
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
-        <p className="text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground">{subtitle || description}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

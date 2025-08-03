@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   DocumentIcon,
   ChatBubbleLeftIcon,
@@ -75,7 +75,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
           { withCredentials: true }
         );
         setMessages(res.data);
-      } catch (error) {
+      } catch {
         setMessages([]);
       } finally {
         setIsLoading(false);
@@ -191,7 +191,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
           <div className="text-lg font-bold text-primary mb-2 flex items-center gap-2">
             <span>{formatDateHeader(dateKey)}</span>
           </div>
-          {grouped[dateKey].map((message, idx) => (
+          {grouped[dateKey].map((message) => (
             <div key={message.id} className="flex items-start gap-3">
               {/* Icono lateral */}
               <div

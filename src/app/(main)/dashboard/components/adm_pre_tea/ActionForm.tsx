@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   FormsObj,
   MessageForm,
@@ -158,7 +158,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   };
 
   // Función para cargar materias
-  const loadSubjects = async () => {
+  const loadSubjects = useCallback(async () => {
     try {
       const [subjectsResponse, coursesResponse] = await Promise.all([
         axios.get("http://localhost:8080/api/v1/subjects/", {
@@ -231,7 +231,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       }
       toast.error("Error al cargar materias");
     }
-  };
+  }, [subjectsStore]);
 
   // Función para cargar evaluaciones de una materia
   const loadAssessments = async (subjectId: string) => {
@@ -347,15 +347,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       console.log("Disparando loadSubjects para action:", action);
       loadSubjects();
     }
-  }, [action]);
+  }, [action, loadSubjects]);
 
   // Cargar materias cuando se necesite
   useEffect(() => {
     if (subjects.length === 0) {
       fetchSubjects();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subjects.length]);
+  }, [subjects.length, fetchSubjects]);
 
   // Cargar cursos cuando se necesite
   useEffect(() => {
@@ -581,13 +580,72 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           }
         }
 
-        // Para notas conceptuales, asegurar que sea string
-        if (formData.grade_type === "conceptual") {
-          if (!formData.grade || typeof formData.grade !== "string") {
-            toast.error("La nota conceptual debe ser un texto válido");
+        // Validar que la nota sea un número válido para notas porcentuales
+        if (formData.grade_type === "percentage") {
+          const gradeNum = Number(formData.grade);
+          if (isNaN(gradeNum) || gradeNum < 0 || gradeNum > 100) {
+            toast.error("El porcentaje debe ser un número entre 0 y 100");
             setIsLoading(false);
             return;
           }
+        }
+
+        // Para notas conceptuales, validar que sea un concepto válido
+        if (formData.grade_type === "conceptual") {
+          if (!formData.grade) {
+            toast.error("La nota conceptual no puede estar vacía");
+            setIsLoading(false);
+            return;
+          }
+
+          const validConceptualGrades = [
+            "excelente",
+            "muy bueno",
+            "bueno",
+            "satisfactorio",
+            "regular",
+            "insuficiente",
+          ];
+          const inputGrade = formData.grade.toLowerCase().trim();
+          if (!validConceptualGrades.includes(inputGrade)) {
+            toast.error(
+              "La nota conceptual debe ser: Excelente, Muy Bueno, Bueno, Satisfactorio, Regular o Insuficiente"
+            );
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Para notas conceptuales, usar un valor numérico que represente el concepto
+        let gradeValue: number;
+        if (formData.grade_type === "conceptual") {
+          // Mapear conceptos a valores numéricos para el backend
+          const conceptualGrade = formData.grade.toLowerCase();
+          switch (conceptualGrade) {
+            case "excelente":
+              gradeValue = 10;
+              break;
+            case "muy bueno":
+              gradeValue = 9;
+              break;
+            case "bueno":
+              gradeValue = 8;
+              break;
+            case "satisfactorio":
+              gradeValue = 7;
+              break;
+            case "regular":
+              gradeValue = 6;
+              break;
+            case "insuficiente":
+              gradeValue = 4;
+              break;
+            default:
+              // Si no es un concepto reconocido, usar 0 como valor por defecto
+              gradeValue = 0;
+          }
+        } else {
+          gradeValue = Number(formData.grade);
         }
 
         payload = {
@@ -598,7 +656,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           student_id: Number(formData.student_id),
           grade_type: gradeType,
           description: formData.description,
-          grade: formData.grade, // Enviar como string para que sea convertido a Decimal
+          grade: gradeValue,
         };
         url = "http://localhost:8080/api/v1/grades/";
         console.log("Payload enviado:", payload);

@@ -28,12 +28,11 @@ interface Course {
 }
 
 interface SubjectSelectorProps {
-  selectedStudentId?: number;
-  selectedCourseId?: number;
+  selectedStudentId?: number | null;
+  selectedCourseId?: number | null;
 }
 
 export default function SubjectSelector({
-  selectedStudentId,
   selectedCourseId,
 }: SubjectSelectorProps) {
   const subjectsStore = useSubjectsStore();
@@ -44,7 +43,6 @@ export default function SubjectSelector({
   } = subjectsStore;
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
 
   // Cargar información del curso
   useEffect(() => {
@@ -79,10 +77,6 @@ export default function SubjectSelector({
 
   return (
     <div className="space-y-6">
-      {errorMsg && (
-        <div className="text-red-500 text-center py-4">{errorMsg}</div>
-      )}
-
       {/* Header con información del curso */}
       {course && (
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border">
@@ -142,7 +136,7 @@ export default function SubjectSelector({
           })()}
       </div>
 
-      {subjects.length === 0 && !errorMsg && (
+      {subjects.length === 0 && (
         <div className="flex items-center justify-center py-12">
           <p className="text-muted-foreground text-lg">
             No hay asignaturas disponibles.

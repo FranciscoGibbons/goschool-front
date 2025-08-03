@@ -41,6 +41,7 @@ export interface UserInfo {
   id: number;
   name: string;
   last_name: string;
+  full_name?: string; // Para compatibilidad con APIs que devuelven full_name
   email: string;
   role: Role;
   photo?: string;
@@ -108,22 +109,47 @@ export interface FormsObj {
 }
 
 // Type guards
-export function isMessageForm(form: any): form is MessageForm {
-  return "title" in form && "message" in form && "courses" in form;
-}
-
-export function isExamForm(form: any): form is ExamForm {
+export function isMessageForm(form: unknown): form is MessageForm {
   return (
-    "subject" in form && "task" in form && "due_date" in form && "type" in form
+    typeof form === "object" &&
+    form !== null &&
+    "title" in form &&
+    "message" in form &&
+    "courses" in form
   );
 }
 
-export function isGradeForm(form: any): form is GradeForm {
-  return "subject" in form && "grade_type" in form && "grade" in form;
+export function isExamForm(form: unknown): form is ExamForm {
+  return (
+    typeof form === "object" &&
+    form !== null &&
+    "subject" in form &&
+    "task" in form &&
+    "due_date" in form &&
+    "type" in form
+  );
 }
 
-export function isSubjectMessageForm(form: any): form is SubjectMessageForm {
-  return "subject_id" in form && "title" in form && "content" in form;
+export function isGradeForm(form: unknown): form is GradeForm {
+  return (
+    typeof form === "object" &&
+    form !== null &&
+    "subject" in form &&
+    "grade_type" in form &&
+    "grade" in form
+  );
+}
+
+export function isSubjectMessageForm(
+  form: unknown
+): form is SubjectMessageForm {
+  return (
+    typeof form === "object" &&
+    form !== null &&
+    "subject_id" in form &&
+    "title" in form &&
+    "content" in form
+  );
 }
 
 // Re-exportar funciones de utilidad desde examUtils

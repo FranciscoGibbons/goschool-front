@@ -11,14 +11,8 @@ import childSelectionStore from "@/store/childSelectionStore";
 export default function Horario() {
   const { userInfo } = userInfoStore();
   const { selectedChild } = childSelectionStore();
-  const {
-    courses,
-    selectedCourseId,
-    isLoading,
-    error,
-    setSelectedCourseId,
-    resetSelection,
-  } = useCourseStudentSelection(userInfo?.role || null);
+  const { courses, selectedCourseId, isLoading, error, setSelectedCourseId } =
+    useCourseStudentSelection(userInfo?.role || null);
 
   const [currentStep, setCurrentStep] = useState<"course" | "timetable">(
     "course"
@@ -59,11 +53,6 @@ export default function Horario() {
   const handleCourseSelect = (courseId: number) => {
     setSelectedCourseId(courseId);
     setCurrentStep("timetable");
-  };
-
-  const handleBackToCourses = () => {
-    setCurrentStep("course");
-    resetSelection();
   };
 
   if (isLoading) {
@@ -160,16 +149,11 @@ export default function Horario() {
       )}
 
       {currentStep === "timetable" &&
-        (selectedCourseId ||
-          userInfo?.role === "student" ||
-          userInfo?.role === "father") && (
+        (selectedCourseId || userInfo?.role === "father") && (
           <TimetableClient
             courses={courses}
             initialCourseId={selectedCourseId || selectedChild?.course_id}
             initialTimetables={[]}
-            onBack={
-              userInfo?.role === "father" ? undefined : handleBackToCourses
-            }
           />
         )}
     </div>

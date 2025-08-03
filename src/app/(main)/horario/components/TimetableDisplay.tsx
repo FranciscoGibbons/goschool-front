@@ -89,7 +89,7 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
       }
     };
     fetchData();
-  }, [courseId, initialTimetables]);
+  }, [courseId, initialTimetables, setSubjects]);
 
   // Construir matriz [bloque][día] => array de clases
   const table: Timetable[][][] = Array.from({ length: timeBlocks.length }, () =>
@@ -160,12 +160,24 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="overflow-x-auto">
             <div className="grid grid-cols-6 gap-1 text-sm min-w-[600px]">
-              <div className="font-bold p-3 bg-muted rounded text-center">Hora</div>
-              <div className="font-bold p-3 bg-muted rounded text-center">Lunes</div>
-              <div className="font-bold p-3 bg-muted rounded text-center">Martes</div>
-              <div className="font-bold p-3 bg-muted rounded text-center">Miércoles</div>
-              <div className="font-bold p-3 bg-muted rounded text-center">Jueves</div>
-              <div className="font-bold p-3 bg-muted rounded text-center">Viernes</div>
+              <div className="font-bold p-3 bg-muted rounded text-center">
+                Hora
+              </div>
+              <div className="font-bold p-3 bg-muted rounded text-center">
+                Lunes
+              </div>
+              <div className="font-bold p-3 bg-muted rounded text-center">
+                Martes
+              </div>
+              <div className="font-bold p-3 bg-muted rounded text-center">
+                Miércoles
+              </div>
+              <div className="font-bold p-3 bg-muted rounded text-center">
+                Jueves
+              </div>
+              <div className="font-bold p-3 bg-muted rounded text-center">
+                Viernes
+              </div>
 
               {timeBlocks.map((block) => (
                 <React.Fragment key={block.num}>

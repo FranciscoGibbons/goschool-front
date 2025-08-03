@@ -20,10 +20,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import axios from "axios";
 
 export default function ProfileAccount() {
-  const { userInfo, fetchUserInfo } = userInfoStore();
+  const { userInfo, fetchUserInfo, isLoading, error } = userInfoStore();
+
+  console.log("ProfileAccount - userInfo:", userInfo);
+  console.log("ProfileAccount - isLoading:", isLoading);
+  console.log("ProfileAccount - error:", error);
 
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
+      console.log("Fetching user info...");
       fetchUserInfo();
     }
   }, [userInfo, fetchUserInfo]);
@@ -83,7 +88,7 @@ export default function ProfileAccount() {
     );
   };
 
-  if (!userInfo || !userInfo.role) {
+  if (isLoading) {
     // Placeholder mientras carga la información
     return (
       <div className="flex items-center gap-3 p-2 rounded-lg animate-pulse">
@@ -96,18 +101,69 @@ export default function ProfileAccount() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center gap-3 p-2 rounded-lg">
+        <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+          <span className="text-red-600 text-xs">!</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="text-sm text-red-600">Error al cargar</div>
+          <button
+            onClick={fetchUserInfo}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userInfo || !userInfo.role) {
+    return (
+      <div className="flex items-center gap-3 p-2 rounded-lg">
+        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+          <span className="text-gray-600 text-xs">?</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="text-sm text-gray-600">No hay datos</div>
+          <button
+            onClick={fetchUserInfo}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Cargar datos
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center w-full gap-3 p-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left outline-none">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={userInfo.photo || ""} alt={userInfo.full_name} />
+          <AvatarImage
+            src={userInfo.photo || ""}
+            alt={
+              userInfo.name && userInfo.last_name
+                ? `${userInfo.name} ${userInfo.last_name}`
+                : userInfo.full_name || "Usuario"
+            }
+          />
           <AvatarFallback className="bg-primary/10 text-primary font-bold">
-            {getInitials(userInfo.full_name)}
+            {getInitials(
+              userInfo.name && userInfo.last_name
+                ? `${userInfo.name} ${userInfo.last_name}`
+                : userInfo.full_name || "Usuario"
+            )}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <p className="text-sm font-semibold text-sidebar-foreground truncate">
-            {userInfo.full_name}
+            {userInfo.name && userInfo.last_name
+              ? `${userInfo.name} ${userInfo.last_name}`
+              : userInfo.full_name || "Usuario"}
           </p>
           {roleDisplay(userInfo.role)}
         </div>

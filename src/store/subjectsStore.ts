@@ -27,9 +27,13 @@ const useSubjectsStore = create<SubjectsState>((set) => ({
         withCredentials: true,
       });
       set({ subjects: res.data, isLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let errorMessage = "Error al cargar materias";
+      if (typeof error === "object" && error && "message" in error) {
+        errorMessage = (error as { message?: string }).message || errorMessage;
+      }
       set({
-        error: error.message || "Error al cargar materias",
+        error: errorMessage,
         isLoading: false,
       });
     }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { Role, Child } from "@/utils/types";
+import { Role } from "@/utils/types";
 import childSelectionStore from "@/store/childSelectionStore";
 
 interface Course {
@@ -34,7 +34,7 @@ interface UseCourseStudentSelectionReturn {
   isLoading: boolean;
   error: string | null;
   setSelectedCourseId: (courseId: number) => void;
-  setSelectedStudentId: (studentId: number) => void;
+  setSelectedStudentId: (studentId: number | null) => void;
   resetSelection: () => void;
   loadStudents: (courseId: number) => Promise<void>;
 }
@@ -79,7 +79,7 @@ export function useCourseStudentSelection(
         console.log("Courses loaded:", response.data);
 
         // Generar nombres para los cursos
-        const coursesWithNames = response.data.map((course: any) => ({
+        const coursesWithNames = response.data.map((course: Course) => ({
           ...course,
           name: `${course.year}° ${course.division} - ${
             course.level === "primary" ? "Primaria" : "Secundaria"
@@ -146,24 +146,37 @@ export function useCourseStudentSelection(
               `http://localhost:8080/api/v1/public_personal_data/?id=${studentId}`,
               { withCredentials: true }
             );
-            console.log(`Raw response for student ${studentId}:`, studentResponse.data);
-            
+            console.log(
+              `Raw response for student ${studentId}:`,
+              studentResponse.data
+            );
+
             // La API devuelve un array de todos los usuarios, necesitamos agregar el ID manualmente
-            const studentData = Array.isArray(studentResponse.data) ? studentResponse.data[0] : studentResponse.data;
-            console.log(`Processed data for student ${studentId}:`, studentData);
-            
+            const studentData = Array.isArray(studentResponse.data)
+              ? studentResponse.data[0]
+              : studentResponse.data;
+            console.log(
+              `Processed data for student ${studentId}:`,
+              studentData
+            );
+
             // Agregar el ID que falta y asegurar que tenga la estructura correcta
             const processedStudent = {
               id: studentId,
-              name: studentData?.full_name?.split(' ')[0] || 'Estudiante',
-              last_name: studentData?.full_name?.split(' ').slice(1).join(' ') || `${studentId}`,
+              name: studentData?.full_name?.split(" ")[0] || "Estudiante",
+              last_name:
+                studentData?.full_name?.split(" ").slice(1).join(" ") ||
+                `${studentId}`,
               full_name: studentData?.full_name || `Estudiante ${studentId}`,
               email: `estudiante${studentId}@escuela.com`,
               course_id: courseId,
-              photo: studentData?.photo
+              photo: studentData?.photo,
             };
-            
-            console.log(`Final processed student ${studentId}:`, processedStudent);
+
+            console.log(
+              `Final processed student ${studentId}:`,
+              processedStudent
+            );
             return processedStudent;
           } catch (err) {
             console.error(`Error fetching student ${studentId}:`, err);
@@ -174,7 +187,7 @@ export function useCourseStudentSelection(
         const studentsData = await Promise.all(studentPromises);
         const validStudents = studentsData
           .filter((student) => student !== null && student.id)
-          .map((student: any) => ({
+          .map((student: Student) => ({
             ...student,
             full_name:
               student.full_name ||
@@ -223,7 +236,7 @@ export function useCourseStudentSelection(
     }
   };
 
-  const handleSetSelectedStudentId = (studentId: number) => {
+  const handleSetSelectedStudentId = (studentId: number | null) => {
     setSelectedStudentId(studentId);
     const student = students.find((s) => s.id === studentId);
     setSelectedStudent(student || null);

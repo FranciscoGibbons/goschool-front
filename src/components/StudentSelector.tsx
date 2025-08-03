@@ -15,7 +15,7 @@ interface StudentSelectorProps {
   students: Student[];
   onStudentSelect: (studentId: number) => void;
   onBack: () => void;
-  selectedStudentId?: number;
+  selectedStudentId?: number | null;
   title?: string;
   description?: string;
 }

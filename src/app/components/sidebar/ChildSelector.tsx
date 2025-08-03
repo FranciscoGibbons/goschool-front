@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronDownIcon, UserIcon } from "@heroicons/react/24/outline";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
@@ -11,7 +11,10 @@ export default function ChildSelector() {
   const { selectedChild, setSelectedChild } = childSelectionStore();
   const [isOpen, setIsOpen] = useState(false);
 
-  const children = userInfo?.children || [];
+  const children = useMemo(
+    () => userInfo?.children || [],
+    [userInfo?.children]
+  );
 
   // Si no hay hijo seleccionado, seleccionar el primero por defecto
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function ChildSelector() {
           Seleccionar Hijo
         </span>
       </div>
-      
+
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -46,11 +49,15 @@ export default function ChildSelector() {
           <div className="flex items-center gap-2">
             <UserIcon className="size-4" />
             <span className="text-sm font-medium">
-              {selectedChild ? `${selectedChild.name} ${selectedChild.last_name}` : "Seleccionar..."}
+              {selectedChild
+                ? `${selectedChild.name} ${selectedChild.last_name}`
+                : "Seleccionar..."}
             </span>
           </div>
-          <ChevronDownIcon 
-            className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          <ChevronDownIcon
+            className={`size-4 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
 
@@ -61,16 +68,20 @@ export default function ChildSelector() {
                 key={child.id}
                 onClick={() => handleChildSelect(child)}
                 className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground first:rounded-t-lg last:rounded-b-lg ${
-                  selectedChild?.id === child.id 
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                    : 'text-sidebar-foreground'
+                  selectedChild?.id === child.id
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground"
                 }`}
               >
                 <UserIcon className="size-4" />
                 <div>
-                  <div className="font-medium">{child.name} {child.last_name}</div>
+                  <div className="font-medium">
+                    {child.name} {child.last_name}
+                  </div>
                   {child.course_name && (
-                    <div className="text-xs opacity-70">{child.course_name}</div>
+                    <div className="text-xs opacity-70">
+                      {child.course_name}
+                    </div>
                   )}
                 </div>
               </button>

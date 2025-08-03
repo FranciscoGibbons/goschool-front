@@ -29,6 +29,7 @@ const userInfoStore = create<UserInfoStore>()(
       error: null,
 
       fetchUserInfo: async () => {
+        console.log("fetchUserInfo called");
         set({ isLoading: true, error: null });
         try {
           const personalDataPromise = axios.get(
@@ -61,8 +62,26 @@ const userInfoStore = create<UserInfoStore>()(
           // Usamos la URL directa del backend
           const profilePicture = profilePictureRes.data?.url || null;
 
+          console.log("Personal data from API:", personalData);
+          console.log("Role from API:", role);
+          console.log("Profile picture from API:", profilePicture);
+
+          // Procesar los datos para asegurar que tengan la estructura correcta
+          const processedData = { ...personalData };
+
+          // Si la API devuelve full_name, dividirlo en name y last_name
+          if (
+            personalData.full_name &&
+            !personalData.name &&
+            !personalData.last_name
+          ) {
+            const nameParts = personalData.full_name.split(" ");
+            processedData.name = nameParts[0] || "";
+            processedData.last_name = nameParts.slice(1).join(" ") || "";
+          }
+
           set({
-            userInfo: { ...personalData, role, photo: profilePicture },
+            userInfo: { ...processedData, role, photo: profilePicture },
             isLoading: false,
           });
         } catch (error) {

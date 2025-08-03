@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Exam,
   Role,
+  SelfAssessableExam,
   translateExamType,
   getExamTypeIndicatorColor,
 } from "@/utils/types";
@@ -38,29 +39,11 @@ export default function ExamList({ exams, role, subjects }: Props) {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [visibleCount, setVisibleCount] = useState<number>(10);
   const [updatingExam, setUpdatingExam] = useState<Exam | null>(null);
-  const [editExam, setEditExam] = useState<any>(null);
+  const [editExam, setEditExam] = useState<Exam | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
   const router = useRouter();
-
-  // Intersection Observer para detectar cuando el usuario llega al final
-  const { ref: loadMoreRef, inView } = useInView({
-    threshold: 0.1,
-    triggerOnce: false,
-  });
-
-  // Cargar más exámenes cuando el usuario llega al final
-  useEffect(() => {
-    if (inView) {
-      setVisibleCount((prev) => Math.min(prev + 10, filteredExams.length));
-    }
-  }, [inView]);
-
-  // Resetear el contador cuando cambian los filtros
-  useEffect(() => {
-    setVisibleCount(10);
-  }, [filter, typeFilter]);
 
   // Ordenar y filtrar exámenes
   let filteredExams = [...exams];
@@ -76,6 +59,24 @@ export default function ExamList({ exams, role, subjects }: Props) {
       (a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
     );
   }
+
+  // Intersection Observer para detectar cuando el usuario llega al final
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0.1,
+    triggerOnce: false,
+  });
+
+  // Cargar más exámenes cuando el usuario llega al final
+  useEffect(() => {
+    if (inView) {
+      setVisibleCount((prev) => Math.min(prev + 10, filteredExams.length));
+    }
+  }, [inView, filteredExams.length]);
+
+  // Resetear el contador cuando cambian los filtros
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [filter, typeFilter]);
 
   // Obtener solo los exámenes visibles
   const visibleExams = filteredExams.slice(0, visibleCount);
@@ -181,7 +182,7 @@ export default function ExamList({ exams, role, subjects }: Props) {
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <SelfAssessableCard
-              exam={exam as any} // cast para evitar error de tipo
+              exam={exam as SelfAssessableExam}
               subjectName={getSubjectName(exam.subject_id)}
               role={role}
             />
@@ -358,7 +359,10 @@ export default function ExamList({ exams, role, subjects }: Props) {
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editExam.subject_id}
                   onChange={(e) =>
-                    setEditExam({ ...editExam, subject_id: e.target.value })
+                    setEditExam({
+                      ...editExam,
+                      subject_id: parseInt(e.target.value),
+                    })
                   }
                   required
                   disabled={subjects.length === 0}
@@ -404,7 +408,10 @@ export default function ExamList({ exams, role, subjects }: Props) {
                   className="w-full border rounded px-3 py-2 bg-background text-foreground"
                   value={editExam.type}
                   onChange={(e) =>
-                    setEditExam({ ...editExam, type: e.target.value })
+                    setEditExam({
+                      ...editExam,
+                      type: e.target.value as Exam["type"],
+                    })
                   }
                   required
                   disabled={editExam.type === "selfassessable"}
