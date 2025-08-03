@@ -22,9 +22,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     // Fetch the image from the backend
     const response = await axios.get(
-      `http://localhost:8080/api/v1/profile_pictures/serve/${encodeURIComponent(
+      `${apiUrl}/api/v1/profile_pictures/serve/${encodeURIComponent(
         filePath
       )}`,
       {

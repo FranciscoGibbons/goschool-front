@@ -37,9 +37,11 @@ export const useUserCourses = (): UseUserCoursesReturn => {
         // Verificar si hay cookies
         console.log("Cookies:", document.cookie);
 
+        
+        const backUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         // Obtener rol del usuario
         const roleResponse = await axios.get(
-          "http://localhost:8080/api/v1/role/",
+          `${backUrl}/api/v1/role/`,
           {
             withCredentials: true,
           }
@@ -52,8 +54,9 @@ export const useUserCourses = (): UseUserCoursesReturn => {
         let coursesData: Course[] = [];
 
         console.log("Fetching courses for role:", role);
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const coursesResponse = await axios.get(
-          "http://localhost:8080/api/v1/courses/",
+          `${apiUrl}/api/v1/courses/`,
           {
             withCredentials: true,
           }

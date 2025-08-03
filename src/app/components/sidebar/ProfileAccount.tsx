@@ -35,8 +35,9 @@ export default function ProfileAccount() {
 
   const handleLogout = async () => {
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.post(
-        "http://localhost:8080/api/v1/logout/",
+        `${apiUrl}/api/v1/logout/`,
         {},
         {
           withCredentials: true,

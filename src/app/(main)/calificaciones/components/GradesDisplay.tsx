@@ -78,17 +78,18 @@ export default function GradesDisplay({
         setErrorMsg("");
         try {
           await fetchSubjects();
-
+          
+          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           // Para estudiantes, no incluir student_id en la URL
           const gradesUrl =
             userInfo?.role === "student"
-              ? "http://localhost:8080/api/v1/grades/"
-              : `http://localhost:8080/api/v1/grades/?student_id=${selectedStudentId}`;
+              ? `${apiUrl}/api/v1/grades/`
+              : `${apiUrl}/api/v1/grades/?student_id=${selectedStudentId}`;
 
           const assessmentsUrl =
             userInfo?.role === "student"
-              ? "http://localhost:8080/api/v1/assessments/"
-              : `http://localhost:8080/api/v1/assessments/?student_id=${selectedStudentId}`;
+              ? `${apiUrl}/api/v1/assessments/`
+              : `${apiUrl}/api/v1/assessments/?student_id=${selectedStudentId}`;
 
           const [gradesRes, assessmentsRes] = await Promise.all([
             axios.get(gradesUrl, { withCredentials: true }),
@@ -198,7 +199,8 @@ export default function GradesDisplay({
     if (!confirm("¿Seguro que quieres borrar esta calificación?")) return;
     setDeletingId(id);
     try {
-      await fetch(`http://localhost:8080/api/v1/grades/${id}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await fetch(`${apiUrl}/api/v1/grades/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -381,8 +383,9 @@ export default function GradesDisplay({
                 e.preventDefault();
                 setIsSaving(true);
                 try {
+                  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
                   const res = await fetch(
-                    `http://localhost:8080/api/v1/grades/${updatingGrade.id}`,
+                    `${apiUrl}/api/v1/grades/${updatingGrade.id}`,
                     {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },

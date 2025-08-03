@@ -7,8 +7,10 @@ export async function GET(req: Request) {
     if (!cookieHeader || !cookieHeader.includes("jwt=")) {
       return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
     }
+    
 
-    const res = await axios.get("http://localhost:8080/api/v1/get_role/", {
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const res = await axios.get(`${apiUrl}/api/v1/role/`, {
       headers: { Cookie: cookieHeader },
       withCredentials: true,
     });

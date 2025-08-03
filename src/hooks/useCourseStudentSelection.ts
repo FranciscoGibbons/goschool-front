@@ -69,8 +69,9 @@ export function useCourseStudentSelection(
           return;
         }
 
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const response = await axios.get(
-          "http://localhost:8080/api/v1/courses/",
+          `${apiUrl}/api/v1/courses/`,
           {
             withCredentials: true,
           }
@@ -126,8 +127,9 @@ export function useCourseStudentSelection(
       setIsLoading(true);
       setError(null);
 
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(
-        `http://localhost:8080/api/v1/students/?course_id=${courseId}`,
+        `${apiUrl}/api/v1/students/?course_id=${courseId}`,
         {
           withCredentials: true,
         }
@@ -142,8 +144,10 @@ export function useCourseStudentSelection(
         const studentPromises = response.data.map(async (studentId: number) => {
           try {
             console.log(`Fetching data for student ID: ${studentId}`);
+
+            const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
             const studentResponse = await axios.get(
-              `http://localhost:8080/api/v1/public_personal_data/?id=${studentId}`,
+              `${apiUrl}/api/v1/public_personal_data/?id=${studentId}`,
               { withCredentials: true }
             );
             console.log(

@@ -32,19 +32,21 @@ const userInfoStore = create<UserInfoStore>()(
         console.log("fetchUserInfo called");
         set({ isLoading: true, error: null });
         try {
+
+          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           const personalDataPromise = axios.get(
-            "http://localhost:8080/api/v1/personal_data/",
+            `${apiUrl}/api/v1/personal_data/`,
             {
               withCredentials: true,
             }
           );
-
-          const rolePromise = axios.get("http://localhost:8080/api/v1/role/", {
+          
+          const rolePromise = axios.get(`${apiUrl}/api/v1/role/`, {
             withCredentials: true,
           });
-
+          
           const profilePicturePromise = axios.get(
-            "http://localhost:8080/api/v1/profile_pictures/",
+            `${apiUrl}/api/v1/profile_pictures/`,
             {
               withCredentials: true,
             }

@@ -100,8 +100,10 @@ export default function SelfAssessableCard({
     if (!exam.id || !isStudent) return setAnswered(false);
     setLoading(true);
     try {
+
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.post(
-        "http://localhost:8080/api/v1/get_if_selfassessable_answered/",
+        `${apiUrl}/api/v1/get_if_selfassessable_answered/`,
         { selfassessable_id: exam.id },
         { withCredentials: true }
       );
@@ -145,8 +147,10 @@ export default function SelfAssessableCard({
     setQuestionsLoading(true);
     setQuestionsError(null);
     try {
+
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.get(
-        `http://localhost:8080/api/v1/selfassessables/?assessment_id=${exam.id}`,
+        `${apiUrl}/api/v1/selfassessables/?assessment_id=${exam.id}`,
         { withCredentials: true }
       );
       const arr = Array.isArray(res.data) ? res.data : [];
@@ -179,8 +183,10 @@ export default function SelfAssessableCard({
       return;
     }
     try {
+
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.post(
-        "http://localhost:8080/api/v1/selfassessables/",
+        `${apiUrl}/api/v1/selfassessables/`,
         { assessment_id: exam.id, answers: clean },
         { withCredentials: true }
       );

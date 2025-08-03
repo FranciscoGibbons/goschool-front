@@ -2,7 +2,9 @@ import axios from "axios";
 
 const verifyToken = async (token: string) => {
   try {
-    const res = await axios.get("http://localhost:8080/api/v1/verify_token/", {
+
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const res = await axios.get(`${apiUrl}/api/v1/verify_token/`, {
       headers: {
         Cookie: `jwt=${token}`,
       },

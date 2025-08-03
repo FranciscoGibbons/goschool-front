@@ -42,8 +42,10 @@ export function QuizResponseForm({
 
     setIsSubmitting(true);
     try {
+
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       await axios.post(
-        `http://localhost:8080/api/v1/selfassessables/`,
+        `${apiUrl}/api/v1/selfassessables/`,
         {
           assessment_id: parseInt(examId),
           answers,

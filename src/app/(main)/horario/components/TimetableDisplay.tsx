@@ -59,9 +59,10 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
     const fetchData = async () => {
       try {
         setLoading(true);
-
+        
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const timetableRes = await axios.get(
-          `http://localhost:8080/api/v1/timetables/?course_id=${courseId}`,
+          `${apiUrl}/api/v1/timetables/?course_id=${courseId}`,
           {
             withCredentials: true,
           }
@@ -72,7 +73,7 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
 
         // Cargar subjects específicos del curso
         const subjectsRes = await axios.get(
-          `http://localhost:8080/api/v1/subjects/?course_id=${courseId}`,
+          `${apiUrl}/api/v1/subjects/?course_id=${courseId}`,
           {
             withCredentials: true,
           }

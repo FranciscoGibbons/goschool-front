@@ -38,8 +38,10 @@ export default function AnswerSelfAssessable({
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.post(
-        "http://localhost:8080/api/v1/selfassessables/",
+        `${apiUrl}/api/v1/selfassessables/`,
         {
           assessment_id: assessmentId,
           answers,

@@ -57,7 +57,8 @@ export default function MessageList() {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:8080/api/v1/messages/", {
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const res = await axios.get(`${apiUrl}/api/v1/messages/`, {
           withCredentials: true,
         });
 
@@ -87,8 +88,9 @@ export default function MessageList() {
 
     for (const senderId of uniqueSenderIds) {
       try {
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await axios.get(
-          `http://localhost:8080/api/v1/public_personal_data/?user_id=${senderId}`,
+          `${apiUrl}/api/v1/public_personal_data/?user_id=${senderId}`,
           {
             withCredentials: true,
           }
@@ -136,7 +138,9 @@ export default function MessageList() {
     if (!confirm("¿Seguro que quieres borrar este mensaje?")) return;
     setDeletingId(id);
     try {
-      await fetch(`http://localhost:8080/api/v1/messages/${id}`, {
+
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await fetch(`${apiUrl}/api/v1/messages/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -288,8 +292,9 @@ export default function MessageList() {
                 e.preventDefault();
                 setIsSaving(true);
                 try {
+                  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
                   const res = await fetch(
-                    `http://localhost:8080/api/v1/messages/${updatingMessage.id}`,
+                    `${apiUrl}/api/v1/messages/${updatingMessage.id}`,
                     {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },

@@ -103,7 +103,9 @@ export default function ExamList({ exams, role, subjects }: Props) {
     if (!confirm("¿Seguro que quieres borrar este examen?")) return;
     setDeletingId(id);
     try {
-      await fetch(`http://localhost:8080/api/v1/assessments/${id}`, {
+
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await fetch(`${apiUrl}/api/v1/assessments/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -323,8 +325,9 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 e.preventDefault();
                 setIsSaving(true);
                 try {
+                  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
                   const res = await fetch(
-                    `http://localhost:8080/api/v1/assessments/${updatingExam.id}`,
+                    `${apiUrl}/api/v1/assessments/${updatingExam.id}`,
                     {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },

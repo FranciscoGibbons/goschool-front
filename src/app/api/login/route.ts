@@ -13,8 +13,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Enviar los datos con el rol al backend
-    const res = await axios.post("http://127.0.0.1:8080/api/v1/login/", body, {
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const res = await axios.post(`${apiUrl}/api/v1/login/`, body, {
       headers: { "Content-Type": "application/json" },
       withCredentials: true,
     });
