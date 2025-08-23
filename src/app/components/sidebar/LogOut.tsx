@@ -9,9 +9,8 @@ export default function LogOut() {
   const handleLogout = async () => {
     try {
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.post(
-        `${apiUrl}/api/v1/logout/`,
+        `/api/proxy/logout`,
         {},
         {
           withCredentials: true,

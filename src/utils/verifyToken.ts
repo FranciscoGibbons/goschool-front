@@ -3,8 +3,7 @@ import axios from "axios";
 const verifyToken = async (token: string) => {
   try {
 
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const res = await axios.get(`${apiUrl}/api/v1/verify_token/`, {
+    const res = await axios.get(`/api/proxy/verify-token`, {
       headers: {
         Cookie: `jwt=${token}`,
       },

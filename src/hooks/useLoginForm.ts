@@ -85,6 +85,13 @@ export const useLoginForm = (): UseLoginFormReturn => {
         }
       } catch (error) {
         console.error("Login error:", error);
+        if (axios.isAxiosError(error)) {
+          console.error("Axios error details:", {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message,
+          });
+        }
         throw new Error("Error al iniciar sesión");
       }
     },
@@ -154,8 +161,14 @@ export const useLoginForm = (): UseLoginFormReturn => {
             const loginSuccess = await performLogin(formData, userRoles[0]);
 
             if (loginSuccess) {
-              await fetchUserInfo();
-              router.push("/dashboard");
+              try {
+                await fetchUserInfo();
+                router.push("/dashboard");
+              } catch (userInfoError) {
+                console.error("Error fetching user info:", userInfoError);
+                // Even if user info fails, we can still redirect
+                router.push("/dashboard");
+              }
             }
           } else {
             // Mostrar selector de roles
@@ -171,8 +184,14 @@ export const useLoginForm = (): UseLoginFormReturn => {
           const loginSuccess = await performLogin(formData, role);
 
           if (loginSuccess) {
-            await fetchUserInfo();
-            router.push("/dashboard");
+            try {
+              await fetchUserInfo();
+              router.push("/dashboard");
+            } catch (userInfoError) {
+              console.error("Error fetching user info:", userInfoError);
+              // Even if user info fails, we can still redirect
+              router.push("/dashboard");
+            }
           }
         }
       } catch (error) {

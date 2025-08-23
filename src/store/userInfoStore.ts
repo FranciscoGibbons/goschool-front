@@ -33,20 +33,19 @@ const userInfoStore = create<UserInfoStore>()(
         set({ isLoading: true, error: null });
         try {
 
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           const personalDataPromise = axios.get(
-            `${apiUrl}/api/v1/personal_data/`,
+            `/api/proxy/personal-data`,
             {
               withCredentials: true,
             }
           );
           
-          const rolePromise = axios.get(`${apiUrl}/api/v1/role/`, {
+          const rolePromise = axios.get(`/api/proxy/role`, {
             withCredentials: true,
           });
           
           const profilePicturePromise = axios.get(
-            `${apiUrl}/api/v1/profile_pictures/`,
+            `/api/proxy/profile-pictures`,
             {
               withCredentials: true,
             }

@@ -22,10 +22,9 @@ export async function uploadProfilePicture(clientFormData: FormData) {
     const uploadFormData = new FormData();
     uploadFormData.append("file", file);
     
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    // 4. POST al backend
+    // 4. POST al backend usando proxy
     await axios.post(
-      `${apiUrl}/api/v1/profile_pictures/`,
+      `/api/proxy/profile-pictures`,
       uploadFormData,
       {
         headers: {
@@ -68,9 +67,8 @@ export async function getProfilePicture() {
     const jwtCookie = cookieStore.get("jwt");
     if (!jwtCookie) throw new Error("No JWT token found");
     
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     const response = await axios.get(
-      `${apiUrl}/api/v1/profile_pictures/`,
+      `/api/proxy/profile-pictures`,
       {
         headers: {
           Cookie: `jwt=${jwtCookie.value}`,

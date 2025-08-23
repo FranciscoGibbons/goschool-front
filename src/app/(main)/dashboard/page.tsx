@@ -5,22 +5,21 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import verifyToken from "@/utils/verifyToken";
+import verifyTokenServer from "@/utils/verifyTokenServer";
 import { Role } from "@/utils/types";
-import getRole from "@/utils/getRole";
+import getRoleServer from "@/utils/getRoleServer";
 
 export default async function Dashboard() {
   const cookiesData = await cookies();
   const token = cookiesData.get("jwt")?.value;
 
-  const isValidToken = await verifyToken(token || "");
+  const isValidToken = await verifyTokenServer(token || "");
+  
   if (!isValidToken) {
     redirect("/login");
   }
 
-  const role: Role = await getRole(token || "");
-
-  console.log("Dashboard page role:", role);
+  const role: Role = await getRoleServer(token || "");
 
   if (role === "admin" || role === "preceptor" || role === "teacher") {
     return <DashAdminPreceptorTeacher role={role} />;

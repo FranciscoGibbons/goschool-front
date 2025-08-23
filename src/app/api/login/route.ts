@@ -22,12 +22,13 @@ export async function POST(req: Request) {
     // Transmitir la cookie de sesión al cliente
     const setCookie = res.headers["set-cookie"];
 
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        "Set-Cookie": setCookie?.join("; ") || "",
-      },
-    });
+    const response = NextResponse.json({ success: true }, { status: 200 });
+    
+    if (setCookie) {
+      response.headers.set("Set-Cookie", setCookie.join("; "));
+    }
+
+    return response;
   } catch (error) {
     console.error("Error al hacer login:", error);
     return NextResponse.json(

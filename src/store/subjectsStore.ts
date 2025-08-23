@@ -23,8 +23,7 @@ const useSubjectsStore = create<SubjectsState>((set) => ({
   fetchSubjects: async () => {
     set({ isLoading: true, error: null });
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.get(`${apiUrl}/api/v1/subjects/`, {
+      const res = await axios.get(`/api/proxy/subjects`, {
         withCredentials: true,
       });
       set({ subjects: res.data, isLoading: false });

@@ -38,10 +38,9 @@ export const useUserCourses = (): UseUserCoursesReturn => {
         console.log("Cookies:", document.cookie);
 
         
-        const backUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        // Obtener rol del usuario
+        // Obtener rol del usuario usando proxy
         const roleResponse = await axios.get(
-          `${backUrl}/api/v1/role/`,
+          `/api/proxy/role`,
           {
             withCredentials: true,
           }
@@ -50,13 +49,12 @@ export const useUserCourses = (): UseUserCoursesReturn => {
         console.log("User role:", role);
         setUserRole(role);
 
-        // Obtener cursos según el rol
+        // Obtener cursos según el rol usando proxy
         let coursesData: Course[] = [];
 
         console.log("Fetching courses for role:", role);
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const coursesResponse = await axios.get(
-          `${apiUrl}/api/v1/courses/`,
+          `/api/proxy/courses`,
           {
             withCredentials: true,
           }

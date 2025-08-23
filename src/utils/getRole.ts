@@ -3,8 +3,7 @@ import axios from "axios";
 const getRole = async (token: string) => {
   try {
   
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const res = await axios.get(`${apiUrl}/api/v1/role/`, {
+    const res = await axios.get(`/api/proxy/role`, {
       headers: {
         Cookie: `jwt=${token}`,
       },
