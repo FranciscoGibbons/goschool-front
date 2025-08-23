@@ -21,9 +21,8 @@ export default function DashStudentFather() {
     const fetchExams = async () => {
       try {
 
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await axios.get(
-          `${apiUrl}/api/v1/assessments/`,
+          `/api/proxy/assessments/`,
           {
             withCredentials: true,
           }

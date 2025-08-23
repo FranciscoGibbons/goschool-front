@@ -21,8 +21,7 @@ export default async function Exams() {
   const getExams = async (jwt: string): Promise<Exam[]> => {
     try {
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.get(`${apiUrl}/api/v1/assessments/`, {
+      const res = await axios.get(`/api/proxy/assessments/`, {
         headers: { Cookie: `jwt=${jwt}` },
         withCredentials: true,
       });
@@ -38,8 +37,7 @@ export default async function Exams() {
   ): Promise<{ id: number; name: string }[]> => {
     try {
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.get(`${apiUrl}/api/v1/subjects/`, {
+      const res = await axios.get(`/api/proxy/subjects/`, {
         headers: { Cookie: `jwt=${jwt}` },
         withCredentials: true,
       });

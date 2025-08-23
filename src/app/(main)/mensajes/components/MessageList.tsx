@@ -57,8 +57,7 @@ export default function MessageList() {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        const res = await axios.get(`${apiUrl}/api/v1/messages/`, {
+        const res = await axios.get(`/api/proxy/messages`, {
           withCredentials: true,
         });
 
@@ -88,9 +87,8 @@ export default function MessageList() {
 
     for (const senderId of uniqueSenderIds) {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await axios.get(
-          `${apiUrl}/api/v1/public_personal_data/?user_id=${senderId}`,
+          `/api/proxy/public-personal-data?user_id=${senderId}`,
           {
             withCredentials: true,
           }
@@ -139,8 +137,7 @@ export default function MessageList() {
     setDeletingId(id);
     try {
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      await fetch(`${apiUrl}/api/v1/messages/${id}`, {
+      await fetch(`/api/proxy/messages/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -292,9 +289,8 @@ export default function MessageList() {
                 e.preventDefault();
                 setIsSaving(true);
                 try {
-                  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
                   const res = await fetch(
-                    `${apiUrl}/api/v1/messages/${updatingMessage.id}`,
+                    `/api/proxy/messages/${updatingMessage.id}`,
                     {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },

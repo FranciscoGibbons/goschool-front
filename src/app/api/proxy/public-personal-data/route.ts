@@ -10,13 +10,19 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const userId = searchParams.get("user_id");
 
-    if (!id) {
-      return NextResponse.json({ error: "id es requerido" }, { status: 400 });
+    const paramId = id || userId;
+    if (!paramId) {
+      return NextResponse.json({ error: "id o user_id es requerido" }, { status: 400 });
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const res = await axios.get(`${apiUrl}/api/v1/public_personal_data/?id=${id}`, {
+    const url = id 
+      ? `${apiUrl}/api/v1/public_personal_data/?id=${id}`
+      : `${apiUrl}/api/v1/public_personal_data/?user_id=${userId}`;
+      
+    const res = await axios.get(url, {
       headers: { Cookie: cookieHeader },
       withCredentials: true,
     });

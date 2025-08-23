@@ -161,12 +161,11 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   const loadSubjects = useCallback(async () => {
     try {
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const [subjectsResponse, coursesResponse] = await Promise.all([
-        axios.get(`${apiUrl}/api/v1/subjects/`, {
+        axios.get(`/api/proxy/subjects`, {
           withCredentials: true,
         }),
-        axios.get(`${apiUrl}/api/v1/courses/`, {
+        axios.get(`/api/proxy/courses`, {
           withCredentials: true,
         }),
       ]);
@@ -244,9 +243,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
     setIsLoadingAssessments(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(
-        `${apiUrl}/api/v1/assessments/?subject_id=${subjectId}`,
+        `/api/proxy/assessments?subject_id=${subjectId}`,
         {
           withCredentials: true,
         }
@@ -271,10 +269,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
     setIsLoadingStudents(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       // Primero obtener los IDs de estudiantes del curso
       const studentsResponse = await axios.get(
-        `${apiUrl}/api/v1/students/?course=${courseId}`,
+        `/api/proxy/students?course_id=${courseId}`,
         {
           withCredentials: true,
         }
@@ -291,7 +288,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       // Luego obtener los datos personales de cada estudiante
       const personalDataPromises = studentIds.map((studentId: number) =>
         axios.get(
-          `${apiUrl}/api/v1/public_personal_data/?user_id=${studentId}`,
+          `/api/proxy/public-personal-data?user_id=${studentId}`,
           {
             withCredentials: true,
           }
@@ -326,9 +323,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     setIsLoadingCourses(true);
     try {
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(
-        `${apiUrl}/api/v1/courses/`,
+        `/api/proxy/courses`,
         {
           withCredentials: true,
         }
@@ -499,8 +495,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             : String(formData.courses),
         };
 
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        url = `${apiUrl}/api/v1/messages/`;
+        url = `/api/proxy/messages`;
       } else if (action === "Crear examen" && isExamForm(formData)) {
         if (isSelfAssessableExamForm(formData)) {
           // Verificar que al menos 3 preguntas estén completas
@@ -541,8 +536,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             },
           };
 
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-          url = `${apiUrl}/api/v1/assessments/`;
+          url = `/api/proxy/assessments`;
         } else {
           payload = {
             newtask: {
@@ -553,8 +547,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             },
           };
 
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-          url = `${apiUrl}/api/v1/assessments/`;
+          url = `/api/proxy/assessments`;
         }
       } else if (action === "Cargar calificación" && isGradeForm(formData)) {
         // Validar que todos los campos requeridos estén presentes
@@ -671,8 +664,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           grade: gradeValue,
         };
 
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        url = `${apiUrl}/api/v1/grades/`;
+        url = `/api/proxy/grades`;
         console.log("Payload enviado:", payload);
         console.log("Payload JSON:", JSON.stringify(payload, null, 2));
         console.log("URL:", url);
@@ -718,8 +710,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         }
 
         payload = formDataToSend;
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        url = `${apiUrl}/api/v1/subject_messages/`;
+        url = `/api/proxy/subject-messages`;
       } else {
         throw new Error("Tipo de formulario no válido");
       }

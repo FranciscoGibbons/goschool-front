@@ -70,9 +70,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await axios.get(
-          `${apiUrl}/api/v1/subject_messages/?subject_id=${subjectId}`,
+          `/api/proxy/subject_messages/?subject_id=${subjectId}`,
           { withCredentials: true }
         );
         setMessages(res.data);
@@ -246,9 +245,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                                 return;
                               setDeletingId(message.id);
                               try {
-                                const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
                                 await axios.delete(
-                                  `${apiUrl}/api/v1/subject_messages/${message.id}`,
+                                  `/api/proxy/subject_messages/${message.id}`,
                                   { withCredentials: true }
                                 );
                                 setMessages((prev) =>
@@ -349,9 +347,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 e.preventDefault();
                 setIsSaving(true);
                 try {
-                  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
                   const res = await axios.put(
-                    `${apiUrl}/api/v1/subject_messages/${editingMessage.id}`,
+                    `/api/proxy/subject_messages/${editingMessage.id}`,
                     {
                       title: editData.title,
                       content: editData.content,

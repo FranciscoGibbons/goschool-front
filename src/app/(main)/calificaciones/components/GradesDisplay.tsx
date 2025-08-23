@@ -79,17 +79,16 @@ export default function GradesDisplay({
         try {
           await fetchSubjects();
           
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           // Para estudiantes, no incluir student_id en la URL
           const gradesUrl =
             userInfo?.role === "student"
-              ? `${apiUrl}/api/v1/grades/`
-              : `${apiUrl}/api/v1/grades/?student_id=${selectedStudentId}`;
+              ? `/api/proxy/grades/`
+              : `/api/proxy/grades/?student_id=${selectedStudentId}`;
 
           const assessmentsUrl =
             userInfo?.role === "student"
-              ? `${apiUrl}/api/v1/assessments/`
-              : `${apiUrl}/api/v1/assessments/?student_id=${selectedStudentId}`;
+              ? `/api/proxy/assessments/`
+              : `/api/proxy/assessments/?student_id=${selectedStudentId}`;
 
           const [gradesRes, assessmentsRes] = await Promise.all([
             axios.get(gradesUrl, { withCredentials: true }),
@@ -199,8 +198,7 @@ export default function GradesDisplay({
     if (!confirm("¿Seguro que quieres borrar esta calificación?")) return;
     setDeletingId(id);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      await fetch(`${apiUrl}/api/v1/grades/${id}`, {
+      await fetch(`/api/proxy/grades/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -383,9 +381,8 @@ export default function GradesDisplay({
                 e.preventDefault();
                 setIsSaving(true);
                 try {
-                  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
                   const res = await fetch(
-                    `${apiUrl}/api/v1/grades/${updatingGrade.id}`,
+                    `/api/proxy/grades/${updatingGrade.id}`,
                     {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },

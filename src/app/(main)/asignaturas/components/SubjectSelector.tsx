@@ -49,9 +49,8 @@ export default function SubjectSelector({
     if (selectedCourseId) {
       const fetchCourse = async () => {
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           const response = await axios.get(
-            `${apiUrl}/api/v1/courses/${selectedCourseId}`,
+            `/api/proxy/courses/${selectedCourseId}`,
             { withCredentials: true }
           );
           setCourse(response.data);
