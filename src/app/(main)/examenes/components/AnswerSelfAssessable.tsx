@@ -39,9 +39,8 @@ export default function AnswerSelfAssessable({
     setIsSubmitting(true);
     try {
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.post(
-        `${apiUrl}/api/v1/selfassessables/`,
+        `/api/proxy/selfassessables/`,
         {
           assessment_id: assessmentId,
           answers,

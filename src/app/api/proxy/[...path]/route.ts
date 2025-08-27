@@ -3,30 +3,30 @@ import axios from "axios";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest(req, params, "GET");
+  return handleRequest(req, await Promise.resolve(context.params), "GET");
 }
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest(req, params, "POST");
+  return handleRequest(req, await Promise.resolve(context.params), "POST");
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest(req, params, "PUT");
+  return handleRequest(req, await Promise.resolve(context.params), "PUT");
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  return handleRequest(req, params, "DELETE");
+  return handleRequest(req, await Promise.resolve(context.params), "DELETE");
 }
 
 async function handleRequest(

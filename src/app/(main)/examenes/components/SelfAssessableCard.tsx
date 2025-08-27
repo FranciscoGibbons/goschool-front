@@ -1,14 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogClose,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { RadioGroup } from "@/components/ui/radio-group";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import axios from "axios";
 import {
   CalendarIcon,
   BookOpenIcon,
@@ -100,23 +97,22 @@ export default function SelfAssessableCard({
     if (!exam.id || !isStudent) return setAnswered(false);
     setLoading(true);
     try {
-
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.post(
-        `${apiUrl}/api/v1/get_if_selfassessable_answered/`,
+      const isAnsweredData = await axios.post(
+        `/api/proxy/get-if-selfassessable-answered/`,
         { selfassessable_id: exam.id },
         { withCredentials: true }
       );
+      const isAnsweredResult = isAnsweredData.data;
       let isAnswered = false;
-      if (typeof res.data === "boolean") isAnswered = res.data;
-      else if (typeof res.data === "string")
-        isAnswered = res.data.toLowerCase() === "true";
-      else if (typeof res.data === "number") isAnswered = res.data === 1;
-      else if (res.data && typeof res.data === "object")
+      if (typeof isAnsweredResult === "boolean") isAnswered = isAnsweredResult;
+      else if (typeof isAnsweredResult === "string")
+        isAnswered = isAnsweredResult.toLowerCase() === "true";
+      else if (typeof isAnsweredResult === "number") isAnswered = isAnsweredResult === 1;
+      else if (isAnsweredResult && typeof isAnsweredResult === "object")
         isAnswered =
-          res.data.answered ||
-          res.data.is_answered ||
-          res.data.completed ||
+          isAnsweredResult.answered ||
+          isAnsweredResult.is_answered ||
+          isAnsweredResult.completed ||
           false;
       setAnswered(isAnswered);
     } catch {
@@ -147,13 +143,13 @@ export default function SelfAssessableCard({
     setQuestionsLoading(true);
     setQuestionsError(null);
     try {
-
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.get(
-        `${apiUrl}/api/v1/selfassessables/?assessment_id=${exam.id}`,
-        { withCredentials: true }
+      const questionsData = await axios.get(
+        `/api/proxy/selfassessables/?assessment_id=${exam.id}`, {
+          withCredentials: true,
+        }
       );
-      const arr = Array.isArray(res.data) ? res.data : [];
+      const questionsResult = questionsData.data;
+      const arr = Array.isArray(questionsResult) ? questionsResult : [];
       if (arr.length) setQuestions(arr);
       else throw new Error("Sin preguntas");
     } catch {
@@ -183,14 +179,12 @@ export default function SelfAssessableCard({
       return;
     }
     try {
-
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.post(
-        `${apiUrl}/api/v1/selfassessables/`,
+        `/api/proxy/selfassessables/`,
         { assessment_id: exam.id, answers: clean },
         { withCredentials: true }
       );
-      if (res.status < 300) {
+      if (res) {
         setResult("¡Respuestas enviadas correctamente!");
         await checkIfAnswered();
         setTimeout(() => setShowQuestions(false), 1200);

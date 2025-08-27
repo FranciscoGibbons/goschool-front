@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FormsObj,
   MessageForm,
@@ -9,7 +9,6 @@ import {
   GradeForm,
   SubjectMessageForm,
 } from "@/utils/types";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,8 +19,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import axios from "axios";
 import { toast } from "sonner";
+import axios from "axios";
+
+// Función simple para construir URLs con parámetros para rutas proxy
+const buildProxyUrl = (path: string, params?: Record<string, string | number | boolean>): string => {
+  let url = path;
+  if (params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
+    });
+    const queryString = searchParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  }
+  return url;
+};
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -29,7 +46,6 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import useSubjectsStore from "@/store/subjectsStore";
 import React from "react";
 
 // Tipos para los datos dinámicos
@@ -103,16 +119,11 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const subjectsStore = useSubjectsStore();
-  const {
-    subjects,
-    fetchSubjects,
-    isLoading: isLoadingSubjects,
-  } = subjectsStore as {
-    subjects: SubjectWithCourseName[];
-    fetchSubjects: () => void;
-    isLoading: boolean;
-  };
+  
+  // Estado local para materias con información de cursos
+  const [subjects, setSubjects] = useState<SubjectWithCourseName[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  
   const [courses, setCourses] = useState<
     Array<{
       id: number;
@@ -157,31 +168,36 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     return action === "Crear mensaje de materia";
   };
 
-  // Función para cargar materias
-  const loadSubjects = useCallback(async () => {
+  // Función para cargar materias con información de cursos
+  const loadSubjectsWithCourses = async () => {
     try {
-
-      const [subjectsResponse, coursesResponse] = await Promise.all([
-        axios.get(`/api/proxy/subjects`, {
-          withCredentials: true,
-        }),
-        axios.get(`/api/proxy/courses`, {
-          withCredentials: true,
-        }),
+      setIsLoadingSubjects(true);
+      
+      console.log("Iniciando carga de materias y cursos...");
+      
+      const [subjectsData, coursesData] = await Promise.all([
+        axios.get(`/api/proxy/subjects/`, { withCredentials: true }),
+        axios.get(`/api/proxy/courses/`, { withCredentials: true }),
       ]);
 
-      const subjectsData: Array<{
+      console.log("Respuesta de subjects:", subjectsData.data);
+      console.log("Respuesta de courses:", coursesData.data);
+
+      const subjectsProcessed: Array<{
         id: number;
         name: string;
         course_id: number;
-      }> = subjectsResponse.data;
-      const coursesData: Array<{
+      }> = subjectsData.data;
+      const coursesProcessed: Array<{
         id: number;
         name: string;
         year: number;
         division: string;
         shift: string;
-      }> = coursesResponse.data;
+      }> = coursesData.data;
+
+      console.log("Subjects data procesado:", subjectsProcessed);
+      console.log("Courses data procesado:", coursesProcessed);
 
       // Crear un mapa de cursos para acceso rápido
       const coursesMap: Map<
@@ -194,7 +210,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           shift: string;
         }
       > = new Map(
-        coursesData.map(
+        coursesProcessed.map(
           (course: {
             id: number;
             name: string;
@@ -205,8 +221,10 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         )
       );
 
+      console.log("Courses map creado:", Array.from(coursesMap.entries()));
+
       // Agregar información del curso a cada materia
-      const subjectsWithCourses: SubjectWithCourseName[] = subjectsData.map(
+      const subjectsWithCourses: SubjectWithCourseName[] = subjectsProcessed.map(
         (subject: { id: number; name: string; course_id: number }) => ({
           ...subject,
           teacher_id: 0, // Valor dummy para cumplir con el tipo Subject
@@ -218,21 +236,18 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         })
       );
 
-      console.log("Respuesta de materias con cursos:", subjectsWithCourses);
-      subjectsStore.setSubjects(subjectsWithCourses);
+      console.log("Materias cargadas con cursos:", subjectsWithCourses);
+      setSubjects(subjectsWithCourses);
     } catch (error) {
-      console.error("Error loading subjects:", error);
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          console.error("Status:", error.response.status);
-          console.error("Data:", error.response.data);
-        } else {
-          console.error("Sin respuesta del backend");
-        }
+      console.error("Error loading subjects with courses:", error);
+      if (error instanceof Error) {
+        console.error("Error:", error.message);
       }
       toast.error("Error al cargar materias");
+    } finally {
+      setIsLoadingSubjects(false);
     }
-  }, [subjectsStore]);
+  };
 
   // Función para cargar evaluaciones de una materia
   const loadAssessments = async (subjectId: string) => {
@@ -243,14 +258,13 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
     setIsLoadingAssessments(true);
     try {
-      const response = await axios.get(
-        `/api/proxy/assessments?subject_id=${subjectId}`,
-        {
+      const assessmentsData = await axios.get(
+        buildProxyUrl('/api/proxy/assessments/', { subject_id: subjectId }), {
           withCredentials: true,
         }
       );
-      console.log("Respuesta de evaluaciones:", response.data);
-      setAssessments(response.data);
+      console.log("Respuesta de evaluaciones:", assessmentsData.data);
+      setAssessments(assessmentsData.data);
     } catch (error) {
       console.error("Error loading assessments:", error);
       toast.error("Error al cargar evaluaciones");
@@ -271,8 +285,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     try {
       // Primero obtener los IDs de estudiantes del curso
       const studentsResponse = await axios.get(
-        `/api/proxy/students?course_id=${courseId}`,
-        {
+        buildProxyUrl('/api/proxy/students/', { course_id: courseId }), {
           withCredentials: true,
         }
       );
@@ -288,8 +301,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       // Luego obtener los datos personales de cada estudiante
       const personalDataPromises = studentIds.map((studentId: number) =>
         axios.get(
-          `/api/proxy/public-personal-data?user_id=${studentId}`,
-          {
+          buildProxyUrl('/api/proxy/public-personal-data/', { user_id: studentId }), {
             withCredentials: true,
           }
         )
@@ -324,8 +336,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     try {
 
       const response = await axios.get(
-        `/api/proxy/courses`,
-        {
+        `/api/proxy/courses/`, {
           withCredentials: true,
         }
       );
@@ -346,17 +357,10 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       action === "Crear mensaje de materia" ||
       action === "Crear examen"
     ) {
-      console.log("Disparando loadSubjects para action:", action);
-      loadSubjects();
+      console.log("Cargando materias para action:", action);
+      loadSubjectsWithCourses();
     }
-  }, [action, loadSubjects]);
-
-  // Cargar materias cuando se necesite
-  useEffect(() => {
-    if (subjects.length === 0) {
-      fetchSubjects();
-    }
-  }, [subjects.length, fetchSubjects]);
+  }, [action, loadSubjectsWithCourses]);
 
   // Cargar cursos cuando se necesite
   useEffect(() => {
@@ -715,7 +719,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         throw new Error("Tipo de formulario no válido");
       }
 
-      const response = await axios.post(url, payload, {
+      const response = await axios.post(`${baseURL}${url}`, payload, {
         headers:
           action === "Crear mensaje de materia"
             ? {}
@@ -737,7 +741,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       }
     } catch (error) {
       console.error("Error completo:", error);
-      if (axios.isAxiosError(error)) {
+      if (error instanceof Error) {
         console.error("Error de Axios:", {
           status: error.response?.status,
           statusText: error.response?.statusText,

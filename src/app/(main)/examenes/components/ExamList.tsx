@@ -27,6 +27,13 @@ import { useInView } from "react-intersection-observer";
 import userInfoStore from "@/store/userInfoStore";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import axios from "axios";
 
 interface Props {
   exams: Exam[];
@@ -103,11 +110,8 @@ export default function ExamList({ exams, role, subjects }: Props) {
     if (!confirm("¿Seguro que quieres borrar este examen?")) return;
     setDeletingId(id);
     try {
-
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      await fetch(`${apiUrl}/api/v1/assessments/${id}`, {
-        method: "DELETE",
-        credentials: "include",
+      await axios.delete(`/api/proxy/assessments/${id}/`, {
+        withCredentials: true,
       });
       toast.success("Examen borrado");
       router.refresh();
@@ -325,22 +329,17 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 e.preventDefault();
                 setIsSaving(true);
                 try {
-                  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-                  const res = await fetch(
-                    `${apiUrl}/api/v1/assessments/${updatingExam.id}`,
+                  const res = await axios.put(
+                    `/api/proxy/assessments/${updatingExam.id}/`,
                     {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      credentials: "include",
-                      body: JSON.stringify({
-                        subject_id: Number(editExam.subject_id),
-                        task: editExam.task,
-                        due_date: editExam.due_date,
-                        type: editExam.type,
-                      }),
-                    }
+                      subject_id: Number(editExam.subject_id),
+                      task: editExam.task,
+                      due_date: editExam.due_date,
+                      type: editExam.type,
+                    },
+                    { withCredentials: true }
                   );
-                  if (res.ok) {
+                  if (res.status >= 200 && res.status < 300) {
                     toast.success("Examen actualizado");
                     setUpdatingExam(null);
                     router.refresh();

@@ -57,17 +57,9 @@ export default function Horario() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <CalendarIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Horario
-          </h1>
-        </div>
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
       </div>
     );
   }

@@ -1,22 +1,7 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import verifyToken from "@/utils/verifyToken";
-
 import LoginForm from "./components/LoginForm";
 import Image from "next/image";
 
-export default async function LoginPage() {
-  const cookiesData = await cookies();
-  const token = cookiesData.get("jwt")?.value;
-
-  if (token) {
-    const isValidToken = await verifyToken(token);
-    if (isValidToken) {
-      redirect("/dashboard"); // Redirige si el token es válido
-    }
-  }
-
-  // Si el token es inválido o no existe, muestra la página de login
+export default function LoginPage() {
   return (
     <div className="flex h-screen w-full">
       <div className="hidden md:flex md:w-2/5 items-center py-20 relative flex-col border-r-2 overflow-hidden">
@@ -28,6 +13,7 @@ export default async function LoginPage() {
             width={200}
             height={200}
             className="mb-6 rounded-md"
+            style={{ width: 'auto', height: 'auto' }}
           />
           <h1 className="text-4xl font-bold text-white drop-shadow-lg">
             Stella Maris Alumnos

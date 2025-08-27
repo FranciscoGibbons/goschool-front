@@ -1,17 +1,12 @@
-import axios from "axios";
+import { apiClient, API_ENDPOINTS } from "@/lib/api-client";
 
-const verifyToken = async (token: string) => {
+const verifyToken = async () => {
   try {
-
-    const res = await axios.get(`/api/proxy/verify-token`, {
-      headers: {
-        Cookie: `jwt=${token}`,
-      },
-      withCredentials: true,
-    });
-    return res.status === 200; // Si la respuesta es 200, el token es válido
-  } catch {
-    return false; // Si ocurre un error, el token no es válido
+    const isValid = await apiClient.get(API_ENDPOINTS.VERIFY_TOKEN);
+    return isValid;
+  } catch (error) {
+    console.error("Error verifying token:", error);
+    return false;
   }
 };
 

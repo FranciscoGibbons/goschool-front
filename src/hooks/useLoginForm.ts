@@ -3,6 +3,8 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import userInfoStore from "@/store/userInfoStore";
 
+
+
 interface LoginCredentials {
   email: string;
   password: string;
@@ -38,24 +40,22 @@ export const useLoginForm = (): UseLoginFormReturn => {
   const [roles, setRoles] = useState<string[]>([]);
   const router = useRouter();
 
-  // Validación simple: solo verificar que los campos no estén vacíos
+  // Validación del formulario
   const isFormValid = useMemo(() => {
-    return formData.email.trim() !== "" && formData.password.trim() !== "";
+    const emailValid = formData.email.trim() !== "";
+    const passwordValid = formData.password.trim() !== "";
+    return emailValid && passwordValid;
   }, [formData.email, formData.password]);
 
   // Funciones de API memoizadas
   const fetchRoles = useCallback(
     async (credentials: LoginCredentials): Promise<string[]> => {
       try {
-        const res = await axios.post("/api/get-roles", credentials, { //
+        const res = await axios.post(`/api/proxy/roles/`, credentials, {
           withCredentials: true,
         });
-
-        if (res.status !== 200) {
-          throw new Error("Error al obtener roles disponibles");
-        }
-
-        return res.data.roles || [];
+        // The proxy route returns { roles: res.data }, so we need to extract the roles array
+        return res.data?.roles || [];
       } catch (error) {
         console.error("Error fetching roles:", error);
         throw new Error("Error al obtener roles");
@@ -70,28 +70,12 @@ export const useLoginForm = (): UseLoginFormReturn => {
       selectedRole: string
     ): Promise<boolean> => {
       try {
-        const res = await axios.post(
-          "/api/login",
-          { ...credentials, role: selectedRole },
-          {
-            withCredentials: true,
-          }
-        );
-
-        if (res.status === 200) {
-          return true;
-        } else {
-          throw new Error("Credenciales inválidas");
-        }
+        await axios.post(`/api/proxy/login/`, { ...credentials, role: selectedRole }, {
+          withCredentials: true,
+        });
+        return true;
       } catch (error) {
         console.error("Login error:", error);
-        if (axios.isAxiosError(error)) {
-          console.error("Axios error details:", {
-            status: error.response?.status,
-            data: error.response?.data,
-            message: error.message,
-          });
-        }
         throw new Error("Error al iniciar sesión");
       }
     },
@@ -162,6 +146,9 @@ export const useLoginForm = (): UseLoginFormReturn => {
 
             if (loginSuccess) {
               try {
+                // Agregar un pequeño delay para asegurar que la cookie se haya establecido
+                console.log("⏳ Esperando que se establezca la cookie JWT...");
+                await new Promise(resolve => setTimeout(resolve, 500));
                 await fetchUserInfo();
                 router.push("/dashboard");
               } catch (userInfoError) {
@@ -185,6 +172,9 @@ export const useLoginForm = (): UseLoginFormReturn => {
 
           if (loginSuccess) {
             try {
+              // Agregar un pequeño delay para asegurar que la cookie se haya establecido
+              console.log("⏳ Esperando que se establezca la cookie JWT...");
+              await new Promise(resolve => setTimeout(resolve, 500));
               await fetchUserInfo();
               router.push("/dashboard");
             } catch (userInfoError) {
@@ -194,14 +184,12 @@ export const useLoginForm = (): UseLoginFormReturn => {
             }
           }
         }
-      } catch (error) {
-        console.error("Login error:", error);
-        setErrorLogin(
-          error instanceof Error ? error.message : "Error de conexión."
-        );
-      } finally {
-        setIsLoading(false);
-      }
+              } catch (error) {
+          console.error("Login error:", error);
+          setErrorLogin("Error de conexión. Verifica tu conexión a internet.");
+        } finally {
+          setIsLoading(false);
+        }
     },
     [
       formData,

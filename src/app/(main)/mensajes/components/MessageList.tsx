@@ -4,10 +4,18 @@ import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import { useInView } from "react-intersection-observer";
-import axios from "axios";
+
 import userInfoStore from "@/store/userInfoStore";
 import { toast } from "sonner";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import axios from "axios";
 
 interface Message {
   id: string;
@@ -57,17 +65,14 @@ export default function MessageList() {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`/api/proxy/messages`, {
+        const fetchedMessages = await axios.get(`/api/proxy/messages/`, {
           withCredentials: true,
         });
+        const messagesData = fetchedMessages.data;
+        setMessages(messagesData);
 
-        if (res.status === 200) {
-          const fetchedMessages = res.data;
-          setMessages(fetchedMessages);
-
-          // Cargar datos de los remitentes
-          await fetchSendersData(fetchedMessages);
-        }
+        // Cargar datos de los remitentes
+        await fetchSendersData(messagesData);
       } catch (error) {
         console.error("Error al obtener los mensajes:", error);
         setError("Error al cargar mensajes.");
@@ -87,21 +92,21 @@ export default function MessageList() {
 
     for (const senderId of uniqueSenderIds) {
       try {
-        const res = await axios.get(
-          `/api/proxy/public-personal-data?user_id=${senderId}`,
-          {
+        const senderData = await axios.get(
+          `/api/proxy/public-personal-data/?user_id=${senderId}`, {
             withCredentials: true,
           }
         );
+        const senderDataResult = senderData.data;
 
-        if (res.data && res.data.length > 0) {
-          const sender = res.data[0];
-          const senderData: Sender = {
+        if (senderDataResult && senderDataResult.length > 0) {
+          const sender = senderDataResult[0];
+          const senderInfo: Sender = {
             id: senderId,
             full_name: sender.full_name || "Usuario",
             photo: sender.photo || null,
           };
-          newSendersMap.set(senderId, senderData);
+          newSendersMap.set(senderId, senderInfo);
         }
       } catch (error) {
         console.error(
@@ -136,11 +141,9 @@ export default function MessageList() {
     if (!confirm("¿Seguro que quieres borrar este mensaje?")) return;
     setDeletingId(id);
     try {
-
-      await fetch(`/api/proxy/messages/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+              await axios.delete(`/api/proxy/messages/${id}/`, {
+          withCredentials: true,
+        });
       toast.success("Mensaje borrado");
       setMessages((prev) => prev.filter((msg) => Number(msg.id) !== id));
     } catch {

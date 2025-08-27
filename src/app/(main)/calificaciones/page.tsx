@@ -7,9 +7,14 @@ import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
 import GradesDisplay from "./components/GradesDisplay";
 import userInfoStore from "@/store/userInfoStore";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function Calificaciones() {
+  // Call all hooks at the top level
   const { userInfo } = userInfoStore();
+  const [currentStep, setCurrentStep] = useState<"course" | "student" | "grades">("course");
+  const { isLoading: isAuthLoading } = useAuthRedirect();
+  
   const {
     courses,
     students,
@@ -23,22 +28,28 @@ export default function Calificaciones() {
     resetSelection,
   } = useCourseStudentSelection(userInfo?.role || null);
 
-  const [currentStep, setCurrentStep] = useState<
-    "course" | "student" | "grades"
-  >("course");
-
   // Determinar el paso inicial según el rol
   useEffect(() => {
-    if (userInfo?.role === "father") {
+    if (!userInfo?.role) return;
+    
+    if (userInfo.role === "father") {
       if (courses.length === 1 && students.length === 1) {
         setCurrentStep("grades");
       } else if (courses.length === 1) {
         setCurrentStep("student");
       }
-    } else if (userInfo?.role === "student") {
+    } else if (userInfo.role === "student") {
       setCurrentStep("grades");
     }
   }, [userInfo?.role, courses.length, students.length]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const handleCourseSelect = async (courseId: number) => {
     setSelectedCourseId(courseId);

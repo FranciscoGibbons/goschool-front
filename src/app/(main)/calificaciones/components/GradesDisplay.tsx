@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import axios from "axios";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
-import useSubjectsStore from "@/store/subjectsStore";
+
+const API_ENDPOINTS = {
+  GRADES: "/api/grades",
+  SUBJECTS: "/api/subjects",
+  ASSESSMENTS: "/api/assessments",
+};
 import {
   Select,
   SelectContent,
@@ -20,7 +28,6 @@ import {
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
-import { toast } from "sonner";
 import userInfoStore from "@/store/userInfoStore";
 
 interface Grade {
@@ -49,8 +56,15 @@ interface GradesDisplayProps {
 export default function GradesDisplay({
   selectedStudentId,
 }: GradesDisplayProps) {
+  interface Subject {
+    id: number;
+    name: string;
+    // Add other subject properties as needed
+  }
+
   const [grades, setGrades] = useState<Grade[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +77,15 @@ export default function GradesDisplay({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
 
-  const { subjects, fetchSubjects } = useSubjectsStore();
+  const fetchSubjects = useCallback(async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.SUBJECTS);
+      setSubjects(response.data);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      toast.error("Error al cargar las materias");
+    }
+  }, []);
 
   useEffect(() => {
     // Para estudiantes, siempre cargar las calificaciones (sin selectedStudentId)
@@ -80,24 +102,33 @@ export default function GradesDisplay({
           await fetchSubjects();
           
           // Para estudiantes, no incluir student_id en la URL
-          const gradesUrl =
-            userInfo?.role === "student"
-              ? `/api/proxy/grades/`
-              : `/api/proxy/grades/?student_id=${selectedStudentId}`;
+          const buildUrl = (baseUrl: string, params?: Record<string, any>) => {
+            if (!params) return baseUrl;
+            const query = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+              if (value !== undefined && value !== null) {
+                query.append(key, value.toString());
+              }
+            });
+            return `${baseUrl}?${query.toString()}`;
+          };
 
-          const assessmentsUrl =
-            userInfo?.role === "student"
-              ? `/api/proxy/assessments/`
-              : `/api/proxy/assessments/?student_id=${selectedStudentId}`;
+          const gradesUrl = userInfo?.role === "student"
+            ? API_ENDPOINTS.GRADES
+            : buildUrl(API_ENDPOINTS.GRADES, { student_id: selectedStudentId });
 
-          const [gradesRes, assessmentsRes] = await Promise.all([
-            axios.get(gradesUrl, { withCredentials: true }),
-            axios.get(assessmentsUrl, { withCredentials: true }),
+          const assessmentsUrl = userInfo?.role === "student"
+            ? API_ENDPOINTS.ASSESSMENTS
+            : buildUrl(API_ENDPOINTS.ASSESSMENTS, { student_id: selectedStudentId });
+
+          const [gradesResponse, assessmentsResponse] = await Promise.all([
+            axios.get(gradesUrl),
+            axios.get(assessmentsUrl),
           ]);
 
-          setGrades(Array.isArray(gradesRes.data) ? gradesRes.data : []);
+          setGrades(Array.isArray(gradesResponse.data) ? gradesResponse.data : []);
           setAssessments(
-            Array.isArray(assessmentsRes.data) ? assessmentsRes.data : []
+            Array.isArray(assessmentsResponse.data) ? assessmentsResponse.data : []
           );
         } catch (error) {
           console.error("Error fetching data:", error);

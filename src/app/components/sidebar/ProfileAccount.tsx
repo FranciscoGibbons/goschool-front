@@ -17,40 +17,27 @@ import {
   ArrowLeftStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { ThemeToggle } from "@/components/theme-toggle";
+
+import { Button } from "@/components/ui/button";
 import axios from "axios";
+
+
 
 export default function ProfileAccount() {
   const { userInfo, fetchUserInfo, isLoading, error } = userInfoStore();
 
-  console.log("ProfileAccount - userInfo:", userInfo);
-  console.log("ProfileAccount - isLoading:", isLoading);
-  console.log("ProfileAccount - error:", error);
-
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
-      console.log("Fetching user info...");
       fetchUserInfo();
     }
   }, [userInfo, fetchUserInfo]);
 
   const handleLogout = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.post(
-        `${apiUrl}/api/v1/logout/`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
-
-      if (res.status === 200) {
-        // Forzar una recarga completa para limpiar todo el estado de la aplicación.
-        // Esto evita el error 401 al no volver a llamar a fetchUserInfo.
-        window.location.href = "/login";
-      } else {
-        console.error("Error al cerrar sesión:", res.statusText);
-      }
+      await axios.post(`/api/proxy/logout`, {}, {
+        withCredentials: true,
+      });
+      window.location.href = "/login";
     } catch (error) {
       console.error("Error de red al cerrar sesión:", error);
     }

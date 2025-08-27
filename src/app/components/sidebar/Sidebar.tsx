@@ -42,6 +42,7 @@ export default function Sidebar({ className = "" }: { className?: string }) {
               alt="Logo de la plataforma"
               width={100}
               height={100}
+              style={{ width: 'auto', height: 'auto' }}
             />
           </Link>
         </div>

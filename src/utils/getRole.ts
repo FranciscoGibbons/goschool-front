@@ -1,19 +1,13 @@
-import axios from "axios";
+import { apiClient, API_ENDPOINTS } from "@/lib/api-client";
 
-const getRole = async (token: string) => {
+const getRole = async () => {
   try {
-  
-    const res = await axios.get(`/api/proxy/role`, {
-      headers: {
-        Cookie: `jwt=${token}`,
-      },
-      withCredentials: true,
-    });
-
-    return res.data;
+    const role = await apiClient.get(API_ENDPOINTS.ROLE);
+    return role;
   } catch (error) {
-    console.error("Error al obtener el rol:", error);
+    console.error("Error getting role:", error);
     return null;
   }
 };
+
 export default getRole;

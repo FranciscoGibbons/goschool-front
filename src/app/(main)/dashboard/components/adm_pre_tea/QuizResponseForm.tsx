@@ -44,7 +44,7 @@ export function QuizResponseForm({
     try {
 
       await axios.post(
-        `/api/proxy/grades/selfassessables/`,
+        `/api/proxy/selfassessables/`,
         {
           assessment_id: parseInt(examId),
           answers,

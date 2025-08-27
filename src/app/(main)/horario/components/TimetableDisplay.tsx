@@ -1,11 +1,18 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+
 import { toast } from "sonner";
 import useSubjectsStore from "@/store/subjectsStore";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import axios from "axios";
+
+const API_ENDPOINTS = {
+  TIMETABLES: "/api/timetables",
+  SUBJECTS: "/api/subjects",
+  COURSES: "/api/courses"
+};
 
 interface Timetable {
   id: number;
@@ -57,29 +64,41 @@ const TimetableDisplay: React.FC<TimetableDisplayProps> = ({
     }
 
     const fetchData = async () => {
+      if (!courseId) return;
       try {
         setLoading(true);
         
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        const timetableRes = await axios.get(
-          `${apiUrl}/api/v1/timetables/?course_id=${courseId}`,
-          {
-            withCredentials: true,
-          }
-        );
+        // Función para construir URLs con parámetros
+        interface QueryParams {
+          [key: string]: string | number | boolean | undefined | null;
+        }
+        
+        const buildUrl = (baseUrl: string, params?: QueryParams) => {
+          if (!params) return baseUrl;
+          const query = new URLSearchParams();
+          Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              query.append(key, value.toString());
+            }
+          });
+          return `${baseUrl}?${query.toString()}`;
+        };
 
-        console.log("Timetables recibidos:", timetableRes.data);
-        setTimetables(timetableRes.data);
+        // Obtener horarios
+        const timetablesUrl = buildUrl(API_ENDPOINTS.TIMETABLES, { course_id: courseId });
+        const timetablesResponse = await axios.get(timetablesUrl);
+        const timetablesData = timetablesResponse.data;
+
+        console.log("Timetables recibidos:", timetablesData);
+        setTimetables(Array.isArray(timetablesData) ? timetablesData : []);
 
         // Cargar subjects específicos del curso
-        const subjectsRes = await axios.get(
-          `${apiUrl}/api/v1/subjects/?course_id=${courseId}`,
-          {
-            withCredentials: true,
-          }
-        );
-        console.log("Subjects cargados:", subjectsRes.data);
-        setSubjects(subjectsRes.data);
+        const subjectsUrl = buildUrl(API_ENDPOINTS.SUBJECTS, { course_id: courseId });
+        const subjectsResponse = await axios.get(subjectsUrl);
+        const subjectsData = subjectsResponse.data;
+        
+        console.log("Subjects cargados:", subjectsData);
+        setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
 
         toast.success("Horario cargado exitosamente");
       } catch (error) {

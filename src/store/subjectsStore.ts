@@ -12,7 +12,7 @@ interface SubjectsState {
   subjects: Subject[];
   isLoading: boolean;
   error: string | null;
-  fetchSubjects: () => Promise<void>;
+  fetchSubjects: (courseId?: number) => Promise<void>;
   setSubjects: (subjects: Subject[]) => void;
 }
 
@@ -20,13 +20,18 @@ const useSubjectsStore = create<SubjectsState>((set) => ({
   subjects: [],
   isLoading: false,
   error: null,
-  fetchSubjects: async () => {
+  fetchSubjects: async (courseId?: number) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await axios.get(`/api/proxy/subjects`, {
+      const url = courseId 
+        ? `/api/proxy/subjects/?course_id=${courseId}`
+        : `/api/proxy/subjects/`;
+      
+      const response = await axios.get(url, {
         withCredentials: true,
       });
-      set({ subjects: res.data, isLoading: false });
+      const subjects = response.data;
+      set({ subjects, isLoading: false });
     } catch (error: unknown) {
       let errorMessage = "Error al cargar materias";
       if (typeof error === "object" && error && "message" in error) {

@@ -3,25 +3,17 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeftStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import axios from "axios";
 
+
+
 // Make a log out button bg-blue-900
 
 export default function LogOut() {
   const handleLogout = async () => {
     try {
-
-      const res = await axios.post(
-        `/api/proxy/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
-
-      if (res.status === 200) {
-        window.location.href = "/login";
-      } else {
-        console.error("Error al cerrar sesión:", res.statusText);
-      }
+      await axios.post(`${baseURL}/api/proxy/logout`, {}, {
+        withCredentials: true,
+      });
+      window.location.href = "/login";
     } catch (error) {
       console.error("Error de red al cerrar sesión:", error);
     }

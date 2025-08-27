@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { toast } from "sonner";
+import axios from "axios";
 import { Role } from "@/utils/types";
+import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 
 interface Course {
@@ -69,17 +70,15 @@ export function useCourseStudentSelection(
           return;
         }
 
-        const response = await axios.get(
-          `/api/proxy/courses`,
-          {
-            withCredentials: true,
-          }
-        );
+        const coursesData = await axios.get(`/api/proxy/courses/`, {
+          withCredentials: true,
+        });
+        const coursesResult = coursesData.data;
 
-        console.log("Courses loaded:", response.data);
+        console.log("Courses loaded:", coursesResult);
 
         // Generar nombres para los cursos
-        const coursesWithNames = response.data.map((course: Course) => ({
+        const coursesWithNames = coursesResult.map((course: Course) => ({
           ...course,
           name: `${course.year}° ${course.division} - ${
             course.level === "primary" ? "Primaria" : "Secundaria"
@@ -126,52 +125,54 @@ export function useCourseStudentSelection(
       setIsLoading(true);
       setError(null);
 
-      const response = await axios.get(
-        `/api/proxy/students?course_id=${courseId}`,
-        {
+      const studentsData = await axios.get(
+        `/api/proxy/students/?course_id=${courseId}`, {
           withCredentials: true,
         }
       );
+      const studentsResult = studentsData.data;
 
-      console.log("Students API response (IDs only):", response.data);
+      console.log("Students API response (IDs only):", studentsResult);
 
       // Si la respuesta son solo IDs, obtener los datos completos de cada estudiante
-      if (response.data.length > 0 && typeof response.data[0] === "number") {
-        console.log("Fetching complete student data for IDs:", response.data);
+      if (studentsResult.length > 0 && typeof studentsResult[0] === "number") {
+        console.log("Fetching complete student data for IDs:", studentsResult);
 
-        const studentPromises = response.data.map(async (studentId: number) => {
+        const studentPromises = studentsResult.map(async (studentId: number) => {
           try {
             console.log(`Fetching data for student ID: ${studentId}`);
 
-            const studentResponse = await axios.get(
-              `/api/proxy/public-personal-data?id=${studentId}`,
-              { withCredentials: true }
+            const studentData = await axios.get(
+              `/api/proxy/public-personal-data/?id=${studentId}`, {
+                withCredentials: true,
+              }
             );
+            const studentDataResult = studentData.data;
             console.log(
               `Raw response for student ${studentId}:`,
-              studentResponse.data
+              studentDataResult
             );
 
             // La API devuelve un array de todos los usuarios, necesitamos agregar el ID manualmente
-            const studentData = Array.isArray(studentResponse.data)
-              ? studentResponse.data[0]
-              : studentResponse.data;
+            const processedStudentData = Array.isArray(studentDataResult)
+              ? studentDataResult[0]
+              : studentDataResult;
             console.log(
               `Processed data for student ${studentId}:`,
-              studentData
+              processedStudentData
             );
 
             // Agregar el ID que falta y asegurar que tenga la estructura correcta
             const processedStudent = {
               id: studentId,
-              name: studentData?.full_name?.split(" ")[0] || "Estudiante",
+              name: processedStudentData?.full_name?.split(" ")[0] || "Estudiante",
               last_name:
-                studentData?.full_name?.split(" ").slice(1).join(" ") ||
+                processedStudentData?.full_name?.split(" ").slice(1).join(" ") ||
                 `${studentId}`,
-              full_name: studentData?.full_name || `Estudiante ${studentId}`,
+              full_name: processedStudentData?.full_name || `Estudiante ${studentId}`,
               email: `estudiante${studentId}@escuela.com`,
               course_id: courseId,
-              photo: studentData?.photo,
+              photo: processedStudentData?.photo,
             };
 
             console.log(
@@ -185,8 +186,8 @@ export function useCourseStudentSelection(
           }
         });
 
-        const studentsData = await Promise.all(studentPromises);
-        const validStudents = studentsData
+        const processedStudents = await Promise.all(studentPromises);
+        const validStudents = processedStudents
           .filter((student) => student !== null && student.id)
           .map((student: Student) => ({
             ...student,
@@ -199,7 +200,7 @@ export function useCourseStudentSelection(
         setStudents(validStudents);
       } else {
         // Si ya son objetos completos, procesarlos normalmente
-        const validStudents = response.data
+        const validStudents = studentsResult
           .filter((student: Student) => {
             if (!student.id) {
               console.warn("Student without ID found:", student);

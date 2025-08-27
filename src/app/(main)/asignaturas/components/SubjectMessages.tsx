@@ -1,5 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import axios from "axios";
 
 import {
@@ -70,11 +78,13 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const res = await axios.get(
-          `/api/proxy/subject_messages/?subject_id=${subjectId}`,
-          { withCredentials: true }
+        const messagesData = await axios.get(
+          `/api/proxy/subject-messages/?subject_id=${subjectId}`, {
+            withCredentials: true,
+          }
         );
-        setMessages(res.data);
+        const messagesResult = messagesData.data;
+        setMessages(messagesResult);
       } catch {
         setMessages([]);
       } finally {
@@ -245,10 +255,11 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                                 return;
                               setDeletingId(message.id);
                               try {
-                                await axios.delete(
-                                  `/api/proxy/subject_messages/${message.id}`,
-                                  { withCredentials: true }
-                                );
+                                                                         await axios.delete(
+          `/api/proxy/subject-messages/${message.id}/`, {
+            withCredentials: true,
+          }
+        );
                                 setMessages((prev) =>
                                   prev.filter((m) => m.id !== message.id)
                                 );
@@ -347,16 +358,15 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 e.preventDefault();
                 setIsSaving(true);
                 try {
-                  const res = await axios.put(
-                    `/api/proxy/subject_messages/${editingMessage.id}`,
-                    {
-                      title: editData.title,
-                      content: editData.content,
-                      type: editData.type,
-                    },
-                    { withCredentials: true }
-                  );
-                  if (res.status === 200) {
+                                     const res = await apiClient.put(
+                     `${API_ENDPOINTS.SUBJECT_MESSAGES}${editingMessage.id}/`,
+                      {
+                        title: editData.title,
+                        content: editData.content,
+                        type: editData.type,
+                      }
+                    );
+                    if (res) {
                     setMessages((prev) =>
                       prev.map((m) =>
                         m.id === editingMessage.id ? { ...m, ...editData } : m

@@ -1,14 +1,14 @@
 import axios from "axios";
 
-const getRoleServer = async (token: string) => {
+const getCourseServer = async (token: string, courseId: string) => {
   try {
     if (!token) {
-      console.log("No token provided to getRoleServer");
+      console.log("No token provided to getCourseServer");
       return null;
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const res = await axios.get(`${apiUrl}/api/v1/role/`, {
+    const res = await axios.get(`${apiUrl}/api/v1/courses/${courseId}`, {
       headers: {
         Cookie: `jwt=${token}`,
       },
@@ -16,9 +16,9 @@ const getRoleServer = async (token: string) => {
     });
     return res.data;
   } catch (error) {
-    console.error("Server role fetch error:", error);
+    console.error("Server course fetch error:", error);
     return null;
   }
 };
 
-export default getRoleServer;
+export default getCourseServer;

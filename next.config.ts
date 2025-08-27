@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245',
+  },
   images: {
     remotePatterns: [
       {
@@ -12,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "localhost",
         port: "8080",
+      },
+      {
+        protocol: "http",
+        hostname: "34.39.136.245",
       },
     ],
     unoptimized: true,

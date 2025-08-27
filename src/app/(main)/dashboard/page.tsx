@@ -1,31 +1,30 @@
+"use client";
+
 import DashAdminPreceptorTeacher from "./components/adm_pre_tea/DashAdminPreceptorTeacher";
 import DashStudentFather from "./components/stu_fat/DashStudentFather";
-
 import { PlusIcon } from "@heroicons/react/24/outline";
+import userInfoStore from "@/store/userInfoStore";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import verifyTokenServer from "@/utils/verifyTokenServer";
-import { Role } from "@/utils/types";
-import getRoleServer from "@/utils/getRoleServer";
+export default function Dashboard() {
+  const { userInfo } = userInfoStore();
+  const { isLoading } = useAuthRedirect();
 
-export default async function Dashboard() {
-  const cookiesData = await cookies();
-  const token = cookiesData.get("jwt")?.value;
+  // El hook useAuthRedirect ya maneja la redirección si no está autenticado
 
-  const isValidToken = await verifyTokenServer(token || "");
-  
-  if (!isValidToken) {
-    redirect("/login");
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  const role: Role = await getRoleServer(token || "");
-
-  if (role === "admin" || role === "preceptor" || role === "teacher") {
-    return <DashAdminPreceptorTeacher role={role} />;
+  if (userInfo?.role === "admin" || userInfo?.role === "preceptor" || userInfo?.role === "teacher") {
+    return <DashAdminPreceptorTeacher role={userInfo.role} />;
   }
 
-  if (role === "student" || role === "father") {
+  if (userInfo?.role === "student" || userInfo?.role === "father") {
     return <DashStudentFather />;
   }
 

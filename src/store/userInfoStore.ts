@@ -4,6 +4,8 @@ import { persist } from "zustand/middleware";
 import axios from "axios";
 import { UserInfo } from "@/utils/types";
 
+
+
 interface UserInfoState {
   userInfo: UserInfo | null;
   isLoading: boolean;
@@ -14,6 +16,7 @@ interface UserInfoActions {
   fetchUserInfo: () => Promise<void>;
   clearUserInfo: () => void;
   setError: (error: string | null) => void;
+  checkAuth: () => Promise<boolean>;
 }
 
 type UserInfoStore = UserInfoState & UserInfoActions;
@@ -28,71 +31,96 @@ const userInfoStore = create<UserInfoStore>()(
       isLoading: false,
       error: null,
 
-      fetchUserInfo: async () => {
-        console.log("fetchUserInfo called");
-        set({ isLoading: true, error: null });
+      checkAuth: async () => {
         try {
-
-          const personalDataPromise = axios.get(
-            `/api/proxy/personal-data`,
-            {
-              withCredentials: true,
-            }
-          );
+          console.log('🔄 Iniciando verificación de autenticación...');
           
-          const rolePromise = axios.get(`/api/proxy/role`, {
+          // Hacer la petición al endpoint de verificación
+          const response = await axios.get(`/api/proxy/verify-token/`, { 
             withCredentials: true,
+            validateStatus: () => true // Aceptar todos los códigos de estado
           });
           
-          const profilePicturePromise = axios.get(
-            `/api/proxy/profile-pictures`,
-            {
-              withCredentials: true,
-            }
-          );
+          // Log detallado de la respuesta
+          console.log('📨 Respuesta de verify-token:', {
+            status: response.status,
+            data: response.data,
+            success: response.data?.success,
+            error: response.data?.error
+          });
+          
+          // Verificar si la autenticación fue exitosa
+          const isAuthenticated = response.status === 200 && response.data?.success === true;
+          
+          if (isAuthenticated) {
+            console.log('✅ Usuario autenticado correctamente');
+          } else if (response.status === 401) {
+            console.log('🔒 No autorizado - Token inválido o expirado');
+          } else if (response.data?.error) {
+            console.error('❌ Error en la autenticación:', response.data.error);
+          } else {
+            console.error('❌ Error desconocido en la autenticación');
+          }
+          
+          return isAuthenticated;
+        } catch (error) {
+          console.error("Error verificando autenticación:", error);
+          return false;
+        }
+      },
 
-          const [personalDataRes, roleRes, profilePictureRes] =
-            await Promise.all([
-              personalDataPromise,
-              rolePromise,
-              profilePicturePromise.catch(() => ({ data: null })), // Si falla, retorna null
-            ]);
+      fetchUserInfo: async () => {
+        // Prevent multiple simultaneous calls
+        const currentState = userInfoStore.getState();
+        if (currentState.isLoading) {
+          console.log("🔄 fetchUserInfo already in progress, skipping...");
+          return;
+        }
+        
+        set({ isLoading: true, error: null });
+        try {
+          console.log("🔍 Intentando obtener datos personales...");
+          console.log("🌐 URL:", `/api/proxy/personal-data/`);
+          
+          const [personalData, role, profilePictureRes] = await Promise.all([
+            axios.get(`/api/proxy/personal-data/`, { withCredentials: true })
+              .catch(err => {
+                if (err.response?.status === 401) throw new Error("No autenticado");
+                throw err;
+              }),
+            axios.get(`/api/proxy/role/`, { withCredentials: true }),
+            axios.get(`/api/proxy/profile-pictures/`, { withCredentials: true })
+              .catch(() => ({ data: { url: null } }))
+          ]);
 
-          const personalData = personalDataRes.data;
-          const role = roleRes.data;
-          // Usamos la URL directa del backend
           const profilePicture = profilePictureRes.data?.url || null;
-
-          console.log("Personal data from API:", personalData);
-          console.log("Role from API:", role);
-          console.log("Profile picture from API:", profilePicture);
-
-          // Procesar los datos para asegurar que tengan la estructura correcta
-          const processedData = { ...personalData };
+          const processedData = { ...personalData.data };
 
           // Si la API devuelve full_name, dividirlo en name y last_name
-          if (
-            personalData.full_name &&
-            !personalData.name &&
-            !personalData.last_name
-          ) {
-            const nameParts = personalData.full_name.split(" ");
+          if (personalData.data.full_name && !personalData.data.name && !personalData.data.last_name) {
+            const nameParts = personalData.data.full_name.split(" ");
             processedData.name = nameParts[0] || "";
             processedData.last_name = nameParts.slice(1).join(" ") || "";
           }
 
-          set({
-            userInfo: { ...processedData, role, photo: profilePicture },
-            isLoading: false,
-          });
-        } catch (error) {
-          console.error("Error al obtener user info:", error);
-          const message =
-            axios.isAxiosError(error) && error.response
-              ? error.response.data?.message || error.message
-              : "Error desconocido";
+          const userInfo = { 
+            ...processedData, 
+            role: role.data, 
+            photo: profilePicture 
+          };
 
-          set({ error: message, isLoading: false });
+          set({ userInfo, isLoading: false });
+          return userInfo;
+        } catch (error: unknown) {
+          console.error("Error al obtener user info:", error);
+          // Limpiar datos de usuario en caso de error de autenticación
+          if (error instanceof Error && error.message === "No autenticado") {
+            set({ userInfo: null, isLoading: false });
+          } else {
+            const message = error instanceof Error ? error.message : "Error desconocido";
+            set({ error: message, isLoading: false });
+          }
+          throw error;
         }
       },
 

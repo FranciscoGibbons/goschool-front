@@ -56,7 +56,7 @@ export default function LoginForm() {
           Contraseña
         </label>
         <input
-          type="text"
+          type="password"
           id="password"
           value={formData.password}
           onChange={handleInputChange("password")}

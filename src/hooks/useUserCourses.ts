@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { apiClient, API_ENDPOINTS } from "@/lib/api-client";
 import { Role } from "@/utils/types";
 
 interface Course {
@@ -38,48 +38,23 @@ export const useUserCourses = (): UseUserCoursesReturn => {
         console.log("Cookies:", document.cookie);
 
         
-        // Obtener rol del usuario usando proxy
-        const roleResponse = await axios.get(
-          `/api/proxy/role`,
-          {
-            withCredentials: true,
-          }
-        );
-        const role = roleResponse.data;
+        // Obtener rol del usuario usando API directa
+        const role = await apiClient.get(API_ENDPOINTS.ROLE);
         console.log("User role:", role);
         setUserRole(role);
 
-        // Obtener cursos según el rol usando proxy
-        let coursesData: Course[] = [];
-
+        // Obtener cursos según el rol usando API directa
         console.log("Fetching courses for role:", role);
-        const coursesResponse = await axios.get(
-          `/api/proxy/courses`,
-          {
-            withCredentials: true,
-          }
-        );
-        coursesData = coursesResponse.data;
-        console.log("Raw courses response:", coursesResponse);
+        const coursesData = await apiClient.get(API_ENDPOINTS.COURSES);
         console.log("Courses data:", coursesData);
 
         setCourses(coursesData);
       } catch (error) {
         console.error("Error fetching user courses:", error);
-        if (axios.isAxiosError(error)) {
-          console.error("Axios error details:", {
-            status: error.response?.status,
-            data: error.response?.data,
+        if (error instanceof Error) {
+          console.error("Error details:", {
             message: error.message,
-            url: error.config?.url,
           });
-
-          // Si es error de autenticación, redirigir al login
-          if (error.response?.status === 401) {
-            console.log("Authentication error, redirecting to login");
-            window.location.href = "/login";
-            return;
-          }
         }
         setError("Error al cargar los cursos del usuario");
       } finally {
