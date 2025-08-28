@@ -8,12 +8,12 @@ import { AcademicCapIcon } from "@heroicons/react/24/outline";
 import userInfoStore from "@/store/userInfoStore";
 import axios from "axios";
 
-import { Exam as BaseExam } from "@/utils/types";
+import { Exam } from "@/utils/types";
 
-interface Exam extends Omit<BaseExam, 'questions' | 'correct' | 'incorrect1' | 'incorrect2' | 'created_at'> {
-  // Add any additional fields specific to this component
+// Use the Exam type from utils/types
+type ExamWithSubjectId = Exam & {
   subject_id: number;
-}
+};
 
 interface Subject {
   id: number;
@@ -21,7 +21,7 @@ interface Subject {
 }
 
 export default function Exams() {
-  const [exams, setExams] = useState<Exam[]>([]);
+  const [exams, setExams] = useState<ExamWithSubjectId[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

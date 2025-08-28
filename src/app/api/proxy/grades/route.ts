@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(res.data, { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       const message = error.response?.data || "Error al crear calificación";
       return NextResponse.json(

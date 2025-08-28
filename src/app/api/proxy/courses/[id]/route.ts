@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
+interface Params {
+  id: string;
+}
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<Params> }
 ) {
+  const params = await context.params;
   const cookieHeader = req.headers.get("cookie");
   if (!cookieHeader) {
     return NextResponse.json({ error: "No cookies found" }, { status: 401 });
@@ -20,11 +25,18 @@ export async function GET(
     });
 
     return NextResponse.json(res.data);
-  } catch (error: any) {
-    console.error("Error in courses/[id] proxy:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: {
+        data?: unknown;
+        status?: number;
+      };
+      message?: string;
+    };
+    console.error("Error in courses/[id] proxy:", axiosError.response?.data || axiosError.message);
     return NextResponse.json(
       { error: "Error fetching course" },
-      { status: error.response?.status || 500 }
+      { status: axiosError.response?.status || 500 }
     );
   }
 }

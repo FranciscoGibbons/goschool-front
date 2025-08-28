@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
+interface Params {
+  id: string;
+}
+
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<Params> }
 ) {
+  const params = await context.params;
   const cookieHeader = req.headers.get("cookie");
   if (!cookieHeader) {
     return NextResponse.json({ error: "No cookies found" }, { status: 401 });
@@ -24,19 +29,27 @@ export async function PUT(
     });
 
     return NextResponse.json(res.data);
-  } catch (error: any) {
-    console.error("Error in subject-messages/[id] PUT proxy:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: {
+        data?: unknown;
+        status?: number;
+      };
+      message?: string;
+    };
+    console.error("Error in subject-messages/[id] PUT proxy:", axiosError.response?.data || axiosError.message);
     return NextResponse.json(
       { error: "Error updating subject message" },
-      { status: error.response?.status || 500 }
+      { status: axiosError.response?.status || 500 }
     );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<Params> }
 ) {
+  const params = await context.params;
   const cookieHeader = req.headers.get("cookie");
   if (!cookieHeader) {
     return NextResponse.json({ error: "No cookies found" }, { status: 401 });
@@ -52,11 +65,18 @@ export async function DELETE(
     });
 
     return NextResponse.json(res.data);
-  } catch (error: any) {
-    console.error("Error in subject-messages/[id] DELETE proxy:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: {
+        data?: unknown;
+        status?: number;
+      };
+      message?: string;
+    };
+    console.error("Error in subject-messages/[id] DELETE proxy:", axiosError.response?.data || axiosError.message);
     return NextResponse.json(
       { error: "Error deleting subject message" },
-      { status: error.response?.status || 500 }
+      { status: axiosError.response?.status || 500 }
     );
   }
 }

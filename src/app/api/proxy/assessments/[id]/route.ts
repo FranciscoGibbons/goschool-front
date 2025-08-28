@@ -1,9 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
-export async function PUT(
+interface Params {
+  id: string;
+}
+
+export async function GET(req: NextRequest, context: { params: Promise<Params> }) {
+  const params = await context.params;
+  return handleRequest(req, params, "GET");
+}
+
+export async function PUT(req: NextRequest, context: { params: Promise<Params> }) {
+  const params = await context.params;
+  return handleRequest(req, params, "PUT");
+}
+
+export async function DELETE(req: NextRequest, context: { params: Promise<Params> }) {
+  const params = await context.params;
+  return handleRequest(req, params, "DELETE");
+}
+
+async function handleRequest(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  params: Params,
+  method: string
 ) {
   try {
     const cookieHeader = req.headers.get("cookie");
@@ -11,61 +31,50 @@ export async function PUT(
       return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
     }
 
-    const body = await req.json();
+    const searchParams = req.nextUrl.searchParams.toString();
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    
-    const res = await axios.put(`${apiUrl}/api/v1/assessments/${params.id}`, body, {
+    const url = `${apiUrl}/api/v1/assessments/${params.id}${searchParams ? `?${searchParams}` : ""}`;
+
+    const config: {
+      headers: Record<string, string>;
+      withCredentials: boolean;
+      data?: unknown;
+    } = {
       headers: { 
         Cookie: cookieHeader,
         'Content-Type': 'application/json',
       },
       withCredentials: true,
+    };
+
+    let data;
+    if (method === "PUT") {
+      const contentType = req.headers.get("content-type");
+      if (contentType?.includes("multipart/form-data")) {
+        data = await req.formData();
+      } else {
+        data = await req.json();
+      }
+      config.data = data;
+    }
+
+    const res = await axios({
+      method,
+      url,
+      ...config,
     });
 
-    return NextResponse.json(res.data, { status: 200 });
+    return NextResponse.json(res.data, { status: res.status });
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const message = error.response?.data || "Error al actualizar evaluación";
+      const message = error.response?.data || "Error en la petición";
       return NextResponse.json(
         { error: message },
         { status: error.response?.status || 500 }
       );
     }
     return NextResponse.json(
-      { error: "Error desconocido al actualizar evaluación" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const cookieHeader = req.headers.get("cookie");
-    if (!cookieHeader || !cookieHeader.includes("jwt=")) {
-      return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
-    }
-
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    
-    const res = await axios.delete(`${apiUrl}/api/v1/assessments/${params.id}`, {
-      headers: { Cookie: cookieHeader },
-      withCredentials: true,
-    });
-
-    return NextResponse.json(res.data, { status: 200 });
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data || "Error al eliminar evaluación";
-      return NextResponse.json(
-        { error: message },
-        { status: error.response?.status || 500 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Error desconocido al eliminar evaluación" },
+      { error: "Error desconocido en la petición" },
       { status: 500 }
     );
   }

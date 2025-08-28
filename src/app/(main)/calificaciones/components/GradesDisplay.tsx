@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import axios from "axios";
@@ -102,7 +102,7 @@ export default function GradesDisplay({
           await fetchSubjects();
           
           // Para estudiantes, no incluir student_id en la URL
-          const buildUrl = (baseUrl: string, params?: Record<string, any>) => {
+          const buildUrl = (baseUrl: string, params?: Record<string, string | number | boolean | null | undefined>) => {
             if (!params) return baseUrl;
             const query = new URLSearchParams();
             Object.entries(params).forEach(([key, value]) => {

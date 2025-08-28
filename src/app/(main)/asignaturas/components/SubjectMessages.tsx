@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Label } from "@/components/ui/label";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { toast } from "sonner";
 import axios from "axios";
 
 import {
@@ -67,10 +67,12 @@ function formatDateHeader(dateString: string) {
 export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   const [messages, setMessages] = useState<SubjectMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingMessage, setEditingMessage] = useState<SubjectMessage | null>(
-    null
-  );
-  const [editData, setEditData] = useState<Partial<SubjectMessage>>({});
+  const [editingMessage, setEditingMessage] = useState<SubjectMessage | null>(null);
+  const [editData, setEditData] = useState<{
+    title?: string;
+    content?: string;
+    type?: "message" | "file" | "link";
+  }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
@@ -356,20 +358,26 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
               className="space-y-4"
               onSubmit={async (e) => {
                 e.preventDefault();
+                if (!editingMessage) return;
+                
                 setIsSaving(true);
                 try {
-                                     const res = await apiClient.put(
-                     `${API_ENDPOINTS.SUBJECT_MESSAGES}${editingMessage.id}/`,
-                      {
-                        title: editData.title,
-                        content: editData.content,
-                        type: editData.type,
-                      }
-                    );
-                    if (res) {
+                  const res = await axios.put(
+                    `/api/proxy/subject-messages/${editingMessage.id}/`,
+                    {
+                      title: editData.title || '',
+                      content: editData.content || '',
+                      type: editData.type || 'message',
+                    },
+                    { withCredentials: true }
+                  );
+                  
+                  if (res && res.data) {
                     setMessages((prev) =>
                       prev.map((m) =>
-                        m.id === editingMessage.id ? { ...m, ...editData } : m
+                        m.id === editingMessage.id 
+                          ? { ...m, ...editData, id: editingMessage.id, subject_id: editingMessage.subject_id }
+                          : m
                       )
                     );
                     setEditingMessage(null);

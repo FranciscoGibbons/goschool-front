@@ -1,37 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
-export async function GET(
-  req: NextRequest,
-  context: { params: { path: string[] } }
-) {
-  return handleRequest(req, await Promise.resolve(context.params), "GET");
+interface Params {
+  id: string;
 }
 
-export async function POST(
-  req: NextRequest,
-  context: { params: { path: string[] } }
-) {
-  return handleRequest(req, await Promise.resolve(context.params), "POST");
+export async function GET(req: NextRequest, context: { params: Promise<Params> }) {
+  const params = await context.params;
+  return handleRequest(req, params, "GET");
 }
 
-export async function PUT(
-  req: NextRequest,
-  context: { params: { path: string[] } }
-) {
-  return handleRequest(req, await Promise.resolve(context.params), "PUT");
+export async function POST(req: NextRequest, context: { params: Promise<Params> }) {
+  const params = await context.params;
+  return handleRequest(req, params, "POST");
 }
 
-export async function DELETE(
-  req: NextRequest,
-  context: { params: { path: string[] } }
-) {
-  return handleRequest(req, await Promise.resolve(context.params), "DELETE");
+export async function PUT(req: NextRequest, context: { params: Promise<Params> }) {
+  const params = await context.params;
+  return handleRequest(req, params, "PUT");
+}
+
+export async function DELETE(req: NextRequest, context: { params: Promise<Params> }) {
+  const params = await context.params;
+  return handleRequest(req, params, "DELETE");
 }
 
 async function handleRequest(
   req: NextRequest,
-  params: { path: string[] },
+  params: Params,
   method: string
 ) {
   try {
@@ -40,12 +36,15 @@ async function handleRequest(
       return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
     }
 
-    const path = params.path.join("/");
     const searchParams = req.nextUrl.searchParams.toString();
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const url = `${apiUrl}/api/v1/${path}${searchParams ? `?${searchParams}` : ""}`;
+    const url = `${apiUrl}/api/v1/courses/${params.id}${searchParams ? `?${searchParams}` : ""}`;
 
-    let config: any = {
+    const config: {
+      headers: Record<string, string>;
+      withCredentials: boolean;
+      data?: unknown;
+    } = {
       headers: { Cookie: cookieHeader },
       withCredentials: true,
     };

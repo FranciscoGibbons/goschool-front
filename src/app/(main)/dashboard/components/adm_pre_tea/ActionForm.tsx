@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   FormsObj,
   MessageForm,
@@ -11,6 +11,7 @@ import {
 } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -169,7 +170,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   };
 
   // Función para cargar materias con información de cursos
-  const loadSubjectsWithCourses = async () => {
+  const loadSubjectsWithCourses = useCallback(async () => {
     try {
       setIsLoadingSubjects(true);
       
@@ -247,7 +248,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     } finally {
       setIsLoadingSubjects(false);
     }
-  };
+  }, [setIsLoadingSubjects, setSubjects]);
 
   // Función para cargar evaluaciones de una materia
   const loadAssessments = async (subjectId: string) => {
@@ -719,7 +720,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         throw new Error("Tipo de formulario no válido");
       }
 
-      const response = await axios.post(`${baseURL}${url}`, payload, {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const response = await axios.post(`${apiUrl}${url}`, payload, {
         headers:
           action === "Crear mensaje de materia"
             ? {}
@@ -739,31 +741,42 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       } else {
         toast.error("Error en la creación");
       }
-    } catch (error) {
-      console.error("Error completo:", error);
-      if (error instanceof Error) {
-        console.error("Error de Axios:", {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers,
-        });
-        // Manejar errores específicos
-        if (error.response?.status === 401) {
-          toast.error("No tienes autorización para realizar esta acción");
-        } else if (error.response?.status === 409) {
-          toast.error(
-            "Ya existe una calificación para este assessment y estudiante"
-          );
-        } else {
-          toast.error(
-            `Error ${error.response?.status}: ${
-              error.response?.data || error.message
-            }`
-          );
-        }
+    } catch (err) {
+      console.error("Error completo:", err);
+      const error = err as {
+        response?: {
+          status?: number;
+          statusText?: string;
+          data?: unknown;
+          headers?: Record<string, string>;
+        };
+        message?: string;
+      };
+      
+      console.error("Error de Axios:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+      
+      // Manejar errores específicos
+      if (error.response?.status === 401) {
+        toast.error("No tienes autorización para realizar esta acción");
+      } else if (error.response?.status === 409) {
+        toast.error(
+          "Ya existe una calificación para este assessment y estudiante"
+        );
       } else {
-        toast.error("Error en la creación");
+        const errorMessage = error.response?.data 
+          ? typeof error.response.data === 'object' 
+            ? JSON.stringify(error.response.data)
+            : String(error.response.data)
+          : error.message || 'Error desconocido';
+            
+        toast.error(
+          `Error ${error.response?.status || ''}: ${errorMessage}`.trim()
+        );
       }
     } finally {
       setIsLoading(false);

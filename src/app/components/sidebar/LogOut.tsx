@@ -10,7 +10,8 @@ import axios from "axios";
 export default function LogOut() {
   const handleLogout = async () => {
     try {
-      await axios.post(`${baseURL}/api/proxy/logout`, {}, {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await axios.post(`${apiUrl}/api/v1/logout`, {}, {
         withCredentials: true,
       });
       window.location.href = "/login";

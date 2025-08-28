@@ -21,11 +21,18 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(res.data);
-  } catch (error: any) {
-    console.error("Error in get-if-selfassessable-answered proxy:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: {
+        data?: unknown;
+        status?: number;
+      };
+      message?: string;
+    };
+    console.error("Error in get-if-selfassessable-answered proxy:", axiosError.response?.data || axiosError.message);
     return NextResponse.json(
       { error: "Error checking selfassessable status" },
-      { status: error.response?.status || 500 }
+      { status: axiosError.response?.status || 500 }
     );
   }
 }

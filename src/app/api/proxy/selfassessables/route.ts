@@ -22,11 +22,18 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(res.data);
-  } catch (error: any) {
-    console.error("Error in selfassessables proxy:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: {
+        data?: unknown;
+        status?: number;
+      };
+      message?: string;
+    };
+    console.error("Error in selfassessables proxy:", axiosError.response?.data || axiosError.message);
     return NextResponse.json(
       { error: "Error fetching selfassessables" },
-      { status: error.response?.status || 500 }
+      { status: axiosError.response?.status || 500 }
     );
   }
 }
@@ -51,11 +58,18 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(res.data);
-  } catch (error: any) {
-    console.error("Error in selfassessables proxy:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: {
+        data?: unknown;
+        status?: number;
+      };
+      message?: string;
+    };
+    console.error("Error in selfassessables proxy:", axiosError.response?.data || axiosError.message);
     return NextResponse.json(
       { error: "Error creating selfassessable" },
-      { status: error.response?.status || 500 }
+      { status: axiosError.response?.status || 500 }
     );
   }
 }

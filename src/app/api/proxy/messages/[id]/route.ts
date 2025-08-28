@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
+interface Params {
+  id: string;
+}
+
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<Params> }
 ) {
+  const params = await context.params;
   try {
     const cookieHeader = req.headers.get("cookie");
     if (!cookieHeader || !cookieHeader.includes("jwt=")) {
@@ -40,8 +45,9 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<Params> }
 ) {
+  const params = await context.params;
   try {
     const cookieHeader = req.headers.get("cookie");
     if (!cookieHeader || !cookieHeader.includes("jwt=")) {
