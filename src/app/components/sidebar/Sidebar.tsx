@@ -35,15 +35,18 @@ export default function Sidebar({ className = "" }: { className?: string }) {
       aria-label="Menú principal"
     >
       <div>
-        <div className="mb-8">
-          <Link href="/" aria-label="Ir al inicio">
-            <Image
-              src="/images/logo.webp"
-              alt="Logo de la plataforma"
-              width={100}
-              height={100}
-              style={{ width: 'auto', height: 'auto' }}
-            />
+        <div className="mb-6 px-2">
+          <Link href="/" aria-label="Ir al inicio" className="block">
+            <div className="w-32 mx-auto">
+              <Image
+                src="/images/logo.webp"
+                alt="Logo de la plataforma"
+                width={128}
+                height={64}
+                className="w-full h-auto"
+                priority
+              />
+            </div>
           </Link>
         </div>
 
