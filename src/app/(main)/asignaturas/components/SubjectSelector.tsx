@@ -24,7 +24,9 @@ interface Course {
   id: number;
   name: string;
   year: number;
-  section: string;
+  division: string;
+  shift: string;
+  level: string;
 }
 
 interface SubjectSelectorProps {
@@ -49,11 +51,13 @@ export default function SubjectSelector({
     if (selectedCourseId) {
       const fetchCourse = async () => {
         try {
-          const response = await axios.get(
-            `/api/proxy/courses/${selectedCourseId}`,
-            { withCredentials: true }
-          );
-          setCourse(response.data);
+          // El backend no expone /courses/{id}. Traemos todos y filtramos.
+          const response = await axios.get(`/api/proxy/courses/`, {
+            withCredentials: true,
+          });
+          const allCourses: Course[] = response.data || [];
+          const found = allCourses.find((c) => Number(c.id) === Number(selectedCourseId)) || null;
+          setCourse(found);
         } catch (error) {
           console.error("Error loading course:", error);
         }
@@ -63,13 +67,19 @@ export default function SubjectSelector({
   }, [selectedCourseId]);
 
   useEffect(() => {
-    if (subjects.length === 0) {
-      fetchSubjects();
-    } else if (!selectedSubject && subjects.length > 0) {
-      setSelectedSubject(subjects[0]);
-    }
+    const load = async () => {
+      if (selectedCourseId) {
+        await fetchSubjects(selectedCourseId);
+      } else if (subjects.length === 0) {
+        await fetchSubjects();
+      }
+      if (!selectedSubject && subjects.length > 0) {
+        setSelectedSubject(subjects[0]);
+      }
+    };
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subjects.length]);
+  }, [selectedCourseId, subjects.length]);
 
   if (isLoadingSubjects) {
     return <div className="text-center py-8">Cargando asignaturas...</div>;
@@ -87,7 +97,7 @@ export default function SubjectSelector({
                 {course.name}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {course.year}° Año - Sección {course.section}
+                {course.year}° Año - División {course.division}
               </p>
             </div>
           </div>

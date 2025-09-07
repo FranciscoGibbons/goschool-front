@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const courseId = searchParams.get("course_id");
     console.log("Course ID recibido:", courseId);
 
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245';
     const url = courseId 
       ? `${apiUrl}/api/v1/subjects/?course_id=${courseId}`
       : `${apiUrl}/api/v1/subjects/`;

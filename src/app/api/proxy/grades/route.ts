@@ -3,33 +3,68 @@ import axios from "axios";
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get("cookie");
-    if (!cookieHeader || !cookieHeader.includes("jwt=")) {
-      return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    // Obtener las cookies de la solicitud
+    const cookieHeader = req.headers.get("cookie") || '';
     
-    const res = await axios.post(`${apiUrl}/api/v1/grades/`, body, {
-      headers: { 
-        Cookie: cookieHeader,
-        'Content-Type': 'application/json',
-      },
-      withCredentials: true,
-    });
-
-    return NextResponse.json(res.data, { status: 200 });
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data || "Error al crear calificación";
+    // Verificar si tenemos el token JWT
+    if (!cookieHeader.includes("jwt=")) {
+      console.error('JWT no encontrado en las cookies');
       return NextResponse.json(
-        { error: message },
-        { status: error.response?.status || 500 }
+        { error: "No autorizado - Token JWT no encontrado" }, 
+        { status: 401 }
       );
     }
+
+    // Obtener el cuerpo de la solicitud
+    const body = await req.json();
+    console.log('Solicitud de calificación recibida:', JSON.stringify(body, null, 2));
+    
+    // URL del backend
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245';
+    const targetUrl = `${apiUrl}/api/v1/grades/`;
+    
+    console.log('Enviando solicitud a:', targetUrl);
+    
+    // Configuración de la solicitud al backend
+    const config = {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader,
+        'Accept': 'application/json',
+      },
+      withCredentials: true,
+      timeout: 10000, // 10 segundos de timeout
+    };
+    
+    // Realizar la solicitud al backend
+    const response = await axios.post(targetUrl, body, config);
+    
+    // Devolver la respuesta del backend
+    return NextResponse.json(response.data, { 
+      status: response.status,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+  } catch (error: unknown) {
+    console.error('Error en el proxy de calificaciones:', error);
+    
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status || 500;
+      const data = error.response?.data || { error: 'Error al procesar la calificación' };
+      
+      console.error(`Error ${status}:`, data);
+      
+      return NextResponse.json(
+        typeof data === 'object' ? data : { error: String(data) },
+        { status }
+      );
+    }
+    
+    // Error desconocido
     return NextResponse.json(
-      { error: "Error desconocido al crear calificación" },
+      { error: 'Error interno del servidor al procesar la calificación' },
       { status: 500 }
     );
   }
@@ -37,32 +72,63 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get("cookie");
-    if (!cookieHeader || !cookieHeader.includes("jwt=")) {
-      return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
-    }
-
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-    const res = await axios.get(`${apiUrl}/api/v1/grades/`, {
-      headers: {
-        Cookie: cookieHeader,
-        "Content-Type": "application/json",
-      },
-      withCredentials: true,
-    });
-
-    return NextResponse.json(res.data, { status: 200 });
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data || "Error al obtener calificaciones";
+    // Obtener las cookies de la solicitud
+    const cookieHeader = req.headers.get("cookie") || '';
+    
+    // Verificar si tenemos el token JWT
+    if (!cookieHeader.includes("jwt=")) {
+      console.error('JWT no encontrado en las cookies (GET)');
       return NextResponse.json(
-        { error: message },
-        { status: error.response?.status || 500 }
+        { error: "No autorizado - Token JWT no encontrado" }, 
+        { status: 401 }
       );
     }
+
+    // URL del backend
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245';
+    const targetUrl = `${apiUrl}/api/v1/grades/`;
+    
+    console.log('Solicitud GET a:', targetUrl);
+    
+    // Configuración de la solicitud al backend
+    const config = {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader,
+        'Accept': 'application/json',
+      },
+      withCredentials: true,
+      timeout: 10000, // 10 segundos de timeout
+    };
+    
+    // Realizar la solicitud al backend
+    const response = await axios.get(targetUrl, config);
+    
+    // Devolver la respuesta del backend
+    return NextResponse.json(response.data, { 
+      status: response.status,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  } catch (error) {
+    console.error('Error en el proxy de calificaciones (GET):', error);
+    
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status || 500;
+      const data = error.response?.data || { error: 'Error al obtener las calificaciones' };
+      
+      console.error(`Error ${status}:`, data);
+      
+      return NextResponse.json(
+        typeof data === 'object' ? data : { error: String(data) },
+        { status }
+      );
+    }
+    
+    // Error desconocido
     return NextResponse.json(
-      { error: "Error desconocido al obtener calificaciones" },
+      { error: 'Error interno del servidor al obtener las calificaciones' },
       { status: 500 }
     );
   }

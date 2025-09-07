@@ -720,14 +720,61 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         throw new Error("Tipo de formulario no válido");
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const response = await axios.post(`${apiUrl}${url}`, payload, {
-        headers:
-          action === "Crear mensaje de materia"
-            ? {}
-            : { "Content-Type": "application/json" },
-        withCredentials: true,
-      });
+      // Configuración de la solicitud
+      const isFormData = payload instanceof FormData;
+      const requestOptions: RequestInit = {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          ...(!isFormData && { 'Content-Type': 'application/json' }),
+        },
+        credentials: 'include',
+        body: isFormData ? payload : JSON.stringify(payload),
+      };
+
+      console.log('Enviando solicitud a:', url);
+      console.log('Método:', requestOptions.method);
+      console.log('Headers:', requestOptions.headers);
+      console.log('Payload:', payload);
+      
+      // Enviar la solicitud
+      const response = await fetch(url, requestOptions);
+      
+      // Procesar la respuesta
+      const contentType = response.headers.get('content-type');
+      let responseData;
+      
+      try {
+        responseData = contentType?.includes('application/json')
+          ? await response.json()
+          : await response.text();
+          
+        console.log('Respuesta del servidor:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: responseData,
+        });
+      } catch (error) {
+        console.error('Error al analizar la respuesta:', error);
+        throw new Error('Error al procesar la respuesta del servidor');
+      }
+      
+      if (!response.ok) {
+        let errorMessage = 'Error en la solicitud';
+        
+        if (typeof responseData === 'object' && responseData !== null) {
+          errorMessage = responseData.error || responseData.message || JSON.stringify(responseData);
+        } else if (typeof responseData === 'string') {
+          errorMessage = responseData;
+        }
+        
+        console.error('Error en la respuesta:', {
+          status: response.status,
+          message: errorMessage,
+        });
+        
+        throw new Error(errorMessage);
+      }
 
       if (response.status === 201 || response.status === 200) {
         const successMessage =

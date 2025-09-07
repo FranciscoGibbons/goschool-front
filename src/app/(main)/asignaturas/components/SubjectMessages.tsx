@@ -203,8 +203,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
           <div className="text-lg font-bold text-primary mb-2 flex items-center gap-2">
             <span>{formatDateHeader(dateKey)}</span>
           </div>
-          {grouped[dateKey].map((message) => (
-            <div key={message.id} className="flex items-start gap-3">
+          {grouped[dateKey].map((message, index) => (
+            <div key={`${message.id}-${index}`} className="flex items-start gap-3">
               {/* Icono lateral */}
               <div
                 className={clsx(

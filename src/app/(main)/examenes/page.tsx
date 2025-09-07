@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Role } from "@/utils/types";
-import ExamList from "./components/ExamList";
+import { useState, useEffect } from "react";
 import { AcademicCapIcon } from "@heroicons/react/24/outline";
+import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import CourseSelector from "@/components/CourseSelector";
+import ExamList from "./components/ExamList";
 import userInfoStore from "@/store/userInfoStore";
-import axios from "axios";
-
+import { Role } from "@/utils/types";
 import { Exam } from "@/utils/types";
+import axios from "axios";
 
 // Use the Exam type from utils/types
 type ExamWithSubjectId = Exam & {
@@ -18,52 +18,70 @@ type ExamWithSubjectId = Exam & {
 interface Subject {
   id: number;
   name: string;
+  course_id: number;
 }
 
 export default function Exams() {
+  const { userInfo } = userInfoStore();
+  const {
+    courses,
+    selectedCourseId,
+    isLoading,
+    error,
+    setSelectedCourseId,
+  } = useCourseStudentSelection(userInfo?.role || null);
+
+  const [currentStep, setCurrentStep] = useState<"course" | "exams">("course");
   const [exams, setExams] = useState<ExamWithSubjectId[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const { userInfo, fetchUserInfo } = userInfoStore();
-  const router = useRouter();
 
+  // Determinar el paso inicial según el rol
   useEffect(() => {
-    const initializePage = async () => {
-      try {
-        // Fetch user info if not already loaded
-        if (!userInfo) {
-          await fetchUserInfo();
+    if (userInfo?.role === "student") {
+      setCurrentStep("exams");
+    }
+  }, [userInfo?.role]);
+
+  const handleCourseSelect = async (courseId: number) => {
+    setSelectedCourseId(courseId);
+    setCurrentStep("exams");
+  };
+
+  const handleBackToCourse = () => {
+    setCurrentStep("course");
+  };
+
+  // Cargar exámenes y materias cuando se selecciona un curso o es student
+  useEffect(() => {
+    const loadExamsAndSubjects = async () => {
+      if (currentStep === "exams") {
+        try {
+          const [examsResponse, subjectsResponse] = await Promise.all([
+            axios.get("/api/proxy/assessments/", { withCredentials: true }),
+            axios.get("/api/proxy/subjects/", { withCredentials: true }),
+          ]);
+          setExams(examsResponse.data);
+          setSubjects(subjectsResponse.data);
+        } catch (err) {
+          console.error("Error loading exams and subjects:", err);
         }
-
-        // If still no user info after fetch, redirect to login
-        if (!userInfo) {
-          router.push("/login");
-          return;
-        }
-
-        // Fetch exams and subjects
-        const [examsResponse, subjectsResponse] = await Promise.all([
-          axios.get("/api/proxy/assessments/", { withCredentials: true }),
-          axios.get("/api/proxy/subjects/", { withCredentials: true }),
-        ]);
-
-        setExams(examsResponse.data);
-        setSubjects(subjectsResponse.data);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error initializing exams page:", err);
-        setError("Error al cargar los datos");
-        setLoading(false);
       }
     };
 
-    initializePage();
-  }, [userInfo, fetchUserInfo, router]);
+    loadExamsAndSubjects();
+  }, [currentStep]);
 
-  // Show loading state
-  if (loading) {
+  // Filtrar por curso seleccionado
+  const filteredSubjects = selectedCourseId
+    ? subjects.filter((s) => Number(s.course_id) === Number(selectedCourseId))
+    : subjects;
+
+  const subjectIdSet = new Set(filteredSubjects.map((s) => s.id));
+  const filteredExams = selectedCourseId
+    ? exams.filter((e) => subjectIdSet.has(e.subject_id))
+    : exams;
+
+  if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center gap-3">
@@ -73,14 +91,13 @@ export default function Exams() {
         <div className="flex justify-center py-16">
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-            <span>Cargando evaluaciones...</span>
+            <span>Cargando...</span>
           </div>
         </div>
       </div>
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="p-6 space-y-6">
@@ -103,11 +120,6 @@ export default function Exams() {
     );
   }
 
-  // If no user info, don't render anything (will redirect)
-  if (!userInfo) {
-    return null;
-  }
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
@@ -115,11 +127,35 @@ export default function Exams() {
         <h1 className="text-3xl font-bold text-foreground">Evaluaciones</h1>
       </div>
 
-      <ExamList 
-        exams={exams} 
-        role={userInfo.role as Role} 
-        subjects={subjects} 
-      />
+      {currentStep === "course" && (
+        <CourseSelector
+          courses={courses}
+          onCourseSelect={handleCourseSelect}
+          selectedCourseId={selectedCourseId}
+          title="Selecciona un curso"
+          description="Elige el curso para ver las evaluaciones"
+        />
+      )}
+
+      {currentStep === "exams" && (
+        <div className="space-y-6">
+          {userInfo?.role !== "student" && (
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleBackToCourse}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                ← Volver a selección de curso
+              </button>
+            </div>
+          )}
+          <ExamList 
+            exams={filteredExams} 
+            role={userInfo?.role as Role} 
+            subjects={filteredSubjects} 
+          />
+        </div>
+      )}
     </div>
   );
 }

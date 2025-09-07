@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const subjectId = searchParams.get("subject_id");
 
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245';
     const url = subjectId 
       ? `${apiUrl}/api/v1/assessments/?subject_id=${subjectId}`
       : `${apiUrl}/api/v1/assessments/`;
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245';
     
     const res = await axios.post(`${apiUrl}/api/v1/assessments/`, body, {
       headers: { 

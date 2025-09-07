@@ -76,8 +76,30 @@ export function useCourseStudentSelection(
 
         console.log("Courses loaded:", coursesResult);
 
+        let dedupedCourses: Course[];
+        const incoming: Course[] = coursesResult as Course[];
+
+        if (userRole === "admin") {
+          // Deduplicar por clave compuesta (mismo año/división/nivel/turno) y quedarse con el id más bajo
+          const byComposite: Record<string, Course> = {};
+          for (const c of incoming) {
+            const key = `${c.year}-${c.division}-${c.level}-${c.shift}`;
+            if (!byComposite[key] || c.id < byComposite[key].id) {
+              byComposite[key] = c;
+            }
+          }
+          dedupedCourses = Object.values(byComposite);
+        } else {
+          // Deduplicar por id para otros roles
+          const uniqueById: Record<number, Course> = {} as Record<number, Course>;
+          for (const c of incoming) {
+            uniqueById[c.id] = uniqueById[c.id] ?? c;
+          }
+          dedupedCourses = Object.values(uniqueById);
+        }
+
         // Generar nombres para los cursos
-        const coursesWithNames = coursesResult.map((course: Course) => ({
+        const coursesWithNames = dedupedCourses.map((course: Course) => ({
           ...course,
           name: `${course.year}° ${course.division} - ${
             course.level === "primary" ? "Primaria" : "Secundaria"

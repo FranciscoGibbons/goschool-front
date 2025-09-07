@@ -9,9 +9,9 @@ import axios from "axios";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 
 const API_ENDPOINTS = {
-  GRADES: "/api/grades",
-  SUBJECTS: "/api/subjects",
-  ASSESSMENTS: "/api/assessments",
+  GRADES: "/api/proxy/grades",
+  SUBJECTS: "/api/proxy/subjects",
+  ASSESSMENTS: "/api/proxy/assessments",
 };
 import {
   Select,
@@ -79,11 +79,25 @@ export default function GradesDisplay({
 
   const fetchSubjects = useCallback(async () => {
     try {
+      console.log('Fetching subjects from:', API_ENDPOINTS.SUBJECTS);
       const response = await axios.get(API_ENDPOINTS.SUBJECTS);
-      setSubjects(response.data);
+      console.log('Subjects API response:', response.data);
+      // Ensure we always set an array, even if the response is not in the expected format
+      const subjectsData = Array.isArray(response.data) ? response.data : [];
+      console.log('Processed subjects data:', subjectsData);
+      setSubjects(subjectsData);
     } catch (error) {
       console.error("Error fetching subjects:", error);
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+        });
+      }
       toast.error("Error al cargar las materias");
+      // Set empty array on error to prevent map errors
+      setSubjects([]);
     }
   }, []);
 
@@ -148,7 +162,7 @@ export default function GradesDisplay({
 
   // ⚠️ Aquí seteamos automáticamente la materia si no hay una seleccionada aún
   useEffect(() => {
-    if (selectedSubject === null && subjects.length > 0) {
+    if (selectedSubject === null && subjects && subjects.length > 0) {
       setSelectedSubject(subjects[0].id);
     }
   }, [selectedSubject, subjects]);

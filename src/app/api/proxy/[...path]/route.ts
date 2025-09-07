@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
 interface Params {
-  id: string;
+  path: string[];
 }
 
 export async function GET(req: NextRequest, context: { params: Promise<Params> }) {
@@ -37,8 +37,9 @@ async function handleRequest(
     }
 
     const searchParams = req.nextUrl.searchParams.toString();
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const url = `${apiUrl}/api/v1/courses/${params.id}${searchParams ? `?${searchParams}` : ""}`;
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245';
+    const path = Array.isArray(params.path) ? params.path.join('/') : params.path || '';
+    const url = `${apiUrl}/api/v1/${path}${searchParams ? `?${searchParams}` : ""}`;
 
     const config: {
       headers: Record<string, string>;

@@ -42,6 +42,11 @@ export default function Asignaturas() {
 
   const handleCourseSelect = async (courseId: number) => {
     setSelectedCourseId(courseId);
+    // Para teacher/admin/preceptor no hace falta seleccionar estudiante
+    if (userInfo?.role === "teacher" || userInfo?.role === "admin" || userInfo?.role === "preceptor") {
+      setCurrentStep("subjects");
+      return;
+    }
     await loadStudents(courseId);
     setCurrentStep("student");
   };
@@ -128,18 +133,19 @@ export default function Asignaturas() {
         />
       )}
 
-      {currentStep === "subjects" && selectedStudentId && (
+      {currentStep === "subjects" && (
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleBackToStudent}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              ← Volver a selección de estudiante
-            </button>
+            {!(userInfo?.role === "teacher" || userInfo?.role === "admin" || userInfo?.role === "preceptor") && (
+              <button
+                onClick={handleBackToStudent}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                ← Volver a selección de estudiante
+              </button>
+            )}
           </div>
           <SubjectSelector
-            selectedStudentId={selectedStudentId}
             selectedCourseId={selectedCourseId}
           />
         </div>
