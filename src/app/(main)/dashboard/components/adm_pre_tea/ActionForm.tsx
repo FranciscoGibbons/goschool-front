@@ -722,6 +722,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
       // Configuración de la solicitud
       const isFormData = payload instanceof FormData;
+      let requestBody: BodyInit;
+      
+      if (isFormData) {
+        requestBody = payload as FormData;
+      } else {
+        requestBody = JSON.stringify(payload as Record<string, unknown> | string | number | boolean | null);
+      }
+      
       const requestOptions: RequestInit = {
         method: 'POST',
         headers: {
@@ -729,7 +737,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           ...(!isFormData && { 'Content-Type': 'application/json' }),
         },
         credentials: 'include',
-        body: isFormData ? payload : JSON.stringify(payload),
+        body: requestBody,
       };
 
       console.log('Enviando solicitud a:', url);
