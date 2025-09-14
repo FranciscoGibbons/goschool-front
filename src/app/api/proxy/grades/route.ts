@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
     
     console.log('Enviando solicitud a:', targetUrl);
     
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+    
     // Configuración de la solicitud al backend
     const config = {
       headers: { 
@@ -34,6 +40,7 @@ export async function POST(req: NextRequest) {
       },
       withCredentials: true,
       timeout: 10000, // 10 segundos de timeout
+      httpsAgent: httpsAgent,
     };
     
     // Realizar la solicitud al backend
@@ -90,6 +97,11 @@ export async function GET(req: NextRequest) {
     
     console.log('Solicitud GET a:', targetUrl);
     
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+    
     // Configuración de la solicitud al backend
     const config = {
       headers: { 
@@ -99,6 +111,7 @@ export async function GET(req: NextRequest) {
       },
       withCredentials: true,
       timeout: 10000, // 10 segundos de timeout
+      httpsAgent: httpsAgent,
     };
     
     // Realizar la solicitud al backend

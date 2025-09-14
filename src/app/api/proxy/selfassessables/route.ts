@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 export async function GET(req: NextRequest) {
   const cookieHeader = req.headers.get("cookie");
@@ -16,9 +17,15 @@ export async function GET(req: NextRequest) {
       ? `${apiUrl}/api/v1/selfassessables/?assessment_id=${assessmentId}`
       : `${apiUrl}/api/v1/selfassessables/`;
 
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const res = await axios.get(url, {
       headers: { Cookie: cookieHeader },
       withCredentials: true,
+      httpsAgent: httpsAgent,
     });
 
     return NextResponse.json(res.data);
@@ -49,12 +56,18 @@ export async function POST(req: NextRequest) {
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     const url = `${apiUrl}/api/v1/selfassessables/`;
 
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const res = await axios.post(url, body, {
       headers: { 
         Cookie: cookieHeader,
         "Content-Type": "application/json"
       },
       withCredentials: true,
+      httpsAgent: httpsAgent,
     });
 
     return NextResponse.json(res.data);

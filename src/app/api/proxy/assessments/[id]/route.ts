@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 interface Params {
   id: string;
@@ -35,9 +36,15 @@ async function handleRequest(
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     const url = `${apiUrl}/api/v1/assessments/${params.id}${searchParams ? `?${searchParams}` : ""}`;
 
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const config: {
       headers: Record<string, string>;
       withCredentials: boolean;
+      httpsAgent: https.Agent;
       data?: unknown;
     } = {
       headers: { 
@@ -45,6 +52,7 @@ async function handleRequest(
         'Content-Type': 'application/json',
       },
       withCredentials: true,
+      httpsAgent: httpsAgent,
     };
 
     let data;

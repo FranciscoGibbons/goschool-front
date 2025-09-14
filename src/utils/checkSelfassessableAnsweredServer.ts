@@ -1,4 +1,5 @@
 import axios from "axios";
+import https from "https";
 
 const checkSelfassessableAnsweredServer = async (token: string, selfassessableId: number) => {
   try {
@@ -8,6 +9,10 @@ const checkSelfassessableAnsweredServer = async (token: string, selfassessableId
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const res = await axios.post(`${apiUrl}/api/v1/get_if_selfassessable_answered/`, 
       { selfassessable_id: selfassessableId },
       {
@@ -16,6 +21,7 @@ const checkSelfassessableAnsweredServer = async (token: string, selfassessableId
           "Content-Type": "application/json"
         },
         withCredentials: true,
+        httpsAgent: httpsAgent,
       }
     );
     

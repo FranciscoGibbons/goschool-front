@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 export async function GET(req: NextRequest) {
   console.log('🔍 Iniciando verificación de token...');
@@ -26,13 +27,19 @@ export async function GET(req: NextRequest) {
     }
 
     console.log(`🌐 Llamando a ${apiUrl}/api/v1/verify_token/`);
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const response = await axios.get(`${apiUrl}/api/v1/verify_token/`, {
       headers: { 
         Cookie: cookieHeader,
         'Accept': 'application/json'
       },
       withCredentials: true,
-      validateStatus: () => true // Aceptar todos los códigos de estado
+      validateStatus: () => true, // Aceptar todos los códigos de estado
+      httpsAgent: httpsAgent,
     });
 
     console.log('✅ Respuesta del backend:', {

@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import https from 'https';
 
 // Define API endpoints
 export const API_ENDPOINTS = {
@@ -7,6 +8,11 @@ export const API_ENDPOINTS = {
   // Add other endpoints as needed
 };
 
+// Create HTTPS agent for self-signed certificates
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
+
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
@@ -14,6 +20,7 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  httpsAgent: httpsAgent,
 });
 
 // Add request interceptor to include cookies

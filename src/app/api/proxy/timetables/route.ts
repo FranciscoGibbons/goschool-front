@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 export async function GET(req: NextRequest) {
   const cookieHeader = req.headers.get("cookie");
@@ -16,9 +17,15 @@ export async function GET(req: NextRequest) {
       ? `${apiUrl}/api/v1/timetables/?course_id=${courseId}`
       : `${apiUrl}/api/v1/timetables/`;
 
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const res = await axios.get(url, {
       headers: { Cookie: cookieHeader },
       withCredentials: true,
+      httpsAgent: httpsAgent,
     });
 
     return NextResponse.json(res.data);

@@ -1,7 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import axios from "axios";
+import https from "https";
 
 export async function uploadProfilePicture(clientFormData: FormData) {
   try {
@@ -23,14 +24,23 @@ export async function uploadProfilePicture(clientFormData: FormData) {
     uploadFormData.append("file", file);
     
     // 4. POST al backend usando proxy
-    await axios.post(
-      `/api/proxy/profile-pictures`,
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
+    await axios.put(
+      `${baseUrl}/api/profile-picture`,
       uploadFormData,
       {
         headers: {
           Cookie: `jwt=${jwtCookie.value}`,
         },
         withCredentials: true,
+        httpsAgent: httpsAgent,
       }
     );
 
@@ -67,13 +77,22 @@ export async function getProfilePicture() {
     const jwtCookie = cookieStore.get("jwt");
     if (!jwtCookie) throw new Error("No JWT token found");
     
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+    
     const response = await axios.get(
-      `/api/proxy/profile-pictures`,
+      `${baseUrl}/api/proxy/profile-pictures`,
       {
         headers: {
           Cookie: `jwt=${jwtCookie.value}`,
         },
         withCredentials: true,
+        httpsAgent: httpsAgent,
       }
     );
 

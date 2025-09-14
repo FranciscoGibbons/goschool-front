@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
+import https from "https";
 
 // GET handler to fetch subject messages
 export async function GET(req: NextRequest) {
@@ -20,11 +21,17 @@ export async function GET(req: NextRequest) {
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const res = await axios.get(
       `${apiUrl}/api/v1/subject_messages/?subject_id=${subjectId}`,
       {
         headers: { Cookie: cookieHeader },
         withCredentials: true,
+        httpsAgent: httpsAgent,
       }
     );
 
@@ -58,12 +65,18 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     
+    // Create HTTPS agent for self-signed certificates
+    const httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
     const res = await axios.post(`${apiUrl}/api/v1/subject_messages/`, formData, {
       headers: { 
         Cookie: cookieHeader,
         'Content-Type': 'multipart/form-data',
       },
       withCredentials: true,
+      httpsAgent: httpsAgent,
     });
 
     return NextResponse.json(res.data, { status: 200 });

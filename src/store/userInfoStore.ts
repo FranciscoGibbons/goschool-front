@@ -93,7 +93,13 @@ const userInfoStore = create<UserInfoStore>()(
               .catch(() => ({ data: { url: null } }))
           ]);
 
-          const profilePicture = profilePictureRes.data?.url || null;
+          // Use the URL directly from backend, or our proxy if no URL
+          let profilePicture = profilePictureRes.data?.url || null;
+          if (!profilePicture) {
+            // If no profile picture URL from backend, use our proxy route
+            profilePicture = `/api/profile-picture`;
+          }
+
           const processedData = { ...personalData.data };
 
           // Si la API devuelve full_name, dividirlo en name y last_name
