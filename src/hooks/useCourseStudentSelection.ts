@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 import { Role } from "@/utils/types";
@@ -37,6 +37,7 @@ interface UseCourseStudentSelectionReturn {
   setSelectedStudentId: (studentId: number | null) => void;
   resetSelection: () => void;
   loadStudents: (courseId: number) => Promise<void>;
+  retryLoadCourses: () => void;
 }
 
 export function useCourseStudentSelection(
@@ -54,71 +55,73 @@ export function useCourseStudentSelection(
 
   const { selectedChild } = childSelectionStore();
 
-  // Cargar cursos según el rol
-  useEffect(() => {
+  // Función para cargar cursos con mejor manejo de errores
+  const fetchCourses = useCallback(async () => {
     if (!userRole) return;
 
-    const fetchCourses = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        if (userRole === "father") {
-          // Para padres, no necesitamos cursos, usamos los hijos
-          setCourses([]);
-          return;
-        }
-
-        const coursesData = await axios.get(`/api/proxy/courses/`, {
-          withCredentials: true,
-        });
-        const coursesResult = coursesData.data;
-
-        console.log("Courses loaded:", coursesResult);
-
-        let dedupedCourses: Course[];
-        const incoming: Course[] = coursesResult as Course[];
-
-        if (userRole === "admin") {
-          // Deduplicar por clave compuesta (mismo año/división/nivel/turno) y quedarse con el id más bajo
-          const byComposite: Record<string, Course> = {};
-          for (const c of incoming) {
-            const key = `${c.year}-${c.division}-${c.level}-${c.shift}`;
-            if (!byComposite[key] || c.id < byComposite[key].id) {
-              byComposite[key] = c;
-            }
-          }
-          dedupedCourses = Object.values(byComposite);
-        } else {
-          // Deduplicar por id para otros roles
-          const uniqueById: Record<number, Course> = {} as Record<number, Course>;
-          for (const c of incoming) {
-            uniqueById[c.id] = uniqueById[c.id] ?? c;
-          }
-          dedupedCourses = Object.values(uniqueById);
-        }
-
-        // Generar nombres para los cursos
-        const coursesWithNames = dedupedCourses.map((course: Course) => ({
-          ...course,
-          name: `${course.year}° ${course.division} - ${
-            course.level === "primary" ? "Primaria" : "Secundaria"
-          } (${course.shift === "morning" ? "Mañana" : "Tarde"})`,
-        }));
-
-        console.log("Courses with names:", coursesWithNames);
-        setCourses(coursesWithNames);
-      } catch (err) {
-        console.error("Error loading courses:", err);
-        setError("Error al cargar los cursos");
-        toast.error("Error al cargar los cursos");
-      } finally {
-        setIsLoading(false);
+      if (userRole === "father") {
+        // Para padres, no necesitamos cursos, usamos los hijos
+        setCourses([]);
+        return;
       }
-    };
 
-    fetchCourses();
+      const coursesData = await axios.get(`/api/proxy/courses/`, {
+        withCredentials: true,
+      });
+      const coursesResult = coursesData.data;
+
+      console.log("Courses loaded:", coursesResult);
+
+      let dedupedCourses: Course[];
+      const incoming: Course[] = coursesResult as Course[];
+
+      if (userRole === "admin") {
+        // Deduplicar por clave compuesta (mismo año/división/nivel/turno) y quedarse con el id más bajo
+        const byComposite: Record<string, Course> = {};
+        for (const c of incoming) {
+          const key = `${c.year}-${c.division}-${c.level}-${c.shift}`;
+          if (!byComposite[key] || c.id < byComposite[key].id) {
+            byComposite[key] = c;
+          }
+        }
+        dedupedCourses = Object.values(byComposite);
+      } else {
+        // Deduplicar por id para otros roles
+        const uniqueById: Record<number, Course> = {} as Record<number, Course>;
+        for (const c of incoming) {
+          uniqueById[c.id] = uniqueById[c.id] ?? c;
+        }
+        dedupedCourses = Object.values(uniqueById);
+      }
+
+      // Generar nombres para los cursos
+      const coursesWithNames = dedupedCourses.map((course: Course) => ({
+        ...course,
+        name: `${course.year}° ${course.division} - ${
+          course.level === "primary" ? "Primaria" : "Secundaria"
+        } (${course.shift === "morning" ? "Mañana" : "Tarde"})`,
+      }));
+
+      console.log("Courses with names:", coursesWithNames);
+      setCourses(coursesWithNames);
+    } catch (err) {
+      console.error("Error loading courses:", err);
+      const errorMessage = err instanceof Error ? err.message : "Error al cargar los cursos";
+      setError(errorMessage);
+      toast.error("Error al cargar los cursos");
+    } finally {
+      setIsLoading(false);
+    }
   }, [userRole]);
+
+  // Cargar cursos al montar o cambiar rol
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   // Para padres, manejar la selección automática del hijo
   useEffect(() => {
@@ -141,7 +144,7 @@ export function useCourseStudentSelection(
     }
   }, [userRole, selectedChild]);
 
-  const loadStudents = async (courseId: number) => {
+  const loadStudents = useCallback(async (courseId: number) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -240,14 +243,15 @@ export function useCourseStudentSelection(
       }
     } catch (err) {
       console.error("Error loading students:", err);
-      setError("Error al cargar los estudiantes");
+      const errorMessage = err instanceof Error ? err.message : "Error al cargar los estudiantes";
+      setError(errorMessage);
       toast.error("Error al cargar los estudiantes");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleSetSelectedCourseId = (courseId: number) => {
+  const handleSetSelectedCourseId = useCallback((courseId: number) => {
     setSelectedCourseId(courseId);
     setSelectedStudentId(null);
     setSelectedStudent(null);
@@ -257,20 +261,21 @@ export function useCourseStudentSelection(
     if (userRole !== "father") {
       loadStudents(courseId);
     }
-  };
+  }, [userRole, loadStudents]);
 
-  const handleSetSelectedStudentId = (studentId: number | null) => {
+  const handleSetSelectedStudentId = useCallback((studentId: number | null) => {
     setSelectedStudentId(studentId);
     const student = students.find((s) => s.id === studentId);
     setSelectedStudent(student || null);
-  };
+  }, [students]);
 
-  const resetSelection = () => {
+  const resetSelection = useCallback(() => {
     setSelectedCourseId(null);
     setSelectedStudentId(null);
     setSelectedStudent(null);
     setStudents([]);
-  };
+    setError(null);
+  }, []);
 
   return {
     courses,
@@ -284,5 +289,6 @@ export function useCourseStudentSelection(
     setSelectedStudentId: handleSetSelectedStudentId,
     resetSelection,
     loadStudents,
+    retryLoadCourses: fetchCourses,
   };
 }

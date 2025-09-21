@@ -2,11 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-  CalendarIcon,
-  UsersIcon,
-  AcademicCapIcon,
-} from "@heroicons/react/24/outline";
+  Calendar,
+  Users,
+  GraduationCap,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Course {
   id: number;
@@ -67,57 +69,78 @@ export default function CourseSelector({
 
   const getCourseIcon = (course: Course) => {
     if (course.year >= 8) {
-      return <AcademicCapIcon className="w-6 h-6" />;
+      return <GraduationCap className="h-5 w-5 text-primary" />;
     } else {
-      return <UsersIcon className="w-6 h-6" />;
+      return <Users className="h-5 w-5 text-primary" />;
     }
   };
 
   if (courses.length === 0) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <p className="text-muted-foreground">No hay cursos disponibles</p>
+      <div className="flex justify-center items-center py-12">
+        <div className="text-center">
+          <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground text-lg">No hay cursos disponibles</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
-        <p className="text-muted-foreground">{subtitle || description}</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="heading-2">{title}</h1>
+        <p className="body-text text-muted-foreground">
+          {subtitle || description}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Grid de cursos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((course) => (
           <Card
             key={course.id}
-            className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+            className={cn(
+              "cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
               selectedCourseId === course.id
-                ? "ring-2 ring-primary bg-primary/5"
-                : "hover:bg-muted/50"
-            }`}
+                ? "ring-2 ring-primary bg-primary/5 border-primary"
+                : "hover:border-accent-foreground/20"
+            )}
             onClick={() => onCourseSelect(course.id)}
+            tabIndex={0}
+            role="button"
+            aria-pressed={selectedCourseId === course.id}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onCourseSelect(course.id);
+              }
+            }}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
+            <CardHeader className="pb-4">
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 bg-primary/10 rounded-lg flex-shrink-0">
                   {getCourseIcon(course)}
                 </div>
-                <div>
-                  <CardTitle className="text-lg">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg font-semibold">
                     {getCourseLabel(course)}
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {getLevelLabel(course.level)} •{" "}
-                    {getShiftLabel(course.shift)}
-                  </p>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <Badge variant="outline" className="text-xs">
+                      {getLevelLabel(course.level)}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {getShiftLabel(course.shift)}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CalendarIcon className="w-4 h-4" />
+                <Calendar className="h-4 w-4" />
                 <span>Seleccionar curso</span>
               </div>
             </CardContent>
@@ -125,10 +148,12 @@ export default function CourseSelector({
         ))}
       </div>
 
+      {/* Botón de confirmación */}
       {selectedCourseId && (
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center pt-6">
           <Button
             onClick={() => onCourseSelect(selectedCourseId)}
+            size="lg"
             className="px-8"
           >
             Continuar con el curso seleccionado

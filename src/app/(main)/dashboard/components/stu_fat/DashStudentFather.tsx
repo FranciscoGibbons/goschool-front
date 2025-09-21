@@ -4,13 +4,18 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-  CalendarIcon,
-  BookOpenIcon,
-  ArrowRightIcon,
-} from "@heroicons/react/24/outline";
+  Calendar,
+  BookOpen,
+  ArrowRight,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 import { Exam, translateExamType, getExamTypeColor } from "@/utils/types";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import axios from "axios";
+import { cn } from "@/lib/utils";
 
 export default function DashStudentFather() {
   const [exams, setExams] = useState<Exam[]>([]);
@@ -20,13 +25,9 @@ export default function DashStudentFather() {
   useEffect(() => {
     const fetchExams = async () => {
       try {
-
-        const res = await axios.get(
-          `/api/proxy/assessments/`,
-          {
-            withCredentials: true,
-          }
-        );
+        const res = await axios.get(`/api/proxy/assessments/`, {
+          withCredentials: true,
+        });
         setExams(res.data);
       } catch (error) {
         console.error("Error fetching exams:", error);
@@ -59,71 +60,135 @@ export default function DashStudentFather() {
     return getExamTypeColor(type);
   };
 
+  const getGreeting = () => {
+    const hours = new Date().getHours();
+    if (hours < 12) return "Buenos días";
+    if (hours < 18) return "Buenas tardes";
+    return "Buenas noches";
+  };
+
+  const isExamSoon = (dateString: string) => {
+    const examDate = new Date(dateString);
+    const today = new Date();
+    const diffTime = examDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 3 && diffDays >= 0;
+  };
+
   if (loading) {
     return (
-      <div className="p-4 md:p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="h-32 bg-muted rounded"></div>
+      <div>
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </div>
     );
   }
 
+  const upcomingExams = exams.slice(0, 3);
+  const hasUpcomingExams = upcomingExams.length > 0;
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {" "}
-      {/* Card de Exámenes */}
-      <Card className="shadow-lg border-border">
+    <div className="space-y-8">
+      {/* Header de bienvenida */}
+      <div className="space-y-4">
+        <div>
+          <h1 className="heading-1">{getGreeting()}</h1>
+          <p className="body-text text-muted-foreground">
+            Aquí tienes un resumen de tu actividad académica
+          </p>
+        </div>
+      </div>
+
+      {/* Card principal de exámenes */}
+      <Card className="academic-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <BookOpenIcon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-            Próximos Exámenes
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-primary/10 rounded-lg">
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="heading-3">Próximos Exámenes</CardTitle>
+                <p className="body-small text-muted-foreground">
+                  Mantente al día con tus evaluaciones
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleViewExams}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              Ver todos
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          {exams.length === 0 ? (
+          {!hasUpcomingExams ? (
             <div className="text-center py-8">
-              <BookOpenIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">
-                No hay exámenes asignados
+              <div className="mb-4">
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
+              </div>
+              <h3 className="heading-4 mb-2">No hay exámenes próximos</h3>
+              <p className="body-text text-muted-foreground">
+                ¡Perfecto! No tienes evaluaciones pendientes por ahora
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {exams.slice(0, 3).map((exam) => (
+            <div className="space-y-3">
+              {upcomingExams.map((exam) => (
                 <div
                   key={exam.id}
-                  className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  className={cn(
+                    "p-4 border rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md hover:border-accent-foreground/20",
+                    isExamSoon(exam.due_date) && "bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800"
+                  )}
                   onClick={() => router.push("/examenes")}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground mb-2">
-                        {exam.task}
-                      </h3>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-4 w-4" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-medium text-foreground truncate">
+                          {exam.task}
+                        </h4>
+                        {isExamSoon(exam.due_date) && (
+                          <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
                           <span>{formatDate(exam.due_date)}</span>
                         </div>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getExamTypeColorLocal(
-                            exam.type
-                          )}`}
+                        
+                        <Badge 
+                          variant="outline" 
+                          className={cn("text-xs", getExamTypeColorLocal(exam.type))}
                         >
                           {getExamTypeLabel(exam.type)}
-                        </span>
+                        </Badge>
+                        
+                        {isExamSoon(exam.due_date) && (
+                          <Badge variant="warning" className="text-xs">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Próximo
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <ArrowRightIcon className="h-4 w-4 text-muted-foreground ml-2" />
+                    
+                    <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
                   </div>
                 </div>
               ))}
 
               {exams.length > 3 && (
-                <div className="text-center pt-2">
-                  <p className="text-sm text-muted-foreground">
+                <div className="text-center pt-3 border-t">
+                  <p className="body-small text-muted-foreground">
                     Y {exams.length - 3} exámenes más...
                   </p>
                 </div>
@@ -134,14 +199,60 @@ export default function DashStudentFather() {
           <div className="mt-6">
             <Button
               onClick={handleViewExams}
-              className="w-full"
               variant="outline"
+              className="w-full"
             >
+              <BookOpen className="h-4 w-4 mr-2" />
               Ver todos los exámenes
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Cards adicionales para futuras funcionalidades */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="academic-card opacity-60">
+          <CardContent className="p-6 text-center">
+            <div className="mb-4">
+              <div className="p-3 bg-muted rounded-lg inline-block">
+                <Calendar className="h-6 w-6 text-muted-foreground" />
+              </div>
+            </div>
+            <h3 className="heading-4 mb-2">Horarios</h3>
+            <p className="body-small text-muted-foreground">
+              Próximamente disponible
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="academic-card opacity-60">
+          <CardContent className="p-6 text-center">
+            <div className="mb-4">
+              <div className="p-3 bg-muted rounded-lg inline-block">
+                <BookOpen className="h-6 w-6 text-muted-foreground" />
+              </div>
+            </div>
+            <h3 className="heading-4 mb-2">Calificaciones</h3>
+            <p className="body-small text-muted-foreground">
+              Próximamente disponible
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="academic-card opacity-60">
+          <CardContent className="p-6 text-center">
+            <div className="mb-4">
+              <div className="p-3 bg-muted rounded-lg inline-block">
+                <ArrowRight className="h-6 w-6 text-muted-foreground" />
+              </div>
+            </div>
+            <h3 className="heading-4 mb-2">Mensajes</h3>
+            <p className="body-small text-muted-foreground">
+              Próximamente disponible
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "./button";
 
 export default function EmptyStateSVG({
   className = "w-64 h-48 mb-4 opacity-80",
@@ -164,5 +165,97 @@ export default function EmptyStateSVG({
         fill="#ccc"
       />
     </svg>
+  );
+}
+
+// Componente de estado vacío más completo
+interface EmptyStateProps {
+  icon?: React.ReactNode;
+  title?: string;
+  description?: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  className?: string;
+}
+
+export function EmptyState({ 
+  icon, 
+  title = "No hay datos disponibles", 
+  description = "No se encontraron elementos para mostrar",
+  action,
+  className = ""
+}: EmptyStateProps) {
+  return (
+    <div className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className}`}>
+      <div className="mb-6">
+        {icon || <EmptyStateSVG className="w-24 h-24 text-gray-400" />}
+      </div>
+      
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        {title}
+      </h3>
+      
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-sm">
+        {description}
+      </p>
+      
+      {action && (
+        <Button 
+          onClick={action.onClick}
+          variant="outline"
+          size="sm"
+        >
+          {action.label}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// Estados vacíos específicos para diferentes secciones
+export function EmptyGrades() {
+  return (
+    <EmptyState
+      title="No hay calificaciones"
+      description="Aún no se han registrado calificaciones para este estudiante"
+    />
+  );
+}
+
+export function EmptyExams() {
+  return (
+    <EmptyState
+      title="No hay evaluaciones"
+      description="No se encontraron evaluaciones programadas para este período"
+    />
+  );
+}
+
+export function EmptyMessages() {
+  return (
+    <EmptyState
+      title="No hay mensajes"
+      description="No tienes mensajes en este momento"
+    />
+  );
+}
+
+export function EmptySubjects() {
+  return (
+    <EmptyState
+      title="No hay asignaturas"
+      description="No se encontraron asignaturas para este curso"
+    />
+  );
+}
+
+export function EmptyTimetable() {
+  return (
+    <EmptyState
+      title="No hay horarios"
+      description="No se ha configurado un horario para este curso"
+    />
   );
 }

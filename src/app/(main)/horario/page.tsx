@@ -66,7 +66,7 @@ export default function Horario() {
 
   if (error) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
           <CalendarIcon className="size-8 text-primary" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -81,7 +81,7 @@ export default function Horario() {
   // Para estudiantes, mostrar directamente el horario
   if (userInfo?.role === "student") {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
           <CalendarIcon className="size-8 text-primary" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -100,7 +100,7 @@ export default function Horario() {
   // Para padres sin hijo seleccionado
   if (userInfo?.role === "father" && !selectedChild) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
           <CalendarIcon className="size-8 text-primary" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -122,7 +122,7 @@ export default function Horario() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <CalendarIcon className="size-8 text-primary" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">

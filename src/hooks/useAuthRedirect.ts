@@ -1,53 +1,85 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import userInfoStore from '@/store/userInfoStore';
 
-export function useAuthRedirect(requiredRole?: string) {
+interface UseAuthRedirectOptions {
+  requiredRole?: string;
+  redirectTo?: string;
+  allowedRoles?: string[];
+}
+
+export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
+  const { requiredRole, redirectTo = '/dashboard', allowedRoles } = options;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { userInfo, checkAuth, isLoading } = userInfoStore();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
+  const handleRedirect = useCallback((path: string) => {
+    const from = searchParams.get('from');
+    router.push(from && from !== '/login' ? from : path);
+  }, [router, searchParams]);
 
-    const verifyAuth = async () => {
-      try {
-        const isAuthenticated = await checkAuth();
-        
-        if (!isMounted) return;
-
-        if (!isAuthenticated) {
-          console.log('🔒 No autenticado, redirigiendo a login...');
-          router.push('/login');
-          return;
-        }
-
-        if (requiredRole && userInfo?.role !== requiredRole) {
-          console.log(`⚠️ Rol ${userInfo?.role} no tiene permiso para acceder a esta ruta`);
-          router.push('/dashboard');
-          return;
-        }
-
-        setIsAuthorized(true);
-      } catch (error) {
-        console.error('Error en verificación de autenticación:', error);
-        if (isMounted) {
-          router.push('/login');
-        }
-      } finally {
-        if (isMounted) {
-          setIsChecking(false);
-        }
+  const verifyAuth = useCallback(async () => {
+    try {
+      setIsChecking(true);
+      
+      const isAuthenticated = await checkAuth();
+      
+      if (!isAuthenticated) {
+        console.log('🔒 No autenticado, redirigiendo a login...');
+        router.push('/login');
+        return;
       }
-    };
 
-    verifyAuth();
+      // Verificar rol específico requerido
+      if (requiredRole && userInfo?.role !== requiredRole) {
+        console.log(`⚠️ Rol ${userInfo?.role} no tiene permiso para acceder a esta ruta`);
+        handleRedirect(redirectTo);
+        return;
+      }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [checkAuth, router, requiredRole, userInfo?.role]);
+      // Verificar roles permitidos
+      if (allowedRoles && userInfo?.role && !allowedRoles.includes(userInfo.role)) {
+        console.log(`⚠️ Rol ${userInfo?.role} no está en la lista de roles permitidos`);
+        handleRedirect(redirectTo);
+        return;
+      }
 
-  return { isAuthorized, isLoading: isLoading || isChecking };
+      setIsAuthorized(true);
+    } catch (error) {
+      console.error('Error en verificación de autenticación:', error);
+      router.push('/login');
+    } finally {
+      setIsChecking(false);
+    }
+  }, [checkAuth, userInfo?.role, requiredRole, allowedRoles, router, redirectTo, handleRedirect]);
+
+  useEffect(() => {
+    // Solo verificar si no está ya autenticado
+    if (!isAuthorized && !isLoading) {
+      verifyAuth();
+    }
+  }, [verifyAuth, isAuthorized, isLoading]);
+
+  // Re-verificar cuando cambie el rol del usuario
+  useEffect(() => {
+    if (userInfo?.role && isAuthorized) {
+      if (requiredRole && userInfo.role !== requiredRole) {
+        setIsAuthorized(false);
+        handleRedirect(redirectTo);
+      } else if (allowedRoles && !allowedRoles.includes(userInfo.role)) {
+        setIsAuthorized(false);
+        handleRedirect(redirectTo);
+      }
+    }
+  }, [userInfo?.role, requiredRole, allowedRoles, isAuthorized, handleRedirect, redirectTo]);
+
+  return { 
+    isAuthorized, 
+    isLoading: isLoading || isChecking,
+    userRole: userInfo?.role || null,
+    retry: verifyAuth
+  };
 }

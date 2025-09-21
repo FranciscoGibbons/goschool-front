@@ -1,16 +1,36 @@
 "use client";
 
 import { AcademicCapIcon } from "@heroicons/react/24/outline";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
 import GradesDisplay from "./components/GradesDisplay";
 import userInfoStore from "@/store/userInfoStore";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
+import { LoadingPage, LoadingCard } from "@/components/ui/loading-spinner";
+import { SkeletonGrades, SkeletonList } from "@/components/ui/skeleton";
 
-export default function Calificaciones() {
-  // Call all hooks at the top level
+// Componente wrapper para GradesDisplay con error boundary
+function GradesDisplayWrapper({ selectedStudentId }: { selectedStudentId?: number | null }) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <ErrorDisplay 
+          error="Error al cargar las calificaciones"
+          retry={() => window.location.reload()}
+        />
+      }
+    >
+      <Suspense fallback={<SkeletonGrades />}>
+        <GradesDisplay selectedStudentId={selectedStudentId || undefined} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function CalificacionesContent() {
   const { userInfo } = userInfoStore();
   const [currentStep, setCurrentStep] = useState<"course" | "student" | "grades">("course");
   const { isLoading: isAuthLoading } = useAuthRedirect();
@@ -43,18 +63,14 @@ export default function Calificaciones() {
     }
   }, [userInfo?.role, courses.length, students.length]);
 
-  if (isAuthLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   const handleCourseSelect = async (courseId: number) => {
-    setSelectedCourseId(courseId);
-    await loadStudents(courseId);
-    setCurrentStep("student");
+    try {
+      setSelectedCourseId(courseId);
+      await loadStudents(courseId);
+      setCurrentStep("student");
+    } catch (error) {
+      console.error("Error al seleccionar curso:", error);
+    }
   };
 
   const handleStudentSelect = (studentId: number) => {
@@ -72,30 +88,25 @@ export default function Calificaciones() {
     setSelectedStudentId(null);
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-3">
-          <AcademicCapIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Calificaciones
-          </h1>
-        </div>
-        <div className="text-center py-8">Cargando...</div>
-      </div>
-    );
+  // Loading states
+  if (isAuthLoading || isLoading) {
+    return <LoadingPage message="Cargando información de calificaciones..." />;
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
           <AcademicCapIcon className="size-8 text-primary" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Calificaciones
           </h1>
         </div>
-        <div className="text-center py-8 text-red-500">{error}</div>
+        <ErrorDisplay 
+          error={error}
+          retry={() => window.location.reload()}
+        />
       </div>
     );
   }
@@ -103,20 +114,20 @@ export default function Calificaciones() {
   // Para estudiantes, mostrar directamente las calificaciones
   if (userInfo?.role === "student") {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
           <AcademicCapIcon className="size-8 text-primary" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Calificaciones
           </h1>
         </div>
-        <GradesDisplay />
+        <GradesDisplayWrapper />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <AcademicCapIcon className="size-8 text-primary" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -125,24 +136,46 @@ export default function Calificaciones() {
       </div>
 
       {currentStep === "course" && (
-        <CourseSelector
-          courses={courses}
-          onCourseSelect={handleCourseSelect}
-          selectedCourseId={selectedCourseId}
-          title="Selecciona un curso"
-          description="Elige el curso para ver las calificaciones"
-        />
+        <ErrorBoundary
+          fallback={
+            <ErrorDisplay 
+              error="Error al cargar los cursos"
+              retry={handleBackToCourse}
+            />
+          }
+        >
+          <Suspense fallback={<LoadingCard />}>
+            <CourseSelector
+              courses={courses}
+              onCourseSelect={handleCourseSelect}
+              selectedCourseId={selectedCourseId}
+              title="Selecciona un curso"
+              description="Elige el curso para ver las calificaciones"
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
       {currentStep === "student" && (
-        <StudentSelector
-          students={students}
-          onStudentSelect={handleStudentSelect}
-          onBack={handleBackToCourse}
-          selectedStudentId={selectedStudentId}
-          title="Selecciona un estudiante"
-          description="Elige el estudiante para ver sus calificaciones"
-        />
+        <ErrorBoundary
+          fallback={
+            <ErrorDisplay 
+              error="Error al cargar los estudiantes"
+              retry={handleBackToCourse}
+            />
+          }
+        >
+          <Suspense fallback={<SkeletonList items={4} />}>
+            <StudentSelector
+              students={students}
+              onStudentSelect={handleStudentSelect}
+              onBack={handleBackToCourse}
+              selectedStudentId={selectedStudentId}
+              title="Selecciona un estudiante"
+              description="Elige el estudiante para ver sus calificaciones"
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
       {currentStep === "grades" && selectedStudentId && (
@@ -150,14 +183,22 @@ export default function Calificaciones() {
           <div className="flex items-center gap-4">
             <button
               onClick={handleBackToStudent}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               ← Volver a selección de estudiante
             </button>
           </div>
-          <GradesDisplay selectedStudentId={selectedStudentId} />
+          <GradesDisplayWrapper selectedStudentId={selectedStudentId || undefined} />
         </div>
       )}
     </div>
+  );
+}
+
+export default function Calificaciones() {
+  return (
+    <ErrorBoundary>
+      <CalificacionesContent />
+    </ErrorBoundary>
   );
 }
