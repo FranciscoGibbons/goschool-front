@@ -213,36 +213,28 @@ export default function SelfAssessableCard({
               <StatusCard
                 icon={<ClockIcon className="w-4 h-4 text-blue-500" />}
                 text={`Disponible el ${formatDate(exam.due_date)}`}
-                bg="bg-blue-50 dark:bg-blue-950/20"
-                border="border-blue-200 dark:border-blue-800"
-                textColor="text-blue-700 dark:text-blue-300"
+                variant="info"
               />
             )}
             {!answered && isToday && (
               <StatusCard
                 icon={<SparklesIcon className="w-4 h-4 text-yellow-500" />}
                 text="Hoy disponible"
-                bg="bg-yellow-50 dark:bg-yellow-950/20"
-                border="border-yellow-200 dark:border-yellow-800"
-                textColor="text-yellow-700 dark:text-yellow-300"
+                variant="warning"
               />
             )}
             {!answered && isAfter && (
               <StatusCard
                 icon={<BookOpenIcon className="w-4 h-4 text-red-500" />}
                 text="Vencido"
-                bg="bg-red-50 dark:bg-red-950/20"
-                border="border-red-200 dark:border-red-800"
-                textColor="text-red-700 dark:text-red-300"
+                variant="danger"
               />
             )}
             {answered && (
               <StatusCard
                 icon={<CheckIcon className="w-4 h-4 text-green-500" />}
                 text="Completado"
-                bg="bg-green-50 dark:bg-green-950/20"
-                border="border-green-200 dark:border-green-800"
-                textColor="text-green-700 dark:text-green-300"
+                variant="success"
               />
             )}
           </div>
@@ -253,9 +245,7 @@ export default function SelfAssessableCard({
             <StatusCard
               icon={<IdentificationIcon className="w-4 h-4 text-gray-500" />}
               text="Solo visualización"
-              bg="bg-gray-50 dark:bg-gray-950/20"
-              border="border-gray-200 dark:border-gray-800"
-              textColor="text-gray-700 dark:text-gray-300"
+              variant="default"
             />
           </div>
         )}
