@@ -32,8 +32,8 @@ export async function uploadProfilePicture(clientFormData: FormData) {
       rejectUnauthorized: false,
     });
 
-    await axios.put(
-      `${baseUrl}/api/profile-picture`,
+    await axios.post(
+      `${baseUrl}/api/proxy/profile-pictures`,
       uploadFormData,
       {
         headers: {

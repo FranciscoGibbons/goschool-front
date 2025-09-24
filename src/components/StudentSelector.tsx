@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 interface Student {
   id: number;
   full_name: string;
-  photo?: string;
+  photo?: string | null;
 }
 
 interface StudentSelectorProps {
@@ -105,7 +105,7 @@ export default function StudentSelector({
               <div className="flex flex-col items-center text-center space-y-3">
                 <Avatar className="h-16 w-16 ring-2 ring-background shadow-sm">
                   <AvatarImage 
-                    src={student.photo} 
+                    src={student.photo || undefined} 
                     alt={student.full_name}
                     className="object-cover"
                   />

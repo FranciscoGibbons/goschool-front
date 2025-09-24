@@ -9,6 +9,7 @@ import {
   getExamTypeIndicatorColor,
 } from "@/utils/types";
 import SelfAssessableCard from "./SelfAssessableCard";
+import SelfAssessableView from "./SelfAssessableView";
 import {
   BookOpenIcon,
   CalendarIcon,
@@ -57,6 +58,7 @@ export default function ExamList({ exams, role, subjects }: Props) {
   if (typeFilter !== "all") {
     filteredExams = filteredExams.filter((exam) => exam.type === typeFilter);
   }
+  
   if (filter === "date_asc") {
     filteredExams.sort(
       (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
@@ -84,6 +86,31 @@ export default function ExamList({ exams, role, subjects }: Props) {
   useEffect(() => {
     setVisibleCount(10);
   }, [filter, typeFilter]);
+
+  // Cuando se abre el modal, inicializar editExam
+  useEffect(() => {
+    if (updatingExam) {
+      setEditExam({ ...updatingExam });
+    } else {
+      setEditExam(null);
+    }
+  }, [updatingExam]);
+
+  // Separar autoevaluables del resto
+  const selfAssessableExams = filteredExams.filter(exam => exam.type === "selfassessable") as SelfAssessableExam[];
+  
+  // Si solo estamos mostrando autoevaluables, usar el componente mejorado
+  if (typeFilter === "selfassessable") {
+    return (
+      <div className="space-y-6">
+        <SelfAssessableView
+          exams={selfAssessableExams}
+          subjects={subjects}
+          role={role}
+        />
+      </div>
+    );
+  }
 
   // Obtener solo los exámenes visibles
   const visibleExams = filteredExams.slice(0, visibleCount);
@@ -121,15 +148,6 @@ export default function ExamList({ exams, role, subjects }: Props) {
       setDeletingId(null);
     }
   };
-
-  // Cuando se abre el modal, inicializar editExam
-  useEffect(() => {
-    if (updatingExam) {
-      setEditExam({ ...updatingExam });
-    } else {
-      setEditExam(null);
-    }
-  }, [updatingExam]);
 
   if (exams.length === 0) {
     return (

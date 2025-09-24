@@ -39,26 +39,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Use the URL directly from the backend
-    const response = await axios.get(profileInfo.url, {
-      headers: {
-        Cookie: `jwt=${jwt}`,
-      },
-      responseType: "arraybuffer",
-      httpsAgent: httpsAgent,
-    });
-
-    // Return the image with proper headers
-    return new NextResponse(response.data, {
-      headers: {
-        "Content-Type": response.headers["content-type"] || "image/png",
-        "Cache-Control": "public, max-age=3600",
-      },
-    });
+    // Return the URL instead of proxying the image
+    // This allows the client to access it directly
+    return NextResponse.json({ url: profileInfo.url }, { status: 200 });
   } catch (error) {
     console.error("Error serving profile picture:", error);
+    
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        return NextResponse.json(
+          { error: "No profile picture found" },
+          { status: 404 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { error: "Failed to serve image" },
+      { error: "Failed to get profile picture info" },
       { status: 500 }
     );
   }
@@ -92,7 +89,7 @@ export async function PUT(request: NextRequest) {
       {
         headers: {
           Cookie: `jwt=${jwt}`,
-          'Content-Type': 'multipart/form-data',
+          // No especificar Content-Type para que axios lo genere automáticamente con boundary
         },
         httpsAgent: httpsAgent,
       }

@@ -32,15 +32,36 @@ async function handleRequest(
   method: string
 ) {
   try {
+    const path = Array.isArray(params.path) ? params.path.join('/') : params.path || '';
+    
+    console.log(`🌐 Catch-all proxy: ${method} /api/proxy/${path}`);
+    
     const cookieHeader = req.headers.get("cookie");
     if (!cookieHeader || !cookieHeader.includes("jwt=")) {
+      console.log("❌ JWT no encontrado");
       return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
     }
 
     const searchParams = req.nextUrl.searchParams.toString();
-    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://34.39.136.245';
-    const path = Array.isArray(params.path) ? params.path.join('/') : params.path || '';
-    const url = `${apiUrl}/api/v1/${path}${searchParams ? `?${searchParams}` : ""}`;
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://163.176.141.4';
+    
+    // Convert kebab-case to snake_case for backend compatibility
+    // profile-pictures -> profile_pictures
+    const backendPath = path.replace(/-/g, '_');
+    
+    // Some endpoints require trailing slash
+    const needsTrailingSlash = [
+      'disciplinary_sanction',
+      'assistance',
+      'messages'
+    ].includes(backendPath);
+    
+    const url = `${apiUrl}/api/v1/${backendPath}${needsTrailingSlash ? '/' : ''}${searchParams ? `?${searchParams}` : ""}`;
+    
+    console.log(`🔗 Backend URL: ${url}`);
+    console.log(`📝 Method: ${method}`);
+    console.log(`🛤️  Original path: ${path}`);
+    console.log(`🛤️  Backend path: ${backendPath}`);
 
     // Create HTTPS agent for self-signed certificates
     const httpsAgent = new https.Agent({
@@ -75,9 +96,18 @@ async function handleRequest(
       ...config,
     });
 
+    console.log(`✅ Backend response: ${res.status}`);
     return NextResponse.json(res.data, { status: res.status });
   } catch (error) {
+    console.error(`❌ Error in catch-all proxy:`, error);
+    
     if (axios.isAxiosError(error)) {
+      console.error(`📊 Axios error details:`, {
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      
       const message = error.response?.data || "Error en la petición";
       return NextResponse.json(
         { error: message },

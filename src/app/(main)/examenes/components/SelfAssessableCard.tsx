@@ -15,6 +15,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { StatusCard } from "@/components/StatusCard";
 import { SelfAssessableExam } from "@/utils/types";
+import { toast } from "sonner";
 
 interface Question {
   id: number;
@@ -183,11 +184,17 @@ export default function SelfAssessableCard({
       );
       if (res) {
         setResult("¡Respuestas enviadas correctamente!");
+        toast.success("Autoevaluación completada exitosamente");
         await checkIfAnswered();
         setTimeout(() => setShowQuestions(false), 1200);
-      } else setResult("Error al enviar respuestas");
-    } catch {
+      } else {
+        setResult("Error al enviar respuestas");
+        toast.error("Error al procesar las respuestas");
+      }
+    } catch (error) {
       setResult("Error de red o del servidor");
+      toast.error("Error de conexión. Intenta nuevamente.");
+      console.error("Error submitting answers:", error);
     } finally {
       setSubmitting(false);
     }

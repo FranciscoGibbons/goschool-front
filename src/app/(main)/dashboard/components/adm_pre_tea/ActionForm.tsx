@@ -58,10 +58,18 @@ interface Assessment {
   type: string;
 }
 
+// Interfaces para el backend
+interface PubUser {
+  id: number;
+  photo: string | null;
+  course_id: number | null;
+  full_name: string; // Ahora incluye full_name directamente
+}
+
 interface Student {
   id: number;
   full_name: string;
-  photo?: string;
+  photo?: string | null;
 }
 
 interface ActionFormProps {
@@ -284,39 +292,29 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
     setIsLoadingStudents(true);
     try {
-      // Primero obtener los IDs de estudiantes del curso
+      // Obtener estudiantes del backend (ahora incluye full_name)
       const studentsResponse = await axios.get(
         buildProxyUrl('/api/proxy/students/', { course_id: courseId }), {
           withCredentials: true,
         }
       );
 
-      const studentIds = studentsResponse.data;
-      console.log("IDs de estudiantes:", studentIds);
+      const pubUsers: PubUser[] = studentsResponse.data;
+      console.log("Students data from backend:", pubUsers);
 
-      if (studentIds.length === 0) {
+      if (pubUsers.length === 0) {
         setStudents([]);
         return;
       }
 
-      // Luego obtener los datos personales de cada estudiante
-      const personalDataPromises = studentIds.map((studentId: number) =>
-        axios.get(
-          buildProxyUrl('/api/proxy/public-personal-data/', { user_id: studentId }), {
-            withCredentials: true,
-          }
-        )
-      );
-
-      const personalDataResponses = await Promise.all(personalDataPromises);
-      const studentsData = personalDataResponses.map((response, index) => ({
-        id: studentIds[index],
-        full_name:
-          response.data[0]?.full_name || `Estudiante ${studentIds[index]}`,
-        photo: response.data[0]?.photo,
+      // Convertir PubUser a Student (ya no necesitamos llamadas adicionales)
+      const studentsData: Student[] = pubUsers.map((pubUser: PubUser) => ({
+        id: pubUser.id,
+        full_name: pubUser.full_name || `Estudiante ${pubUser.id}`,
+        photo: pubUser.photo,
       }));
 
-      console.log("Datos de estudiantes:", studentsData);
+      console.log("Final students data:", studentsData);
       // Remove duplicates by id
       const uniqueStudents = studentsData.filter(
         (student, idx, arr) => arr.findIndex((s) => s.id === student.id) === idx

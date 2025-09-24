@@ -23,6 +23,8 @@ interface Message {
   message: string;
   courses: string;
   sender_id: number;
+  sender_name?: string; // Ahora puede incluir sender_name directamente
+  sender_photo?: string; // Ahora puede incluir sender_photo directamente
 }
 
 interface Sender {
@@ -85,39 +87,49 @@ export default function MessageList() {
   }, []);
 
   const fetchSendersData = async (messagesToProcess: Message[]) => {
-    const uniqueSenderIds = [
-      ...new Set(messagesToProcess.map((msg) => msg.sender_id)),
-    ];
     const newSendersMap = new Map<number, Sender>();
 
-    for (const senderId of uniqueSenderIds) {
-      try {
-        const senderData = await axios.get(
-          `/api/proxy/public-personal-data/?user_id=${senderId}`, {
-            withCredentials: true,
-          }
-        );
-        const senderDataResult = senderData.data;
-
-        if (senderDataResult && senderDataResult.length > 0) {
-          const sender = senderDataResult[0];
-          const senderInfo: Sender = {
-            id: senderId,
-            full_name: sender.full_name || "Usuario",
-            photo: sender.photo || null,
-          };
-          newSendersMap.set(senderId, senderInfo);
-        }
-      } catch (error) {
-        console.error(
-          `Error al obtener datos del remitente ${senderId}:`,
-          error
-        );
-        newSendersMap.set(senderId, {
+    for (const message of messagesToProcess) {
+      const senderId = message.sender_id;
+      
+      // Si el mensaje ya incluye la información del remitente, usarla directamente
+      if (message.sender_name) {
+        const senderInfo: Sender = {
           id: senderId,
-          full_name: "Usuario Desconocido",
-          photo: null,
-        });
+          full_name: message.sender_name,
+          photo: message.sender_photo || null,
+        };
+        newSendersMap.set(senderId, senderInfo);
+      } else {
+        // Solo hacer llamada adicional si no está incluida la información
+        try {
+          const senderData = await axios.get(
+            `/api/proxy/public-personal-data/?user_id=${senderId}`, {
+              withCredentials: true,
+            }
+          );
+          const senderDataResult = senderData.data;
+
+          if (senderDataResult && senderDataResult.length > 0) {
+            const sender = senderDataResult[0];
+            const senderInfo: Sender = {
+              id: senderId,
+              full_name: sender.full_name || "Usuario",
+              photo: sender.photo || null,
+            };
+            newSendersMap.set(senderId, senderInfo);
+          }
+        } catch (error) {
+          console.error(
+            `Error al obtener datos del remitente ${senderId}:`,
+            error
+          );
+          newSendersMap.set(senderId, {
+            id: senderId,
+            full_name: "Usuario Desconocido",
+            photo: null,
+          });
+        }
       }
     }
 

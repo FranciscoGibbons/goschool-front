@@ -9,7 +9,8 @@ const PROTECTED_ROUTES = [
   '/examenes', 
   '/horario', 
   '/mensajes', 
-  '/perfil'
+  '/perfil',
+  '/conducta'
 ] as const;
 
 // Rutas públicas que no requieren autenticación

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 // import { Button } from "@/components/ui/button";
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +77,9 @@ export default function GradesDisplay({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
 
+  // Ref para prevenir race conditions
+  const currentStudentIdRef = useRef<number | undefined>(selectedStudentId);
+
   const fetchSubjects = useCallback(async () => {
     try {
       console.log('Fetching subjects from:', API_ENDPOINTS.SUBJECTS);
@@ -102,14 +105,22 @@ export default function GradesDisplay({
   }, []);
 
   useEffect(() => {
+    // Actualizar la ref con el studentId actual
+    currentStudentIdRef.current = selectedStudentId;
+
     // Para estudiantes, siempre cargar las calificaciones (sin selectedStudentId)
     // Para otros roles, solo cargar si hay selectedStudentId
     const shouldFetch = userInfo?.role === "student" || selectedStudentId;
 
-    if (shouldFetch) {
-      setSelectedSubject(null); // Reset subject on student change
+    // Limpiar inmediatamente el estado cuando cambia el estudiante
+    setGrades([]);
+    setAssessments([]);
+    setSelectedSubject(null); // Reset subject on student change
 
+    if (shouldFetch) {
       const fetchAll = async () => {
+        const requestStudentId = selectedStudentId; // Capturar el ID al momento de la petición
+        
         setIsLoading(true);
         setErrorMsg("");
         try {
@@ -135,28 +146,48 @@ export default function GradesDisplay({
             ? API_ENDPOINTS.ASSESSMENTS
             : buildUrl(API_ENDPOINTS.ASSESSMENTS, { student_id: selectedStudentId });
 
+          console.log("Fetching grades for student:", selectedStudentId, "URL:", gradesUrl);
+
           const [gradesResponse, assessmentsResponse] = await Promise.all([
             axios.get(gradesUrl),
             axios.get(assessmentsUrl),
           ]);
 
-          setGrades(Array.isArray(gradesResponse.data) ? gradesResponse.data : []);
+          // Verificar que la respuesta corresponda al estudiante actual (evitar race conditions)
+          if (currentStudentIdRef.current !== requestStudentId) {
+            console.log("Race condition detectada, ignorando respuesta para estudiante:", requestStudentId);
+            return;
+          }
+
+          console.log("Grades response for student", selectedStudentId, ":", gradesResponse.data);
+
+          // Verificar que las calificaciones correspondan al estudiante correcto
+          const validGrades = Array.isArray(gradesResponse.data) 
+            ? gradesResponse.data.filter((grade: Grade) => 
+                userInfo?.role === "student" || grade.student_id === selectedStudentId
+              )
+            : [];
+
+          setGrades(validGrades);
           setAssessments(
             Array.isArray(assessmentsResponse.data) ? assessmentsResponse.data : []
           );
         } catch (error) {
-          console.error("Error fetching data:", error);
-          setErrorMsg("Error al cargar los datos.");
-          toast.error("Error al cargar los datos");
+          // Solo mostrar error si aún estamos en el mismo estudiante
+          if (currentStudentIdRef.current === requestStudentId) {
+            console.error("Error fetching data:", error);
+            setErrorMsg("Error al cargar los datos.");
+            toast.error("Error al cargar los datos");
+          }
         } finally {
-          setIsLoading(false);
+          // Solo actualizar loading si aún estamos en el mismo estudiante
+          if (currentStudentIdRef.current === requestStudentId) {
+            setIsLoading(false);
+          }
         }
       };
 
       fetchAll();
-    } else {
-      setGrades([]);
-      setAssessments([]);
     }
   }, [selectedStudentId, userInfo?.role, fetchSubjects]);
 
@@ -248,8 +279,10 @@ export default function GradesDisplay({
         credentials: "include",
       });
       toast.success("Calificación borrada");
+      // Filtrar la calificación borrada del estado local
       setGrades((prev) => prev.filter((g) => Number(g.id) !== id));
-    } catch {
+    } catch (error) {
+      console.error("Error al borrar calificación:", error);
       toast.error("Error al borrar la calificación");
     } finally {
       setDeletingId(null);
@@ -441,6 +474,7 @@ export default function GradesDisplay({
                   );
                   if (res.ok) {
                     toast.success("Calificación actualizada");
+                    // Actualizar el estado local con los nuevos datos
                     setGrades((prev) =>
                       prev.map((g) =>
                         Number(g.id) === Number(updatingGrade.id)
@@ -449,10 +483,14 @@ export default function GradesDisplay({
                       )
                     );
                     setUpdatingGrade(null);
+                    setEditGrade(null);
                   } else {
+                    const errorData = await res.text();
+                    console.error("Error response:", errorData);
                     toast.error("Error al actualizar la calificación");
                   }
-                } catch {
+                } catch (error) {
+                  console.error("Error al actualizar calificación:", error);
                   toast.error("Error de red al actualizar");
                 } finally {
                   setIsSaving(false);
@@ -505,7 +543,10 @@ export default function GradesDisplay({
                 <button
                   className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
                   type="button"
-                  onClick={() => setUpdatingGrade(null)}
+                  onClick={() => {
+                    setUpdatingGrade(null);
+                    setEditGrade(null);
+                  }}
                   disabled={isSaving}
                 >
                   <TrashIcon className="w-4 h-4" /> Cancelar

@@ -4,6 +4,14 @@ import axios from "axios";
 import { Role } from "@/utils/types";
 import childSelectionStore from "@/store/childSelectionStore";
 
+// Estructura que devuelve el backend en /api/proxy/students/ (ahora incluye full_name)
+interface PubUser {
+  id: number;
+  photo: string | null;
+  course_id: number | null;
+  full_name: string; // Ahora incluye full_name directamente
+}
+
 interface Course {
   id: number;
   name: string;
@@ -22,7 +30,7 @@ interface Student {
   full_name: string;
   email: string;
   course_id: number;
-  photo?: string;
+  photo?: string | null; // Permitir null como en PubUser
 }
 
 interface UseCourseStudentSelectionReturn {
@@ -149,98 +157,57 @@ export function useCourseStudentSelection(
       setIsLoading(true);
       setError(null);
 
-      const studentsData = await axios.get(
+      // Obtener estudiantes del backend (ahora incluye full_name)
+      const studentsResponse = await axios.get(
         `/api/proxy/students/?course_id=${courseId}`, {
           withCredentials: true,
         }
       );
-      const studentsResult = studentsData.data;
+      
+      console.log("=== RESPONSE COMPLETA GET STUDENTS ===");
+      console.log("URL:", `/api/proxy/students/?course_id=${courseId}`);
+      console.log("Status:", studentsResponse.status);
+      console.log("Headers:", studentsResponse.headers);
+      console.log("Data (estudiantes):", studentsResponse.data);
+      console.log("========================================");
+      
+      const pubUsers: PubUser[] = studentsResponse.data;
 
-      console.log("Students API response (IDs only):", studentsResult);
+      console.log("Students data from backend:", pubUsers);
 
-      // Si la respuesta son solo IDs, obtener los datos completos de cada estudiante
-      if (studentsResult.length > 0 && typeof studentsResult[0] === "number") {
-        console.log("Fetching complete student data for IDs:", studentsResult);
-
-        const studentPromises = studentsResult.map(async (studentId: number) => {
-          try {
-            console.log(`Fetching data for student ID: ${studentId}`);
-
-            const studentData = await axios.get(
-              `/api/proxy/public-personal-data/?id=${studentId}`, {
-                withCredentials: true,
-              }
-            );
-            const studentDataResult = studentData.data;
-            console.log(
-              `Raw response for student ${studentId}:`,
-              studentDataResult
-            );
-
-            // La API devuelve un array de todos los usuarios, necesitamos agregar el ID manualmente
-            const processedStudentData = Array.isArray(studentDataResult)
-              ? studentDataResult[0]
-              : studentDataResult;
-            console.log(
-              `Processed data for student ${studentId}:`,
-              processedStudentData
-            );
-
-            // Agregar el ID que falta y asegurar que tenga la estructura correcta
-            const processedStudent = {
-              id: studentId,
-              name: processedStudentData?.full_name?.split(" ")[0] || "Estudiante",
-              last_name:
-                processedStudentData?.full_name?.split(" ").slice(1).join(" ") ||
-                `${studentId}`,
-              full_name: processedStudentData?.full_name || `Estudiante ${studentId}`,
-              email: `estudiante${studentId}@escuela.com`,
-              course_id: courseId,
-              photo: processedStudentData?.photo,
-            };
-
-            console.log(
-              `Final processed student ${studentId}:`,
-              processedStudent
-            );
-            return processedStudent;
-          } catch (err) {
-            console.error(`Error fetching student ${studentId}:`, err);
-            return null;
-          }
-        });
-
-        const processedStudents = await Promise.all(studentPromises);
-        const validStudents = processedStudents
-          .filter((student) => student !== null && student.id)
-          .map((student: Student) => ({
-            ...student,
-            full_name:
-              student.full_name ||
-              `${student.name || ""} ${student.last_name || ""}`.trim(),
-          }));
-
-        console.log("Complete students data:", validStudents);
-        setStudents(validStudents);
-      } else {
-        // Si ya son objetos completos, procesarlos normalmente
-        const validStudents = studentsResult
-          .filter((student: Student) => {
-            if (!student.id) {
-              console.warn("Student without ID found:", student);
-              return false;
-            }
-            return true;
-          })
-          .map((student: Student) => ({
-            ...student,
-            full_name:
-              student.full_name || `${student.name} ${student.last_name}`,
-          }));
-
-        console.log("Valid students:", validStudents);
-        setStudents(validStudents);
+      if (pubUsers.length === 0) {
+        setStudents([]);
+        return;
       }
+
+      // Convertir PubUser a Student (ya no necesitamos llamadas adicionales)
+      const studentsData: Student[] = pubUsers.map((pubUser: PubUser) => {
+        const fullName = pubUser.full_name || `Estudiante ${pubUser.id}`;
+        const nameParts = fullName.split(" ");
+        const firstName = nameParts[0] || "Estudiante";
+        const lastName = nameParts.slice(1).join(" ") || `${pubUser.id}`;
+
+        return {
+          id: pubUser.id,
+          name: firstName,
+          last_name: lastName,
+          full_name: fullName,
+          email: `estudiante${pubUser.id}@escuela.com`,
+          course_id: pubUser.course_id || courseId,
+          photo: pubUser.photo,
+        };
+      });
+      
+      // Filtrar estudiantes válidos y eliminar duplicados
+      const validStudents = studentsData
+        .filter((student) => student && student.id)
+        .filter((student, index, arr) => 
+          arr.findIndex((s) => s.id === student.id) === index
+        );
+
+      console.log("Final students data:", validStudents);
+      setStudents(validStudents);
+
     } catch (err) {
       console.error("Error loading students:", err);
       const errorMessage = err instanceof Error ? err.message : "Error al cargar los estudiantes";
