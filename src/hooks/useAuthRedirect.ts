@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import userInfoStore from '@/store/userInfoStore';
 
@@ -25,6 +25,32 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
     try {
       setIsChecking(true);
       
+      console.log('🔄 Iniciando verificación de autenticación...');
+      
+      // Si ya tenemos userInfo válido, verificar permisos directamente sin hacer nueva llamada
+      if (userInfo?.role) {
+        console.log('✅ Usando userInfo existente:', userInfo.role);
+        
+        // Verificar rol específico requerido
+        if (requiredRole && userInfo.role !== requiredRole) {
+          console.log(`⚠️ Rol ${userInfo.role} no tiene permiso para acceder a esta ruta`);
+          handleRedirect(redirectTo);
+          return;
+        }
+
+        // Verificar roles permitidos
+        if (allowedRoles && !allowedRoles.includes(userInfo.role)) {
+          console.log(`⚠️ Rol ${userInfo.role} no está en la lista de roles permitidos`);
+          handleRedirect(redirectTo);
+          return;
+        }
+
+        setIsAuthorized(true);
+        return;
+      }
+      
+      // Hacer checkAuth que incluye su propia verificación de cookies
+      console.log('🔄 Verificando token con backend...');
       const isAuthenticated = await checkAuth();
       
       if (!isAuthenticated) {
@@ -33,21 +59,27 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
         return;
       }
 
-      // Verificar rol específico requerido
-      if (requiredRole && userInfo?.role !== requiredRole) {
-        console.log(`⚠️ Rol ${userInfo?.role} no tiene permiso para acceder a esta ruta`);
-        handleRedirect(redirectTo);
-        return;
-      }
+      // Después de checkAuth, el userInfo debería estar disponible
+      const updatedUserInfo = userInfoStore.getState().userInfo;
+      
+      if (updatedUserInfo?.role) {
+        // Verificar rol específico requerido
+        if (requiredRole && updatedUserInfo.role !== requiredRole) {
+          console.log(`⚠️ Rol ${updatedUserInfo.role} no tiene permiso para acceder a esta ruta`);
+          handleRedirect(redirectTo);
+          return;
+        }
 
-      // Verificar roles permitidos
-      if (allowedRoles && userInfo?.role && !allowedRoles.includes(userInfo.role)) {
-        console.log(`⚠️ Rol ${userInfo?.role} no está en la lista de roles permitidos`);
-        handleRedirect(redirectTo);
-        return;
+        // Verificar roles permitidos
+        if (allowedRoles && !allowedRoles.includes(updatedUserInfo.role)) {
+          console.log(`⚠️ Rol ${updatedUserInfo.role} no está en la lista de roles permitidos`);
+          handleRedirect(redirectTo);
+          return;
+        }
       }
-
+      
       setIsAuthorized(true);
+
     } catch (error) {
       console.error('Error en verificación de autenticación:', error);
       router.push('/login');
@@ -57,8 +89,11 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
   }, [checkAuth, userInfo?.role, requiredRole, allowedRoles, router, redirectTo, handleRedirect]);
 
   useEffect(() => {
-    // Solo verificar si no está ya autenticado
-    if (!isAuthorized && !isLoading) {
+    // Si ya está autorizado, no hacer nueva verificación
+    if (isAuthorized) return;
+    
+    // Solo verificar si no está cargando
+    if (!isLoading) {
       verifyAuth();
     }
   }, [verifyAuth, isAuthorized, isLoading]);

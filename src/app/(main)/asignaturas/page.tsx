@@ -3,6 +3,7 @@
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, Suspense } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
 import SubjectSelector from "./components/SubjectSelector";
@@ -217,8 +218,10 @@ function AsignaturasContent() {
 
 export default function Asignaturas() {
   return (
-    <ErrorBoundary>
-      <AsignaturasContent />
-    </ErrorBoundary>
+    <ProtectedPage>
+      <ErrorBoundary>
+        <AsignaturasContent />
+      </ErrorBoundary>
+    </ProtectedPage>
   );
 }

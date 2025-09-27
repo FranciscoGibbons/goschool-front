@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { AcademicCapIcon } from "@heroicons/react/24/outline";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
 import ExamList from "./components/ExamList";
 import userInfoStore from "@/store/userInfoStore";
@@ -195,8 +196,10 @@ function ExamsContent() {
 
 export default function Exams() {
   return (
-    <ErrorBoundary>
-      <ExamsContent />
-    </ErrorBoundary>
+    <ProtectedPage>
+      <ErrorBoundary>
+        <ExamsContent />
+      </ErrorBoundary>
+    </ProtectedPage>
   );
 }

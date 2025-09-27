@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import Sidebar from "../components/sidebar/Sidebar";
 import { MobileHeaderClient } from './components/mobile-header-client';
 import BottomNavbar from '@/components/BottomNavbar';
@@ -9,14 +7,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Server-side authentication check
-  const cookieStore = await cookies();
-  const jwtCookie = cookieStore.get('jwt');
+  // El middleware ya se encarga de la verificación de autenticación
+  // No necesitamos verificar aquí para evitar conflictos
   
-  if (!jwtCookie) {
-    redirect('/login');
-  }
-
   return (
     <div className="min-h-screen w-full bg-background flex">
       {/* Mobile sidebar overlay */}

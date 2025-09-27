@@ -3,12 +3,13 @@
 import { CalendarIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
 import TimetableClient from "./components/TimetableClient";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 
-export default function Horario() {
+function HorarioContent() {
   const { userInfo } = userInfoStore();
   const { selectedChild } = childSelectionStore();
   const { courses, selectedCourseId, isLoading, error, setSelectedCourseId } =
@@ -149,5 +150,13 @@ export default function Horario() {
           />
         )}
     </div>
+  );
+}
+
+export default function Horario() {
+  return (
+    <ProtectedPage>
+      <HorarioContent />
+    </ProtectedPage>
   );
 }

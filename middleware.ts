@@ -17,7 +17,7 @@ const PROTECTED_ROUTES = [
 const PUBLIC_ROUTES = [
   '/login',
   '/api/proxy/login',
-  '/api/proxy/verify-token', // Permitir verificación de token
+  '/api/proxy/verify_token', // Corregido: usar underscore como en el backend
   '/_next',
   '/favicon.ico',
   '/images',
@@ -30,18 +30,21 @@ async function verifyTokenWithBackend(request: NextRequest): Promise<boolean> {
     const cookieHeader = request.headers.get('cookie');
     if (!cookieHeader) return false;
 
-    // Hacer llamada interna al endpoint de verificación
-    const verifyUrl = new URL('/api/proxy/verify-token', request.url);
+    // Hacer llamada interna al endpoint de verificación (corregido: usar underscore)
+    const verifyUrl = new URL('/api/proxy/verify_token/', request.url);
     const response = await fetch(verifyUrl, {
       method: 'GET',
       headers: {
         'Cookie': cookieHeader,
         'Content-Type': 'application/json'
-      }
+      },
+      // Agregar timeout más corto
+      signal: AbortSignal.timeout(5000)
     });
 
     return response.ok;
-  } catch {
+  } catch (error) {
+    console.error('Error en middleware verificando token:', error);
     return false;
   }
 }
@@ -109,7 +112,7 @@ export async function middleware(request: NextRequest) {
       return addSecurityHeaders(response);
     }
     
-    // Verificar el token con el backend usando el endpoint existente
+    // Verificar el token con el backend usando el endpoint correcto
     const isValidToken = await verifyTokenWithBackend(request);
     if (!isValidToken) {
       // Token inválido, limpiar cookie y redirigir

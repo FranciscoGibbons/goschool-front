@@ -39,32 +39,51 @@ const userInfoStore = create<UserInfoStore>()(
         checkAuth: async (): Promise<boolean> => {
           const state = get();
           
+          console.log('🔍 checkAuth iniciado - lastCheck:', state.lastCheck, 'userInfo:', !!state.userInfo);
+          
           // Use cached result if recent
           if (state.lastCheck && Date.now() - state.lastCheck < CACHE_DURATION && state.userInfo) {
+            console.log('✅ Usando resultado cacheado');
             return true;
+          }
+
+          // Quick cookie check before making HTTP request
+          if (typeof window !== 'undefined') {
+            const cookies = document.cookie.split(';').map(c => c.trim());
+            const jwtCookie = cookies.find(cookie => cookie.startsWith('jwt='));
+            
+            console.log('🍪 Cookies encontradas:', cookies.length);
+            console.log('🍪 JWT Cookie:', jwtCookie ? 'Encontrada' : 'No encontrada');
+            
+            if (!jwtCookie) {
+              console.log('🔒 No hay cookie JWT');
+              set({ userInfo: null, lastCheck: null, error: 'No JWT cookie' });
+              return false;
+            }
           }
 
           try {
             console.log('🔄 Verificando autenticación...');
             
-            const response = await axios.get(`/api/proxy/verify-token/`, { 
+            const response = await axios.get(`/api/proxy/verify_token/`, { 
               withCredentials: true,
               timeout: 10000, // 10 second timeout
               validateStatus: (status) => status < 500 // Accept 4xx but not 5xx
             });
             
-            const isAuthenticated = response.status === 200 && response.data?.success === true;
+            // El backend devuelve "json web token is valid" como string, no un objeto con success
+            const isAuthenticated = response.status === 200;
             
             if (isAuthenticated) {
               set({ lastCheck: Date.now(), error: null });
-              console.log('✅ Usuario autenticado correctamente');
+              console.log('✅ Token JWT válido, usuario autenticado');
               
               // Fetch user info if not available or stale
               if (!state.userInfo || Date.now() - (state.lastCheck || 0) > CACHE_DURATION) {
                 get().fetchUserInfo().catch(console.error);
               }
             } else {
-              console.log('🔒 Autenticación fallida');
+              console.log('🔒 Token JWT inválido o expirado');
               set({ userInfo: null, lastCheck: null, error: 'Authentication failed' });
             }
             
