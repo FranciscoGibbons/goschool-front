@@ -94,10 +94,32 @@ export default function MessageList() {
       
       // Si el mensaje ya incluye la información del remitente, usarla directamente
       if (message.sender_name) {
+        let profilePicture = null;
+        if (message.sender_photo) {
+          // Procesar la URL de la foto para usar el proxy, como en userInfoStore
+          let fileName = message.sender_photo;
+          
+          // Si viene con estructura de path completa, extraer solo el nombre del archivo
+          if (fileName.includes('/uploads/profile_pictures/')) {
+            fileName = fileName.split('/uploads/profile_pictures/').pop() || fileName;
+          }
+          // Si viene con ./ al inicio, quitarlo
+          fileName = fileName.replace(/^\.\//, '');
+          // Si aún contiene path, quedarnos solo con el nombre del archivo
+          fileName = fileName.split('/').pop() || fileName;
+          
+          // Usar el proxy interno para evitar problemas de certificados SSL
+          profilePicture = `/api/image-proxy/uploads/profile_pictures/${fileName}`;
+          console.log("🖼️ Foto de remitente procesada - Original:", message.sender_photo, "-> Proxy:", profilePicture);
+        } else {
+          // Usar imagen por defecto a través del proxy
+          profilePicture = `/api/image-proxy/uploads/profile_pictures/default.jpg`;
+        }
+
         const senderInfo: Sender = {
           id: senderId,
           full_name: message.sender_name,
-          photo: message.sender_photo || null,
+          photo: profilePicture,
         };
         newSendersMap.set(senderId, senderInfo);
       } else {
@@ -112,10 +134,33 @@ export default function MessageList() {
 
           if (senderDataResult && senderDataResult.length > 0) {
             const sender = senderDataResult[0];
+            
+            let profilePicture = null;
+            if (sender.photo) {
+              // Procesar la URL de la foto para usar el proxy, como en userInfoStore
+              let fileName = sender.photo;
+              
+              // Si viene con estructura de path completa, extraer solo el nombre del archivo
+              if (fileName.includes('/uploads/profile_pictures/')) {
+                fileName = fileName.split('/uploads/profile_pictures/').pop() || fileName;
+              }
+              // Si viene con ./ al inicio, quitarlo
+              fileName = fileName.replace(/^\.\//, '');
+              // Si aún contiene path, quedarnos solo con el nombre del archivo
+              fileName = fileName.split('/').pop() || fileName;
+              
+              // Usar el proxy interno para evitar problemas de certificados SSL
+              profilePicture = `/api/image-proxy/uploads/profile_pictures/${fileName}`;
+              console.log("🖼️ Foto de remitente desde API - Original:", sender.photo, "-> Proxy:", profilePicture);
+            } else {
+              // Usar imagen por defecto a través del proxy
+              profilePicture = `/api/image-proxy/uploads/profile_pictures/default.jpg`;
+            }
+
             const senderInfo: Sender = {
               id: senderId,
               full_name: sender.full_name || "Usuario",
-              photo: sender.photo || null,
+              photo: profilePicture,
             };
             newSendersMap.set(senderId, senderInfo);
           }
@@ -127,7 +172,7 @@ export default function MessageList() {
           newSendersMap.set(senderId, {
             id: senderId,
             full_name: "Usuario Desconocido",
-            photo: null,
+            photo: `/api/image-proxy/uploads/profile_pictures/default.jpg`,
           });
         }
       }
@@ -216,7 +261,13 @@ export default function MessageList() {
             >
               <Avatar className="h-12 w-12 mr-4">
                 {sender?.photo ? (
-                  <AvatarImage src={sender.photo} alt={sender.full_name} />
+                  <AvatarImage 
+                    src={sender.photo} 
+                    alt={sender.full_name}
+                    onError={(e) => {
+                      console.error("Error cargando imagen de avatar:", sender.photo, e);
+                    }}
+                  />
                 ) : (
                   <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                     {initials}

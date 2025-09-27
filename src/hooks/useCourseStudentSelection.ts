@@ -192,6 +192,29 @@ export function useCourseStudentSelection(
         const firstName = nameParts[0] || "Estudiante";
         const lastName = nameParts.slice(1).join(" ") || `${pubUser.id}`;
 
+        // Procesar la URL de la foto usando el proxy de imágenes
+        let processedPhoto: string | null = null;
+        if (pubUser.photo) {
+          let fileName = pubUser.photo;
+          
+          console.log(`🔧 Procesando foto para ${fullName}:`, pubUser.photo);
+          
+          // Si viene con estructura de path completa, extraer solo el nombre del archivo
+          if (fileName.includes('/uploads/profile_pictures/')) {
+            fileName = fileName.split('/uploads/profile_pictures/').pop() || fileName;
+          }
+          // Si viene con ./ al inicio, quitarlo
+          fileName = fileName.replace(/^\.\//, '');
+          // Si aún contiene path, quedarnos solo con el nombre del archivo
+          fileName = fileName.split('/').pop() || fileName;
+          
+          // Usar el proxy interno para evitar problemas de certificados SSL
+          processedPhoto = `/api/image-proxy/uploads/profile_pictures/${fileName}`;
+          console.log(`📷 URL procesada para ${fullName}:`, processedPhoto);
+        } else {
+          console.log(`❌ Sin foto para ${fullName}`);
+        }
+
         return {
           id: pubUser.id,
           name: firstName,
@@ -199,7 +222,7 @@ export function useCourseStudentSelection(
           full_name: fullName,
           email: `estudiante${pubUser.id}@escuela.com`,
           course_id: pubUser.course_id || courseId,
-          photo: pubUser.photo,
+          photo: processedPhoto,
         };
       });
       
