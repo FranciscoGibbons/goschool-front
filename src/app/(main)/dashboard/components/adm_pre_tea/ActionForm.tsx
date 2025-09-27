@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { cleanSubjectName } from "@/utils/subjectHelpers";
 import axios from "axios";
 
 // Función simple para construir URLs con parámetros para rutas proxy
@@ -184,64 +185,28 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       
       console.log("Iniciando carga de materias y cursos...");
       
-      const [subjectsData, coursesData] = await Promise.all([
-        axios.get(`/api/proxy/subjects/`, { withCredentials: true }),
-        axios.get(`/api/proxy/courses/`, { withCredentials: true }),
-      ]);
+      // Solo necesitamos cargar subjects ya que incluye course_name
+      const subjectsData = await axios.get(`/api/proxy/subjects/`, {
+        withCredentials: true,
+      });
 
       console.log("Respuesta de subjects:", subjectsData.data);
-      console.log("Respuesta de courses:", coursesData.data);
 
       const subjectsProcessed: Array<{
         id: number;
         name: string;
         course_id: number;
+        course_name?: string;
       }> = subjectsData.data;
-      const coursesProcessed: Array<{
-        id: number;
-        name: string;
-        year: number;
-        division: string;
-        shift: string;
-      }> = coursesData.data;
 
       console.log("Subjects data procesado:", subjectsProcessed);
-      console.log("Courses data procesado:", coursesProcessed);
 
-      // Crear un mapa de cursos para acceso rápido
-      const coursesMap: Map<
-        number,
-        {
-          id: number;
-          name: string;
-          year: number;
-          division: string;
-          shift: string;
-        }
-      > = new Map(
-        coursesProcessed.map(
-          (course: {
-            id: number;
-            name: string;
-            year: number;
-            division: string;
-            shift: string;
-          }) => [course.id, course]
-        )
-      );
-
-      console.log("Courses map creado:", Array.from(coursesMap.entries()));
-
-      // Agregar información del curso a cada materia
+      // Las materias ya vienen con course_name desde el backend
       const subjectsWithCourses: SubjectWithCourseName[] = subjectsProcessed.map(
-        (subject: { id: number; name: string; course_id: number }) => ({
+        (subject: { id: number; name: string; course_id: number; course_name?: string }) => ({
           ...subject,
           teacher_id: 0, // Valor dummy para cumplir con el tipo Subject
-          course_name: coursesMap.get(subject.course_id)
-            ? `${coursesMap.get(subject.course_id)!.year}°${
-                coursesMap.get(subject.course_id)!.division
-              }`
-            : `Curso ${subject.course_id}`,
+          course_name: subject.course_name || `Curso ${subject.course_id}`,
         })
       );
 
@@ -600,6 +565,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
         // Para notas conceptuales, validar que sea un concepto válido
         if (formData.grade_type === "conceptual") {
+          console.log("🔍 Validando nota conceptual:", formData.grade);
           if (!formData.grade) {
             toast.error("La nota conceptual no puede estar vacía");
             setIsLoading(false);
@@ -607,53 +573,59 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           }
 
           const validConceptualGrades = [
-            "excelente",
-            "muy bueno",
-            "bueno",
-            "satisfactorio",
-            "regular",
-            "insuficiente",
+            "e",
+            "mb", 
+            "b",
+            "s",
+            "r",
+            "i",
           ];
           const inputGrade = formData.grade.toLowerCase().trim();
+          console.log("✅ Nota conceptual a validar:", inputGrade);
+          console.log("🔍 Notas válidas:", validConceptualGrades);
           if (!validConceptualGrades.includes(inputGrade)) {
             toast.error(
-              "La nota conceptual debe ser: Excelente, Muy Bueno, Bueno, Satisfactorio, Regular o Insuficiente"
+              "La nota conceptual debe ser: E, MB, B, S, R o I"
             );
             setIsLoading(false);
             return;
           }
+          console.log("✅ Nota conceptual válida");
         }
 
         // Para notas conceptuales, usar un valor numérico que represente el concepto
         let gradeValue: number;
         if (formData.grade_type === "conceptual") {
+          console.log("🔄 Convirtiendo nota conceptual a numérica:", formData.grade);
           // Mapear conceptos a valores numéricos para el backend
           const conceptualGrade = formData.grade.toLowerCase();
           switch (conceptualGrade) {
-            case "excelente":
+            case "e":
               gradeValue = 10;
               break;
-            case "muy bueno":
+            case "mb":
               gradeValue = 9;
               break;
-            case "bueno":
+            case "b":
               gradeValue = 8;
               break;
-            case "satisfactorio":
+            case "s":
               gradeValue = 7;
               break;
-            case "regular":
+            case "r":
               gradeValue = 6;
               break;
-            case "insuficiente":
+            case "i":
               gradeValue = 4;
               break;
             default:
               // Si no es un concepto reconocido, usar 0 como valor por defecto
               gradeValue = 0;
           }
+          console.log("🔄 Valor numérico asignado:", gradeValue);
         } else {
           gradeValue = Number(formData.grade);
+          console.log("🔄 Valor numérico directo:", gradeValue);
         }
 
         payload = {
@@ -993,8 +965,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             <SelectContent>
               {subjects.map((subject) => (
                 <SelectItem key={subject.id} value={subject.id.toString()}>
-                  {subject.name}
-                  {"course_name" in subject ? ` - ${subject.course_name}` : ""}
+                  {cleanSubjectName(subject.name)}
+                  {subject.course_name && ` - ${subject.course_name}`}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1190,7 +1162,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                 <SelectContent>
                   {subjects.map((subject) => (
                     <SelectItem key={subject.id} value={subject.id.toString()}>
-                      {subject.name}
+                      {cleanSubjectName(subject.name)}
+                      {subject.course_name && ` - ${subject.course_name}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1316,14 +1289,35 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
             <div>
               <Label htmlFor="grade">Nota</Label>
-              <Input
-                id="grade"
-                placeholder={formData.grade_type === "numerical" ? "7.5" : "MB"}
-                value={formData.grade}
-                onChange={(e) =>
-                  handleChange<GradeForm>("grade", e.target.value)
-                }
-              />
+              {formData.grade_type === "conceptual" ? (
+                <Select
+                  value={formData.grade}
+                  onValueChange={(value) =>
+                    handleChange<GradeForm>("grade", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar nota (E, MB, B, S, R, I)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="e">E (Excelente)</SelectItem>
+                    <SelectItem value="mb">MB (Muy Bueno)</SelectItem>
+                    <SelectItem value="b">B (Bueno)</SelectItem>
+                    <SelectItem value="s">S (Satisfactorio)</SelectItem>
+                    <SelectItem value="r">R (Regular)</SelectItem>
+                    <SelectItem value="i">I (Insuficiente)</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="grade"
+                  placeholder="7.5"
+                  value={formData.grade}
+                  onChange={(e) =>
+                    handleChange<GradeForm>("grade", e.target.value)
+                  }
+                />
+              )}
             </div>
           </div>
         </>
@@ -1358,7 +1352,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                         key={subject.id}
                         value={subject.id.toString()}
                       >
-                        {subject.name}
+                        {cleanSubjectName(subject.name)}
+                        {subject.course_name && ` - ${subject.course_name}`}
                       </SelectItem>
                     ))}
                   </SelectContent>

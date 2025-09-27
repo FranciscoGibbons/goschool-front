@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { toast } from "sonner";
-import { uploadProfilePicture } from "@/lib/actions/profile-actions";
+import userInfoStore from "@/store/userInfoStore";
 
 interface ProfileUploadProps {
   onUploadSuccess?: () => void;
@@ -15,6 +15,7 @@ export function ProfileUpload({
   children,
 }: ProfileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const { refreshUserInfo } = userInfoStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
@@ -32,13 +33,30 @@ export function ProfileUpload({
       const formData = new FormData();
       formData.append("file", file);
 
-      await uploadProfilePicture(formData);
+      console.log("📤 Subiendo foto de perfil directamente...");
+      
+      // Llamar directamente al proxy en lugar de usar Server Action
+      const response = await fetch('/api/proxy/profile-pictures', {
+        method: 'PUT',
+        body: formData,
+        credentials: 'include', // Para incluir las cookies
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+      
+      console.log("🔄 Actualizando datos del usuario...");
+      await refreshUserInfo();
+      
       toast.success("Foto de perfil actualizada correctamente");
       onUploadSuccess?.();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Error al subir la imagen";
       toast.error(message);
+      console.error("❌ Error subiendo foto:", error);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

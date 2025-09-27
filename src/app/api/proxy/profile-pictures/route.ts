@@ -119,18 +119,31 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    console.log(" PUT /api/proxy/profile-pictures - Iniciando...");
+    
     const cookieHeader = req.headers.get("cookie");
     if (!cookieHeader || !cookieHeader.includes("jwt=")) {
+      console.log(" JWT no encontrado en headers");
       return NextResponse.json({ error: "JWT no encontrado" }, { status: 401 });
     }
 
+    console.log(" JWT encontrado, obteniendo formData...");
     const formData = await req.formData();
+    const file = formData.get("file") as File;
+    console.log(" Archivo recibido:", {
+      name: file?.name,
+      size: file?.size,
+      type: file?.type
+    });
+    
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    console.log(" Backend URL:", apiUrl);
     
     const httpsAgent = new https.Agent({
       rejectUnauthorized: false,
     });
 
+    console.log(" Enviando PUT al backend...");
     const res = await axios.put(`${apiUrl}/api/v1/profile_pictures/`, formData, {
       headers: { 
         Cookie: cookieHeader,
@@ -139,15 +152,27 @@ export async function PUT(req: NextRequest) {
       httpsAgent: httpsAgent,
     });
 
+    console.log(" ✅ PUT exitoso, respuesta del backend:", res.status);
     return NextResponse.json(res.data, { status: 200 });
   } catch (error) {
+    console.error(" ❌ Error en PUT proxy:", error);
+    
     if (axios.isAxiosError(error)) {
+      console.error(" Detalles del error axios:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
+      
       const message = error.response?.data || "Error al actualizar foto de perfil";
       return NextResponse.json(
         { error: message },
         { status: error.response?.status || 500 }
       );
     }
+    
+    console.error(" Error no-axios:", error);
     return NextResponse.json(
       { error: "Error desconocido al actualizar foto de perfil" },
       { status: 500 }

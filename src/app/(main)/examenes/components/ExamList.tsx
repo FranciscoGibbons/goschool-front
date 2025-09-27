@@ -39,7 +39,7 @@ import axios from "axios";
 interface Props {
   exams: Exam[];
   role: Role;
-  subjects: { id: number; name: string }[];
+  subjects: { id: number; name: string; course_name?: string }[];
 }
 
 export default function ExamList({ exams, role, subjects }: Props) {
@@ -118,9 +118,19 @@ export default function ExamList({ exams, role, subjects }: Props) {
   // Obtener tipos únicos
   const examTypes = Array.from(new Set(exams.map((e) => e.type)));
 
+  // Helper function to clean subject name
+  const cleanSubjectName = (name: string) => {
+    // Remove patterns like "- 12°1", "- 12°2", etc.
+    return name.replace(/\s*-\s*\d+°\d+\s*$/, '').trim();
+  };
+
   const getSubjectName = (id: number) => {
     const subject = subjects.find((s) => s.id === id);
-    return subject ? subject.name : `ID: ${id}`;
+    if (!subject) return `ID: ${id}`;
+    const cleanName = cleanSubjectName(subject.name);
+    return subject.course_name 
+      ? `${cleanName} - ${subject.course_name}` 
+      : cleanName;
   };
 
   const formatDate = (date: string) => {

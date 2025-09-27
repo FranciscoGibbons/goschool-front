@@ -168,8 +168,8 @@ export function SanctionForm({
                 <SelectValue placeholder="Seleccionar tipo de sanción" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(SANCTION_TYPES).map(([, value]) => (
-                  <SelectItem key={value} value={value}>
+                {Object.entries(SANCTION_TYPES).map(([key, value]) => (
+                  <SelectItem key={key} value={value}>
                     {SANCTION_LABELS[value as SanctionType]}
                   </SelectItem>
                 ))}

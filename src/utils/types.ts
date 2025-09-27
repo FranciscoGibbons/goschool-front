@@ -183,6 +183,7 @@ export interface Subject {
   readonly id: number;
   readonly subject_name: string;
   readonly course_id: number;
+  readonly course_name?: string;
 }
 
 export interface Grade {

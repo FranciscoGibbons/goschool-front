@@ -22,7 +22,7 @@ import type { SelfAssessableExam } from "@/utils/types";
 
 interface SelfAssessableListProps {
   exams: SelfAssessableExam[];
-  subjects: Array<{ id: number; name: string }>;
+  subjects: Array<{ id: number; name: string; course_name?: string }>;
   role: string;
   className?: string;
 }
@@ -48,6 +48,12 @@ export default function SelfAssessableList({
   });
   
   const [answeredExams, setAnsweredExams] = useState<Set<number>>(new Set());
+
+  // Helper function to clean subject name
+  const cleanSubjectName = (name: string) => {
+    // Remove patterns like "- 12°1", "- 12°2", etc.
+    return name.replace(/\s*-\s*\d+°\d+\s*$/, '').trim();
+  };
   const [loadingAnswered, setLoadingAnswered] = useState(false);
 
   const { checkIfAnswered } = useSelfAssessable({ autoLoad: false });
@@ -228,7 +234,8 @@ export default function SelfAssessableList({
                 <SelectItem value="">Todas las materias</SelectItem>
                 {subjects.map((subject) => (
                   <SelectItem key={subject.id} value={subject.id.toString()}>
-                    {subject.name}
+                    {cleanSubjectName(subject.name)}
+                    {subject.course_name && ` - ${subject.course_name}`}
                   </SelectItem>
                 ))}
               </SelectContent>

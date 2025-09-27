@@ -7,6 +7,7 @@ import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
 import GradesDisplay from "./components/GradesDisplay";
 import userInfoStore from "@/store/userInfoStore";
+import childSelectionStore from "@/store/childSelectionStore";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
 import { LoadingPage, LoadingCard } from "@/components/ui/loading-spinner";
@@ -32,6 +33,7 @@ function GradesDisplayWrapper({ selectedStudentId }: { selectedStudentId?: numbe
 
 function CalificacionesContent() {
   const { userInfo } = userInfoStore();
+  const { selectedChild } = childSelectionStore();
   const [currentStep, setCurrentStep] = useState<"course" | "student" | "grades">("course");
   const { isLoading: isAuthLoading } = useAuthRedirect();
   
@@ -53,15 +55,12 @@ function CalificacionesContent() {
     if (!userInfo?.role) return;
     
     if (userInfo.role === "father") {
-      if (courses.length === 1 && students.length === 1) {
-        setCurrentStep("grades");
-      } else if (courses.length === 1) {
-        setCurrentStep("student");
-      }
+      // Para padres, ir directamente a ver las calificaciones del hijo seleccionado
+      setCurrentStep("grades");
     } else if (userInfo.role === "student") {
       setCurrentStep("grades");
     }
-  }, [userInfo?.role, courses.length, students.length]);
+  }, [userInfo?.role, selectedChild]);
 
   const handleCourseSelect = async (courseId: number) => {
     try {
@@ -111,8 +110,8 @@ function CalificacionesContent() {
     );
   }
 
-  // Para estudiantes, mostrar directamente las calificaciones
-  if (userInfo?.role === "student") {
+  // Para estudiantes y padres, mostrar directamente las calificaciones
+  if (userInfo?.role === "student" || userInfo?.role === "father") {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -121,7 +120,7 @@ function CalificacionesContent() {
             Calificaciones
           </h1>
         </div>
-        <GradesDisplayWrapper />
+        <GradesDisplayWrapper selectedStudentId={selectedChild?.id} />
       </div>
     );
   }

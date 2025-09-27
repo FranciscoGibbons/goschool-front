@@ -16,6 +16,7 @@ interface Subject {
   name: string;
   course_id: number;
   teacher_id?: number;
+  course_name?: string;
 }
 
 interface SubjectsState {

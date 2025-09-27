@@ -18,6 +18,7 @@ interface Subject {
   id: number;
   name: string;
   course_id?: number;
+  course_name?: string;
 }
 
 interface Course {
@@ -45,6 +46,12 @@ export default function SubjectSelector({
   } = subjectsStore;
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
+
+  // Helper function to clean subject name
+  const cleanSubjectName = (name: string) => {
+    // Remove patterns like "- 12°1", "- 12°2", etc.
+    return name.replace(/\s*-\s*\d+°\d+\s*$/, '').trim();
+  };
 
   // Cargar información del curso
   useEffect(() => {
@@ -121,12 +128,10 @@ export default function SubjectSelector({
                 <SelectItem key={subject.id} value={subject.id.toString()}>
                   <div className="flex items-center gap-2">
                     <BookOpenIcon className="size-4" />
-                    <span>{subject.name}</span>
-                    {course && (
-                      <span className="text-xs text-gray-500 ml-2">
-                        ({course.name})
-                      </span>
-                    )}
+                    <span>
+                      {cleanSubjectName(subject.name)}
+                      {subject.course_name && ` - ${subject.course_name}`}
+                    </span>
                   </div>
                 </SelectItem>
               ))}

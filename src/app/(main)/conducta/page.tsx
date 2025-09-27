@@ -8,6 +8,7 @@ import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
 import { SanctionDisplay, SanctionForm } from "./components";
 import userInfoStore from "@/store/userInfoStore";
+import childSelectionStore from "@/store/childSelectionStore";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
 import { LoadingPage, LoadingCard } from "@/components/ui/loading-spinner";
@@ -33,6 +34,7 @@ import {
 
 function ConductaContent() {
   const { userInfo } = userInfoStore();
+  const { selectedChild } = childSelectionStore();
   const { 
     courses,
     students,
@@ -65,8 +67,8 @@ function ConductaContent() {
   const canDelete = userInfo?.role === 'admin' || userInfo?.role === 'preceptor';
   const canView = true; // Todos pueden ver
 
-  // Determinar si se debe mostrar los selectores (todos excepto student)
-  const shouldShowSelectors = userInfo?.role !== 'student';
+  // Determinar si se debe mostrar los selectores (todos excepto student y father)
+  const shouldShowSelectors = userInfo?.role !== 'student' && userInfo?.role !== 'father';
 
   // Determinar si se puede crear una sanción (necesita estudiante seleccionado)
   const canCreateSanction = (canCreate && selectedStudent) || (userInfo?.role === 'student');
@@ -96,9 +98,9 @@ function ConductaContent() {
     setEditingSanction(null);
   };
 
-  // Para estudiantes, saltar directamente al contenido
+  // Para estudiantes y padres, saltar directamente al contenido
   React.useEffect(() => {
-    if (userInfo?.role === 'student') {
+    if (userInfo?.role === 'student' || userInfo?.role === 'father') {
       setCurrentStep("content");
     } else if (!shouldShowSelectors) {
       setCurrentStep("content");
@@ -114,14 +116,18 @@ function ConductaContent() {
     if (userInfo?.role === 'student') {
       // Los estudiantes solo ven sus propias sanciones
       fetchSanctions();
+    } else if (userInfo?.role === 'father') {
+      // Los padres ven las sanciones del hijo seleccionado
+      if (selectedChild) {
+        fetchSanctions({ student_id: selectedChild.id });
+      } else {
+        fetchSanctions();
+      }
     } else if (selectedStudent) {
       // Otros roles ven las sanciones del estudiante seleccionado
       fetchSanctions({ student_id: selectedStudent.id });
-    } else if (userInfo?.role === 'father' && !selectedStudent) {
-      // Los padres ven las sanciones de todos sus hijos si no hay uno específico seleccionado
-      fetchSanctions();
     }
-  }, [selectedStudent, userInfo, canView, fetchSanctions]);
+  }, [selectedStudent, selectedChild, userInfo, canView, fetchSanctions]);
 
   const handleCreateSanction = async (data: NewDisciplinarySanction) => {
     const success = await createSanction(data);
@@ -261,19 +267,19 @@ function ConductaContent() {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    Registro Disciplinario
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
+                  <div className="flex items-center gap-3">
+                    <CardTitle className="text-lg">
+                      Registro Disciplinario
+                    </CardTitle>
+                    <Badge variant="secondary" className="px-3 py-1">
                       {currentStudentName()}
                     </Badge>
-                    {shouldShowSelectors && (
-                      <Button variant="outline" size="sm" onClick={handleBackToStudent}>
-                        Cambiar estudiante
-                      </Button>
-                    )}
                   </div>
+                  {shouldShowSelectors && (
+                    <Button variant="outline" size="sm" onClick={handleBackToStudent}>
+                      ← Volver
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>

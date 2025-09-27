@@ -23,6 +23,7 @@ interface Subject {
   id: number;
   name: string;
   course_id: number;
+  course_name?: string;
 }
 
 // Componente wrapper para ExamList con error boundary
@@ -72,7 +73,7 @@ function ExamsContent() {
 
   // Determinar el paso inicial según el rol
   useEffect(() => {
-    if (userInfo?.role === "student") {
+    if (userInfo?.role === "student" || userInfo?.role === "father") {
       setCurrentStep("exams");
     }
   }, [userInfo?.role]);
@@ -171,7 +172,7 @@ function ExamsContent() {
 
       {currentStep === "exams" && (
         <div className="space-y-6">
-          {userInfo?.role !== "student" && (
+          {userInfo?.role !== "student" && userInfo?.role !== "father" && (
             <div className="flex items-center gap-4">
               <button
                 onClick={handleBackToCourse}

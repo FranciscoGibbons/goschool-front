@@ -67,7 +67,7 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
       </div>
 
       {/* Botón de acción flotante */}
-      <div className="fixed right-6 bottom-6 z-50">
+      <div className="fixed right-6 bottom-6 z-50 lg:bottom-22">
         <AddActionHandler role={role} />
       </div>
     </div>

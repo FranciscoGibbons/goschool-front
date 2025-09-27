@@ -29,6 +29,7 @@ import {
 import clsx from "clsx";
 import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import userInfoStore from "@/store/userInfoStore";
+import { cleanSubjectName } from "@/utils/subjectHelpers";
 
 interface Grade {
   id: number;
@@ -59,6 +60,7 @@ export default function GradesDisplay({
   interface Subject {
     id: number;
     name: string;
+    course_name?: string;
     // Add other subject properties as needed
   }
 
@@ -256,6 +258,49 @@ export default function GradesDisplay({
     gradesByAssessment[key].grades.push(grade);
   });
 
+  const convertNumericToConceptual = (grade: number | string) => {
+    const numGrade = typeof grade === "number" ? grade : parseFloat(grade as string);
+    switch (numGrade) {
+      case 10:
+        return "e";
+      case 9:
+        return "mb";
+      case 8:
+        return "b";
+      case 7:
+        return "s";
+      case 6:
+        return "r";
+      case 4:
+        return "i";
+      default:
+        return grade.toString();
+    }
+  };
+
+  const getGradeDisplay = (grade: number | string, type: string) => {
+    if (type === "conceptual") {
+      const numGrade = typeof grade === "number" ? grade : parseFloat(grade as string);
+      switch (numGrade) {
+        case 10:
+          return "E";
+        case 9:
+          return "MB";
+        case 8:
+          return "B";
+        case 7:
+          return "S";
+        case 6:
+          return "R";
+        case 4:
+          return "I";
+        default:
+          return grade.toString();
+      }
+    }
+    return grade.toString();
+  };
+
   const getGradeColor = (grade: number | string, type: string) => {
     if (type === "conceptual") return "bg-blue-100 text-blue-800";
     const numGrade =
@@ -309,7 +354,10 @@ export default function GradesDisplay({
                 <SelectItem key={subject.id} value={String(subject.id)}>
                   <div className="flex items-center gap-2">
                     <BookOpenIcon className="size-4" />
-                    {subject.name}
+                    <span>
+                      {cleanSubjectName(subject.name)}
+                      {subject.course_name && ` - ${subject.course_name}`}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -404,7 +452,7 @@ export default function GradesDisplay({
                   <Badge
                     className={getGradeColor(grade.grade, grade.grade_type)}
                   >
-                    {grade.grade}
+                    {getGradeDisplay(grade.grade, grade.grade_type)}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {grade.grade_type === "conceptual"
@@ -427,7 +475,12 @@ export default function GradesDisplay({
                           title="Editar"
                           onClick={() => {
                             setUpdatingGrade(grade);
-                            setEditGrade({ ...grade });
+                            const editableGrade = { ...grade };
+                            // Si es nota conceptual, convertir el valor numérico de vuelta al texto conceptual
+                            if (grade.grade_type === "conceptual") {
+                              editableGrade.grade = convertNumericToConceptual(grade.grade);
+                            }
+                            setEditGrade(editableGrade);
                           }}
                         >
                           <PencilIcon className="w-5 h-5" />
@@ -459,6 +512,53 @@ export default function GradesDisplay({
                 e.preventDefault();
                 setIsSaving(true);
                 try {
+                  // Validar y convertir la nota conceptual si es necesario
+                  let gradeValue: number | string = editGrade.grade;
+                  
+                  if (editGrade.grade_type === "conceptual") {
+                    if (!editGrade.grade) {
+                      toast.error("La nota conceptual no puede estar vacía");
+                      setIsSaving(false);
+                      return;
+                    }
+                    
+                    // Convertir concepto a valor numérico para el backend
+                    const conceptualGrade = String(editGrade.grade).toLowerCase();
+                    switch (conceptualGrade) {
+                      case "e":
+                        gradeValue = 10;
+                        break;
+                      case "mb":
+                        gradeValue = 9;
+                        break;
+                      case "b":
+                        gradeValue = 8;
+                        break;
+                      case "s":
+                        gradeValue = 7;
+                        break;
+                      case "r":
+                        gradeValue = 6;
+                        break;
+                      case "i":
+                        gradeValue = 4;
+                        break;
+                      default:
+                        toast.error("Nota conceptual no válida");
+                        setIsSaving(false);
+                        return;
+                    }
+                  } else {
+                    // Para notas numéricas, validar el rango
+                    const numGrade = Number(editGrade.grade);
+                    if (isNaN(numGrade) || numGrade < 1 || numGrade > 10) {
+                      toast.error("La nota debe ser un número entre 1 y 10");
+                      setIsSaving(false);
+                      return;
+                    }
+                    gradeValue = numGrade;
+                  }
+
                   const res = await fetch(
                     `/api/proxy/grades/${updatingGrade.id}`,
                     {
@@ -466,7 +566,7 @@ export default function GradesDisplay({
                       headers: { "Content-Type": "application/json" },
                       credentials: "include",
                       body: JSON.stringify({
-                        grade: editGrade.grade,
+                        grade: gradeValue,
                         grade_type: editGrade.grade_type,
                         description: editGrade.description,
                       }),
@@ -499,15 +599,36 @@ export default function GradesDisplay({
             >
               <div>
                 <label className="block text-sm font-medium mb-1">Nota</label>
-                <input
-                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
-                  value={editGrade.grade}
-                  onChange={(e) =>
-                    editGrade &&
-                    setEditGrade({ ...editGrade, grade: e.target.value })
-                  }
-                  required
-                />
+                {editGrade.grade_type === "conceptual" ? (
+                  <select
+                    className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                    value={editGrade.grade}
+                    onChange={(e) =>
+                      editGrade &&
+                      setEditGrade({ ...editGrade, grade: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="">Seleccionar nota conceptual</option>
+                    <option value="e">E (Excelente)</option>
+                    <option value="mb">MB (Muy Bueno)</option>
+                    <option value="b">B (Bueno)</option>
+                    <option value="s">S (Satisfactorio)</option>
+                    <option value="r">R (Regular)</option>
+                    <option value="i">I (Insuficiente)</option>
+                  </select>
+                ) : (
+                  <input
+                    className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                    value={editGrade.grade}
+                    onChange={(e) =>
+                      editGrade &&
+                      setEditGrade({ ...editGrade, grade: e.target.value })
+                    }
+                    placeholder="7.5"
+                    required
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Tipo</label>

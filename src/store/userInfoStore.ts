@@ -1,9 +1,10 @@
-// src/store/userInfoStore.ts
+                                                                                                                                                                                                // src/store/userInfoStore.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { devtools } from "zustand/middleware";
 import axios, { AxiosError } from "axios";
-import { UserInfo } from "@/utils/types";
+import { UserInfo, Child } from "@/utils/types";
+import childSelectionStore from "./childSelectionStore";
 
 interface UserInfoState {
   userInfo: UserInfo | null;
@@ -112,6 +113,40 @@ const userInfoStore = create<UserInfoStore>()(
               })
             ]);
 
+            // Handle role first to check if it's a father
+            let userRole: string | null = null;
+            if (roleRes.status === 'fulfilled') {
+              userRole = roleRes.value.data;
+            } else {
+              console.warn("No se pudo obtener el rol del usuario:", roleRes.reason);
+            }
+
+            // Para padres, cargar también información sobre sus hijos
+            interface ChildData {
+              id: number;
+              full_name?: string;
+              photo?: string | null;
+              email: string;
+              course_id?: number | null;
+            }
+            
+            let childrenData: ChildData[] = [];
+            
+            if (userRole === "father") {
+              try {
+                console.log("👨‍👩‍👧‍👦 Cargando hijos del padre...");
+                const childrenResponse = await axios.get(`/api/proxy/students/`, { 
+                  withCredentials: true,
+                  timeout: 10000 
+                });
+                childrenData = childrenResponse.data || [];
+                console.log("👶 Hijos cargados:", childrenData.length);
+              } catch (childrenError) {
+                console.warn("⚠️ Error cargando hijos:", childrenError);
+                // No es crítico si falla la carga de hijos
+              }
+            }
+
             // Handle personal data
             if (personalDataRes.status === 'rejected') {
               if (personalDataRes.reason?.response?.status === 401) {
@@ -127,14 +162,35 @@ const userInfoStore = create<UserInfoStore>()(
 
             // Handle profile picture (optional)
             let profilePicture = null;
-            if (profilePictureRes.status === 'fulfilled') {
-              profilePicture = profilePictureRes.value.data?.url || `/api/profile-picture`;
+            if (profilePictureRes.status === 'fulfilled' && profilePictureRes.value.data?.url) {
+              const photoUrl = profilePictureRes.value.data.url;
+              console.log("🖼️ URL original del backend:", photoUrl);
+              
+              // Extraer el nombre del archivo de la URL
+              let fileName = photoUrl;
+              
+              // Si viene con estructura de path completa, extraer solo el nombre del archivo
+              if (fileName.includes('/uploads/profile_pictures/')) {
+                fileName = fileName.split('/uploads/profile_pictures/').pop() || fileName;
+              }
+              // Si viene con ./ al inicio, quitarlo
+              fileName = fileName.replace(/^\.\//, '');
+              // Si aún contiene path, quedarnos solo con el nombre del archivo
+              fileName = fileName.split('/').pop() || fileName;
+              
+              // Usar el proxy interno para evitar problemas de certificados SSL
+              profilePicture = `/api/image-proxy/uploads/profile_pictures/${fileName}`;
+              console.log("🔧 URL con proxy:", profilePicture);
             } else {
-              profilePicture = `/api/profile-picture`;
+              // Usar imagen por defecto a través del proxy
+              profilePicture = `/api/image-proxy/uploads/profile_pictures/default.jpg`;
+              console.log("📷 Usando imagen por defecto con proxy:", profilePicture);
+              console.log("❌ Error en profilePictureRes:", profilePictureRes);
             }
+            
+            console.log("🎯 URL final de la foto:", profilePicture);
 
             const personalData = personalDataRes.value.data;
-            const role = roleRes.status === 'fulfilled' ? roleRes.value.data : null;
 
             // Process name data
             const processedData = { ...personalData };
@@ -144,10 +200,27 @@ const userInfoStore = create<UserInfoStore>()(
               processedData.last_name = nameParts.slice(1).join(" ") || "";
             }
 
+            // Process children data for fathers
+            let processedChildren: Child[] = [];
+            if (userRole === "father" && childrenData.length > 0) {
+              processedChildren = childrenData.map((child: ChildData) => {
+                const fullName = child.full_name || `Estudiante ${child.id}`;
+                const nameParts = fullName.split(" ");
+                return {
+                  id: child.id,
+                  name: nameParts[0] || "Estudiante",
+                  last_name: nameParts.slice(1).join(" ") || `${child.id}`,
+                  course_id: child.course_id || 0,
+                  course_name: "", // Será cargado después si es necesario
+                };
+              });
+            }
+
             const userInfo: UserInfo = { 
               ...processedData, 
-              role, 
-              photo: profilePicture 
+              role: userRole, 
+              photo: profilePicture,
+              children: processedChildren
             };
 
             set({ 
@@ -156,6 +229,11 @@ const userInfoStore = create<UserInfoStore>()(
               lastCheck: Date.now(),
               error: null 
             });
+
+            // Initialize child selection store for fathers
+            if (userRole === "father" && processedChildren.length > 0) {
+              childSelectionStore.getState().setChildren(processedChildren);
+            }
 
             console.log("✅ Datos del usuario obtenidos exitosamente");
             return userInfo;

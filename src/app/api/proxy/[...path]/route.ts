@@ -53,7 +53,8 @@ async function handleRequest(
     const needsTrailingSlash = [
       'disciplinary_sanction',
       'assistance',
-      'messages'
+      'messages',
+      'students'
     ].includes(backendPath);
     
     const url = `${apiUrl}/api/v1/${backendPath}${needsTrailingSlash ? '/' : ''}${searchParams ? `?${searchParams}` : ""}`;

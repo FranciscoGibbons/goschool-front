@@ -7,6 +7,7 @@ import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
 import { AssistanceDisplay, AssistanceForm } from "./components";
 import userInfoStore from "@/store/userInfoStore";
+import childSelectionStore from "@/store/childSelectionStore";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
 import { LoadingPage, LoadingCard } from "@/components/ui/loading-spinner";
@@ -32,6 +33,7 @@ function AssistanceDisplayWrapper({ selectedStudentId }: { selectedStudentId?: n
 
 function AsistenciaContent() {
   const { userInfo } = userInfoStore();
+  const { selectedChild } = childSelectionStore();
   const [currentStep, setCurrentStep] = useState<"course" | "student" | "assistance">("course");
   const { isLoading: isAuthLoading } = useAuthRedirect();
   
@@ -53,15 +55,12 @@ function AsistenciaContent() {
     if (!userInfo?.role) return;
     
     if (userInfo.role === "father") {
-      if (courses.length === 1 && students.length === 1) {
-        setCurrentStep("assistance");
-      } else if (courses.length === 1) {
-        setCurrentStep("student");
-      }
+      // Para padres, ir directamente a ver la asistencia del hijo seleccionado
+      setCurrentStep("assistance");
     } else if (userInfo.role === "student") {
       setCurrentStep("assistance");
     }
-  }, [userInfo?.role, courses.length, students.length]);
+  }, [userInfo?.role, selectedChild]);
 
   const handleCourseSelect = async (courseId: number) => {
     try {
@@ -111,8 +110,8 @@ function AsistenciaContent() {
     );
   }
 
-  // Para estudiantes, mostrar directamente la asistencia
-  if (userInfo?.role === "student") {
+  // Para estudiantes y padres, mostrar directamente la asistencia
+  if (userInfo?.role === "student" || userInfo?.role === "father") {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -121,7 +120,7 @@ function AsistenciaContent() {
             Asistencia
           </h1>
         </div>
-        <AssistanceDisplayWrapper />
+        <AssistanceDisplayWrapper selectedStudentId={selectedChild?.id} />
       </div>
     );
   }

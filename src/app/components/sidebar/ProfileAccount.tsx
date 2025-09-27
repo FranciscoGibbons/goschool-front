@@ -21,13 +21,22 @@ import axios from "axios";
 
 
 export default function ProfileAccount() {
-  const { userInfo, fetchUserInfo, isLoading, error } = userInfoStore();
+  const { userInfo, fetchUserInfo, refreshUserInfo, isLoading, error } = userInfoStore();
+
+  // Debug: mostrar la foto actual
+  console.log("🖼️ ProfileAccount - userInfo.photo:", userInfo?.photo);
 
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
       fetchUserInfo();
     }
   }, [userInfo, fetchUserInfo]);
+
+  // Función para forzar recarga de datos
+  const forceRefresh = async () => {
+    console.log("🔄 Forzando recarga completa de datos de usuario...");
+    await refreshUserInfo();
+  };
 
   const handleLogout = async () => {
     try {
@@ -135,6 +144,8 @@ export default function ProfileAccount() {
                 ? `${userInfo.name} ${userInfo.last_name}`
                 : userInfo.full_name || "Usuario"
             }
+            onError={(e) => console.error("🖼️ Error cargando imagen:", userInfo.photo, e)}
+            onLoad={() => console.log("✅ Imagen cargada correctamente:", userInfo.photo)}
           />
           <AvatarFallback className="bg-primary/10 text-primary font-bold">
             {getInitials(
@@ -175,6 +186,13 @@ export default function ProfileAccount() {
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={forceRefresh}
+          className="flex items-center gap-2 cursor-pointer text-blue-600 focus:text-blue-600"
+        >
+          <span>🔄 Recargar Foto</span>
+        </DropdownMenuItem>
 
         <DropdownMenuItem
           onClick={handleLogout}

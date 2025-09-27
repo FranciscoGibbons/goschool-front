@@ -7,6 +7,7 @@ import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
 import SubjectSelector from "./components/SubjectSelector";
 import userInfoStore from "@/store/userInfoStore";
+import childSelectionStore from "@/store/childSelectionStore";
 import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
 import { LoadingPage, LoadingCard } from "@/components/ui/loading-spinner";
 import { SkeletonList } from "@/components/ui/skeleton";
@@ -32,6 +33,7 @@ function SubjectSelectorWrapper({ selectedCourseId }: { selectedCourseId?: numbe
 // Componente principal con error boundary
 function AsignaturasContent() {
   const { userInfo } = userInfoStore();
+  const { selectedChild } = childSelectionStore();
   const {
     courses,
     students,
@@ -52,15 +54,12 @@ function AsignaturasContent() {
   // Determinar el paso inicial según el rol
   useEffect(() => {
     if (userInfo?.role === "father") {
-      if (courses.length === 1 && students.length === 1) {
-        setCurrentStep("subjects");
-      } else if (courses.length === 1) {
-        setCurrentStep("student");
-      }
+      // Para padres, ir directamente a ver las asignaturas del hijo seleccionado
+      setCurrentStep("subjects");
     } else if (userInfo?.role === "student") {
       setCurrentStep("subjects");
     }
-  }, [userInfo?.role, courses.length, students.length]);
+  }, [userInfo?.role, selectedChild]);
 
   const handleCourseSelect = async (courseId: number) => {
     try {
@@ -117,8 +116,8 @@ function AsignaturasContent() {
     );
   }
 
-  // Para estudiantes, mostrar directamente las asignaturas
-  if (userInfo?.role === "student") {
+  // Para estudiantes y padres, mostrar directamente las asignaturas
+  if (userInfo?.role === "student" || userInfo?.role === "father") {
     return (
       <div className="space-y-6">
         <header>
@@ -130,7 +129,7 @@ function AsignaturasContent() {
           </div>
         </header>
         <main>
-          <SubjectSelectorWrapper />
+          <SubjectSelectorWrapper selectedCourseId={selectedChild?.course_id} />
         </main>
       </div>
     );

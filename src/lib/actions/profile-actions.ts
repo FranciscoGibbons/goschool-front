@@ -6,10 +6,14 @@ import https from "https";
 
 export async function uploadProfilePicture(clientFormData: FormData) {
   try {
+    console.log("🚀 uploadProfilePicture - Iniciando server action...");
+    
     // 1. JWT
     const cookieStore = await cookies();
     const jwtCookie = cookieStore.get("jwt");
     if (!jwtCookie) throw new Error("No JWT token found");
+
+    console.log("🍪 JWT encontrado en cookies");
 
     // 2. Obtener archivo del form
     const file = clientFormData.get("file") as File;
@@ -19,20 +23,25 @@ export async function uploadProfilePicture(clientFormData: FormData) {
     if (file.size > 10 * 1024 * 1024)
       throw new Error("File size exceeds 5MB limit");
 
+    console.log("📁 Archivo validado:", { name: file.name, size: file.size, type: file.type });
+
     // 3. Crear FormData con el archivo real
     const uploadFormData = new FormData();
     uploadFormData.append("file", file);
     
-    // 4. POST al backend usando proxy
+    // 4. PUT al backend usando proxy
     const headersList = await headers();
-    const host = headersList.get('host') || 'localhost:3000';
+    const host = headersList.get('host') || 'localhost:3001';
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+    
+    console.log("📤 Enviando PUT a:", `${baseUrl}/api/proxy/profile-pictures`);
+    
     const httpsAgent = new https.Agent({
       rejectUnauthorized: false,
     });
 
-    await axios.post(
+    await axios.put(
       `${baseUrl}/api/proxy/profile-pictures`,
       uploadFormData,
       {

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       rejectUnauthorized: false,
     });
 
-    const res = await axios.get(`${apiUrl}/api/v1/students/?course_id=${courseId}`, {
+    const res = await axios.get(`${apiUrl}/api/v1/students/?course=${courseId}`, {
       headers: { Cookie: cookieHeader },
       withCredentials: true,
       httpsAgent: httpsAgent,

@@ -157,6 +157,9 @@ export function useCourseStudentSelection(
       setIsLoading(true);
       setError(null);
 
+      console.log("=== LOAD STUDENTS DEBUG ===");
+      console.log("Course ID solicitado:", courseId);
+
       // Obtener estudiantes del backend (ahora incluye full_name)
       const studentsResponse = await axios.get(
         `/api/proxy/students/?course_id=${courseId}`, {
@@ -164,23 +167,25 @@ export function useCourseStudentSelection(
         }
       );
       
-      console.log("=== RESPONSE COMPLETA GET STUDENTS ===");
       console.log("URL:", `/api/proxy/students/?course_id=${courseId}`);
       console.log("Status:", studentsResponse.status);
-      console.log("Headers:", studentsResponse.headers);
       console.log("Data (estudiantes):", studentsResponse.data);
-      console.log("========================================");
+      console.log("Cantidad de estudiantes:", studentsResponse.data.length);
+      console.log("=============================");
       
       const pubUsers: PubUser[] = studentsResponse.data;
 
-      console.log("Students data from backend:", pubUsers);
+      console.log("Estudiantes RAW del backend:", pubUsers.length);
+      console.log("Course IDs de los estudiantes:", pubUsers.map(u => u.course_id));
+      console.log("Expected course ID:", courseId);
 
       if (pubUsers.length === 0) {
+        console.log("No hay estudiantes para el curso", courseId);
         setStudents([]);
         return;
       }
 
-      // Convertir PubUser a Student (ya no necesitamos llamadas adicionales)
+      // Convertir PubUser a Student
       const studentsData: Student[] = pubUsers.map((pubUser: PubUser) => {
         const fullName = pubUser.full_name || `Estudiante ${pubUser.id}`;
         const nameParts = fullName.split(" ");
@@ -206,13 +211,31 @@ export function useCourseStudentSelection(
         );
 
       console.log("Final students data:", validStudents);
+      console.log("Estudiantes válidos procesados:", validStudents.length);
       setStudents(validStudents);
 
     } catch (err) {
-      console.error("Error loading students:", err);
-      const errorMessage = err instanceof Error ? err.message : "Error al cargar los estudiantes";
-      setError(errorMessage);
-      toast.error("Error al cargar los estudiantes");
+      console.error("=== ERROR LOADING STUDENTS ===");
+      console.error("Course ID:", courseId);
+      console.error("Error completo:", err);
+      
+      if (axios.isAxiosError(err)) {
+        console.error("Status:", err.response?.status);
+        console.error("Status Text:", err.response?.statusText);
+        console.error("Response data:", err.response?.data);
+        console.error("Request config:", err.config);
+        
+        const errorMessage = err.response?.data?.error || err.response?.data || err.message || "Error al cargar los estudiantes";
+        setError(`Error ${err.response?.status}: ${errorMessage}`);
+        toast.error(`Error ${err.response?.status} al cargar estudiantes: ${errorMessage}`);
+      } else {
+        console.error("Error no-axios:", err);
+        const errorMessage = err instanceof Error ? err.message : "Error desconocido al cargar los estudiantes";
+        setError(errorMessage);
+        toast.error("Error al cargar los estudiantes");
+      }
+      
+      setStudents([]);
     } finally {
       setIsLoading(false);
     }
