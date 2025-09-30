@@ -109,6 +109,16 @@ export interface DisciplinarySanctionForm {
   date: string;
 }
 
+// Tipos para formulario de asistencia
+export interface AssistanceForm {
+  course_id: string;
+  date: string;
+  students: Array<{
+    student_id: number;
+    presence: string;
+  }>;
+}
+
 // Union type para todos los formularios
 export interface FormsObj {
   "Crear mensaje": MessageForm;
@@ -116,6 +126,7 @@ export interface FormsObj {
   "Cargar calificación": GradeForm;
   "Crear mensaje de materia": SubjectMessageForm;
   "Crear conducta": DisciplinarySanctionForm;
+  "Crear asistencia": AssistanceForm;
 }
 
 // Type guards mejorados con validación
@@ -188,6 +199,23 @@ export function isDisciplinarySanctionForm(form: unknown): form is DisciplinaryS
     typeof f.description === "string" &&
     typeof f.date === "string" &&
     validSanctionTypes.includes(f.sanction_type)
+  );
+}
+
+export function isAssistanceForm(form: unknown): form is AssistanceForm {
+  if (typeof form !== "object" || form === null) return false;
+  
+  const f = form as Record<string, unknown>;
+  
+  return (
+    typeof f.course_id === "string" &&
+    typeof f.date === "string" &&
+    Array.isArray(f.students) &&
+    f.students.every((student): student is { student_id: number; presence: string } => {
+      if (typeof student !== "object" || student === null) return false;
+      const s = student as Record<string, unknown>;
+      return typeof s.student_id === "number" && typeof s.presence === "string";
+    })
   );
 }
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Role, FormsObj } from "@/utils/types";
 
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogTrigger,
@@ -25,9 +25,9 @@ type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
 const getActionsForRole = (role: ActionableRole) => {
   switch (role) {
     case "admin":
-      return ["Crear mensaje", "Crear examen", "Crear conducta"] as Array<keyof FormsObj>;
+      return ["Crear mensaje", "Crear examen", "Crear conducta", "Crear asistencia"] as Array<keyof FormsObj>;
     case "preceptor":
-      return ["Crear mensaje", "Crear conducta"] as Array<keyof FormsObj>;
+      return ["Crear mensaje", "Crear conducta", "Crear asistencia"] as Array<keyof FormsObj>;
     case "teacher":
       return [
         "Crear examen",
@@ -50,9 +50,11 @@ export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
   return (
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
       <DialogTrigger asChild>
-        <button className="bg-blue-900 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition duration-500 cursor-pointer">
-          <PlusIcon className="size-10" aria-hidden="true" />
-        </button>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white shadow-lg rounded-full border border-blue-600 dark:border-blue-700 w-16 h-16 pb-3.5 cursor-pointer flex justify-center"
+        >
+          <span className="text-4xl font-[350] leading-none">+</span>
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogTitle>{action || "Crear tarea"}</DialogTitle>

@@ -9,6 +9,7 @@ import {
   GradeForm,
   SubjectMessageForm,
   DisciplinarySanctionForm,
+  AssistanceForm,
 } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -51,6 +52,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import React from "react";
 import { SANCTION_TYPES, SANCTION_LABELS } from "@/types/disciplinarySanction";
+import { PRESENCE_STATUS } from "@/types/assistance";
 
 // Tipos para los datos dinámicos
 interface Assessment {
@@ -129,6 +131,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         description: "",
         date: new Date().toISOString().split('T')[0], // Fecha actual por defecto
       } as DisciplinarySanctionForm;
+    } else if (action === "Crear asistencia") {
+      return {
+        course_id: "",
+        date: new Date().toISOString().split('T')[0], // Fecha actual por defecto
+        students: [],
+      } as AssistanceForm;
     } else {
       return { title: "", message: "", courses: [] } as MessageForm;
     }
@@ -164,6 +172,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   // Estado para el curso seleccionado en formulario de conducta
   const [selectedCourseIdConducta, setSelectedCourseIdConducta] = useState<string>("");
 
+  // Estado para el curso seleccionado en formulario de asistencia  
+  const [selectedCourseIdAsistencia, setSelectedCourseIdAsistencia] = useState<string>("");
+
   // Type guards para verificar el tipo de formulario
   const isMessageForm = (
     data: FormsObj[typeof action]
@@ -195,6 +206,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     data: FormsObj[typeof action]
   ): data is DisciplinarySanctionForm => {
     return action === "Crear conducta";
+  };
+
+  const isAssistanceForm = (
+    data: FormsObj[typeof action]
+  ): data is AssistanceForm => {
+    return action === "Crear asistencia";
   };
 
   // Función para cargar materias con información de cursos
@@ -347,7 +364,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
   // Cargar cursos cuando se necesite
   useEffect(() => {
-    if (action === "Crear mensaje" || action === "Crear conducta") {
+    if (action === "Crear mensaje" || action === "Crear conducta" || action === "Crear asistencia") {
       loadCourses();
     }
   }, [action]);
@@ -405,6 +422,20 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCourseIdConducta, action]);
 
+  // Effect to load students for assistance form when course changes
+  useEffect(() => {
+    if (action === "Crear asistencia" && selectedCourseIdAsistencia) {
+      loadStudents(parseInt(selectedCourseIdAsistencia));
+      // Reset students array when course changes
+      if (isAssistanceForm(formData)) {
+        setFormData((prev) =>
+          isAssistanceForm(prev) ? { ...prev, course_id: selectedCourseIdAsistencia, students: [] } : prev
+        );
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourseIdAsistencia, action]);
+
   // Manejo de cambios para campos individuales
   const handleChange = <T extends FormsObj[typeof action]>(
     field: keyof T,
@@ -429,6 +460,40 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         ...examData,
         [field]: examData[field].map((item, i) => (i === index ? value : item)),
       });
+    }
+  };
+
+  // Función para actualizar la asistencia de un estudiante específico
+  const handleStudentPresenceChange = (studentId: number, presence: string) => {
+    if (isAssistanceForm(formData)) {
+      const updatedStudents = [...formData.students];
+      const existingIndex = updatedStudents.findIndex(s => s.student_id === studentId);
+      
+      if (existingIndex >= 0) {
+        updatedStudents[existingIndex] = { student_id: studentId, presence };
+      } else {
+        updatedStudents.push({ student_id: studentId, presence });
+      }
+      
+      setFormData({
+        ...formData,
+        students: updatedStudents,
+      } as AssistanceForm);
+    }
+  };
+
+  // Función para inicializar asistencia con todos los estudiantes como presentes
+  const initializeAllStudentsAsPresent = () => {
+    if (isAssistanceForm(formData)) {
+      const initialStudents = students.map(student => ({
+        student_id: student.id,
+        presence: PRESENCE_STATUS.PRESENT,
+      }));
+      
+      setFormData({
+        ...formData,
+        students: initialStudents,
+      } as AssistanceForm);
     }
   };
 
@@ -757,6 +822,62 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         };
 
         url = `/api/proxy/disciplinary_sanction`;
+      } else if (action === "Crear asistencia" && isAssistanceForm(formData)) {
+        // Validar que todos los campos requeridos estén presentes
+        if (!formData.course_id || !formData.date || formData.students.length === 0) {
+          toast.error("Por favor selecciona un curso, fecha y registra al menos un estudiante");
+          setIsLoading(false);
+          return;
+        }
+
+        // Validar que todos los estudiantes tengan un estado de presencia
+        const invalidStudents = formData.students.filter(s => !s.presence);
+        if (invalidStudents.length > 0) {
+          toast.error("Todos los estudiantes deben tener un estado de asistencia");
+          setIsLoading(false);
+          return;
+        }
+
+        // Crear asistencias para cada estudiante
+        const assistancePromises = formData.students.map(async (student) => {
+          const assistanceData = {
+            student_id: student.student_id,
+            presence: student.presence,
+            date: formData.date,
+          };
+
+          console.log('📝 Creating assistance for student:', assistanceData);
+
+          const response = await fetch("/api/proxy/assistance", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(assistanceData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Error ${response.status} para estudiante ${student.student_id}`);
+          }
+
+          return response.json();
+        });
+
+        try {
+          await Promise.all(assistancePromises);
+          toast.success(`Asistencia registrada para ${formData.students.length} estudiantes`);
+          onClose();
+          setIsLoading(false);
+          return;
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "Error al crear asistencias";
+          console.error("❌ Error creating assistances:", err);
+          toast.error(errorMessage);
+          setIsLoading(false);
+          return;
+        }
       } else {
         throw new Error("Tipo de formulario no válido");
       }
@@ -833,6 +954,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             ? "Mensaje de materia creado exitosamente"
             : action === "Crear conducta"
             ? "Sanción disciplinaria creada exitosamente"
+            // : action === "Crear asistencia" // Nunca se ejecuta, ya retornamos antes
+            // ? "Asistencias registradas exitosamente"
             : "Examen creado exitosamente";
         toast.success(successMessage);
         onClose();
@@ -1639,6 +1762,138 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                 <span>{formData.description.length}/500</span>
               </div>
             </div>
+          </div>
+        </>
+      )}
+
+      {/* Formulario para asistencia */}
+      {action === "Crear asistencia" && isAssistanceForm(formData) && (
+        <>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="course_select_assistance">Curso</Label>
+              <Select
+                value={selectedCourseIdAsistencia}
+                onValueChange={setSelectedCourseIdAsistencia}
+                disabled={isLoadingCourses}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingCourses
+                        ? "Cargando cursos..."
+                        : "Selecciona un curso"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id.toString()}>
+                      {getCourseLabel(course)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="assistance_date">Fecha</Label>
+              <Input
+                id="assistance_date"
+                type="date"
+                value={formData.date}
+                onChange={(e) =>
+                  handleChange<AssistanceForm>("date", e.target.value)
+                }
+              />
+            </div>
+
+            {selectedCourseIdAsistencia && students.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label>Asistencia de Estudiantes</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={initializeAllStudentsAsPresent}
+                  >
+                    Marcar todos como presentes
+                  </Button>
+                </div>
+                
+                <div className="max-h-64 overflow-y-auto border rounded-lg p-4 space-y-3">
+                  {students.map((student) => {
+                    const currentPresence = formData.students.find(
+                      s => s.student_id === student.id
+                    )?.presence || "";
+                    
+                    return (
+                      <div key={student.id} className="flex items-center justify-between py-2 border-b">
+                        <div className="flex items-center gap-3">
+                          {student.photo ? (
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={student.photo} />
+                              <AvatarFallback className="text-xs">
+                                {student.full_name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {student.full_name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                          <span className="font-medium">{student.full_name}</span>
+                        </div>
+                        
+                        <Select
+                          value={currentPresence}
+                          onValueChange={(value) =>
+                            handleStudentPresenceChange(student.id, value)
+                          }
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Estado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={PRESENCE_STATUS.PRESENT}>
+                              ✅ Presente
+                            </SelectItem>
+                            <SelectItem value={PRESENCE_STATUS.ABSENT}>
+                              ❌ Ausente
+                            </SelectItem>
+                            <SelectItem value={PRESENCE_STATUS.LATE}>
+                              ⏰ Tarde
+                            </SelectItem>
+                            <SelectItem value={PRESENCE_STATUS.JUSTIFIED}>
+                              📋 Justificado
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  {formData.students.length} de {students.length} estudiantes con asistencia registrada
+                </div>
+              </div>
+            )}
+
+            {selectedCourseIdAsistencia && isLoadingStudents && (
+              <div className="text-center py-4">
+                <div className="text-muted-foreground">Cargando estudiantes...</div>
+              </div>
+            )}
+
+            {selectedCourseIdAsistencia && !isLoadingStudents && students.length === 0 && (
+              <div className="text-center py-4">
+                <div className="text-muted-foreground">No se encontraron estudiantes en este curso</div>
+              </div>
+            )}
           </div>
         </>
       )}
