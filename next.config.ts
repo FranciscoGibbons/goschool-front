@@ -21,11 +21,11 @@ const nextConfig: NextConfig = {
         hostname: "34.39.136.245",
       },
     ],
-    unoptimized: true,
+    unoptimized: false,
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '20mb', // Increase from default 1mb
+      bodySizeLimit: '20mb',
     },
   },
   async headers() {
@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
       {
         source: '/api/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'http://localhost:3000' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, Cookie' },
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
@@ -41,6 +41,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Optimización para Vercel
+  trailingSlash: false,
+  compress: true,
+  poweredByHeader: false,
 };
 
 export default nextConfig;

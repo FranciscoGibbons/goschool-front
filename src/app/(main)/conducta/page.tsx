@@ -403,7 +403,7 @@ function ConductaSkeleton() {
   );
 }
 
-export default function ConductaPage() {
+function ConductaWithAuth() {
   const { isLoading } = useAuthRedirect();
 
   if (isLoading) {
@@ -412,9 +412,15 @@ export default function ConductaPage() {
 
   return (
     <ErrorBoundary fallback={<ErrorDisplay error="Error en la página de conducta" />}>
-      <Suspense fallback={<ConductaSkeleton />}>
-        <ConductaContent />
-      </Suspense>
+      <ConductaContent />
     </ErrorBoundary>
+  );
+}
+
+export default function ConductaPage() {
+  return (
+    <Suspense fallback={<ConductaSkeleton />}>
+      <ConductaWithAuth />
+    </Suspense>
   );
 }

@@ -35,7 +35,6 @@ function CalificacionesContent() {
   const { userInfo } = userInfoStore();
   const { selectedChild } = childSelectionStore();
   const [currentStep, setCurrentStep] = useState<"course" | "student" | "grades">("course");
-  const { isLoading: isAuthLoading } = useAuthRedirect();
   
   const {
     courses,
@@ -88,7 +87,7 @@ function CalificacionesContent() {
   };
 
   // Loading states
-  if (isAuthLoading || isLoading) {
+  if (isLoading) {
     return <LoadingPage message="Cargando información de calificaciones..." />;
   }
 
@@ -194,10 +193,24 @@ function CalificacionesContent() {
   );
 }
 
-export default function Calificaciones() {
+function CalificacionesWithAuth() {
+  const { isLoading: isAuthLoading } = useAuthRedirect();
+  
+  if (isAuthLoading) {
+    return <LoadingPage message="Cargando información de calificaciones..." />;
+  }
+
   return (
     <ErrorBoundary>
       <CalificacionesContent />
     </ErrorBoundary>
+  );
+}
+
+export default function Calificaciones() {
+  return (
+    <Suspense fallback={<LoadingPage message="Cargando página de calificaciones..." />}>
+      <CalificacionesWithAuth />
+    </Suspense>
   );
 }

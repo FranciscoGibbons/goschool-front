@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { CloudArrowUpIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,6 @@ interface Task {
 
 function EntregasContent() {
   const { userInfo } = userInfoStore();
-  const { isLoading: isAuthLoading } = useAuthRedirect();
   const [currentStep, setCurrentStep] = useState<"course" | "student" | "submissions">("course");
   
   // Form and filters state
@@ -247,7 +246,7 @@ function EntregasContent() {
   };
 
   // Loading states
-  if (isAuthLoading || isSelectionLoading) {
+  if (isSelectionLoading) {
     return <LoadingPage message="Cargando información de entregas..." />;
   }
 
@@ -618,10 +617,24 @@ function EntregasContent() {
   );
 }
 
-export default function Entregas() {
+function EntregasWithAuth() {
+  const { isLoading: isAuthLoading } = useAuthRedirect();
+  
+  if (isAuthLoading) {
+    return <LoadingPage message="Cargando información de entregas..." />;
+  }
+
   return (
     <ErrorBoundary>
       <EntregasContent />
     </ErrorBoundary>
+  );
+}
+
+export default function Entregas() {
+  return (
+    <Suspense fallback={<LoadingPage message="Cargando página de entregas..." />}>
+      <EntregasWithAuth />
+    </Suspense>
   );
 }

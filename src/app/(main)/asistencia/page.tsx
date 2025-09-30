@@ -35,7 +35,6 @@ function AsistenciaContent() {
   const { userInfo } = userInfoStore();
   const { selectedChild } = childSelectionStore();
   const [currentStep, setCurrentStep] = useState<"course" | "student" | "assistance">("course");
-  const { isLoading: isAuthLoading } = useAuthRedirect();
   
   const {
     courses,
@@ -88,7 +87,7 @@ function AsistenciaContent() {
   };
 
   // Loading states
-  if (isAuthLoading || isLoading) {
+  if (isLoading) {
     return <LoadingPage message="Cargando información de asistencia..." />;
   }
 
@@ -235,10 +234,24 @@ function AsistenciaContent() {
   );
 }
 
-export default function Asistencia() {
+function AsistenciaWithAuth() {
+  const { isLoading: isAuthLoading } = useAuthRedirect();
+  
+  if (isAuthLoading) {
+    return <LoadingPage message="Cargando información de asistencia..." />;
+  }
+
   return (
     <ErrorBoundary>
       <AsistenciaContent />
     </ErrorBoundary>
+  );
+}
+
+export default function Asistencia() {
+  return (
+    <Suspense fallback={<LoadingPage message="Cargando página de asistencia..." />}>
+      <AsistenciaWithAuth />
+    </Suspense>
   );
 }
