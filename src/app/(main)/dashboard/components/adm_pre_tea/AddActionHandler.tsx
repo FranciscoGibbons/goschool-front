@@ -25,9 +25,9 @@ type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
 const getActionsForRole = (role: ActionableRole) => {
   switch (role) {
     case "admin":
-      return ["Crear mensaje", "Crear examen"] as Array<keyof FormsObj>;
+      return ["Crear mensaje", "Crear examen", "Crear conducta"] as Array<keyof FormsObj>;
     case "preceptor":
-      return ["Crear mensaje"] as Array<keyof FormsObj>;
+      return ["Crear mensaje", "Crear conducta"] as Array<keyof FormsObj>;
     case "teacher":
       return [
         "Crear examen",

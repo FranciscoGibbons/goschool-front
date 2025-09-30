@@ -100,12 +100,22 @@ export interface SubjectMessageForm {
   file?: File;
 }
 
+// Tipos para formulario de conducta/sanción disciplinaria
+export interface DisciplinarySanctionForm {
+  student_id: string;
+  sanction_type: string;
+  quantity: string;
+  description: string;
+  date: string;
+}
+
 // Union type para todos los formularios
 export interface FormsObj {
   "Crear mensaje": MessageForm;
   "Crear examen": ExamForm;
   "Cargar calificación": GradeForm;
   "Crear mensaje de materia": SubjectMessageForm;
+  "Crear conducta": DisciplinarySanctionForm;
 }
 
 // Type guards mejorados con validación
@@ -162,6 +172,22 @@ export function isSubjectMessageForm(form: unknown): form is SubjectMessageForm 
     typeof f.content === "string" &&
     typeof f.type === "string" &&
     validTypes.includes(f.type)
+  );
+}
+
+export function isDisciplinarySanctionForm(form: unknown): form is DisciplinarySanctionForm {
+  if (typeof form !== "object" || form === null) return false;
+  
+  const f = form as Record<string, unknown>;
+  const validSanctionTypes = ["admonition", "warning"];
+  
+  return (
+    typeof f.student_id === "string" &&
+    typeof f.sanction_type === "string" &&
+    typeof f.quantity === "string" &&
+    typeof f.description === "string" &&
+    typeof f.date === "string" &&
+    validSanctionTypes.includes(f.sanction_type)
   );
 }
 

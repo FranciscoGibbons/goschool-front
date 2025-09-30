@@ -8,6 +8,7 @@ import {
   SelfAssessableExamForm,
   GradeForm,
   SubjectMessageForm,
+  DisciplinarySanctionForm,
 } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -49,6 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import React from "react";
+import { SANCTION_TYPES, SANCTION_LABELS } from "@/types/disciplinarySanction";
 
 // Tipos para los datos dinámicos
 interface Assessment {
@@ -119,6 +121,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         content: "",
         type: "message" as "message" | "file" | "link",
       } as SubjectMessageForm;
+    } else if (action === "Crear conducta") {
+      return {
+        student_id: "",
+        sanction_type: "",
+        quantity: "1",
+        description: "",
+        date: new Date().toISOString().split('T')[0], // Fecha actual por defecto
+      } as DisciplinarySanctionForm;
     } else {
       return { title: "", message: "", courses: [] } as MessageForm;
     }
@@ -151,6 +161,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
 
+  // Estado para el curso seleccionado en formulario de conducta
+  const [selectedCourseIdConducta, setSelectedCourseIdConducta] = useState<string>("");
+
   // Type guards para verificar el tipo de formulario
   const isMessageForm = (
     data: FormsObj[typeof action]
@@ -176,6 +189,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     data: FormsObj[typeof action]
   ): data is SubjectMessageForm => {
     return action === "Crear mensaje de materia";
+  };
+
+  const isDisciplinarySanctionForm = (
+    data: FormsObj[typeof action]
+  ): data is DisciplinarySanctionForm => {
+    return action === "Crear conducta";
   };
 
   // Función para cargar materias con información de cursos
@@ -328,7 +347,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
   // Cargar cursos cuando se necesite
   useEffect(() => {
-    if (action === "Crear mensaje") {
+    if (action === "Crear mensaje" || action === "Crear conducta") {
       loadCourses();
     }
   }, [action]);
@@ -371,6 +390,20 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData, subjects, action]);
+
+  // Effect to load students for conducta form when course changes
+  useEffect(() => {
+    if (action === "Crear conducta" && selectedCourseIdConducta) {
+      loadStudents(parseInt(selectedCourseIdConducta));
+      // Reset student selection when course changes
+      if (isDisciplinarySanctionForm(formData)) {
+        setFormData((prev) =>
+          isDisciplinarySanctionForm(prev) ? { ...prev, student_id: "" } : prev
+        );
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourseIdConducta, action]);
 
   // Manejo de cambios para campos individuales
   const handleChange = <T extends FormsObj[typeof action]>(
@@ -686,6 +719,44 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
         payload = formDataToSend;
         url = `/api/proxy/subject-messages`;
+      } else if (action === "Crear conducta" && isDisciplinarySanctionForm(formData)) {
+        // Validar que todos los campos requeridos estén presentes
+        if (
+          !formData.student_id ||
+          !formData.sanction_type ||
+          !formData.quantity ||
+          !formData.description ||
+          !formData.date
+        ) {
+          toast.error("Por favor completa todos los campos requeridos");
+          setIsLoading(false);
+          return;
+        }
+
+        // Validar que la cantidad sea un número positivo
+        const quantity = parseInt(formData.quantity);
+        if (isNaN(quantity) || quantity < 1) {
+          toast.error("La cantidad debe ser un número positivo");
+          setIsLoading(false);
+          return;
+        }
+
+        // Validar que la descripción tenga al menos 10 caracteres
+        if (formData.description.trim().length < 10) {
+          toast.error("La descripción debe tener al menos 10 caracteres");
+          setIsLoading(false);
+          return;
+        }
+
+        payload = {
+          student_id: Number(formData.student_id),
+          sanction_type: formData.sanction_type,
+          quantity: quantity,
+          description: formData.description.trim(),
+          date: formData.date,
+        };
+
+        url = `/api/proxy/disciplinary_sanction`;
       } else {
         throw new Error("Tipo de formulario no válido");
       }
@@ -760,6 +831,8 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             ? "Calificación cargada exitosamente"
             : action === "Crear mensaje de materia"
             ? "Mensaje de materia creado exitosamente"
+            : action === "Crear conducta"
+            ? "Sanción disciplinaria creada exitosamente"
             : "Examen creado exitosamente";
         toast.success(successMessage);
         onClose();
@@ -1424,6 +1497,151 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             </div>
           </>
         )}
+
+      {/* Formulario para conducta/sanción disciplinaria */}
+      {action === "Crear conducta" && isDisciplinarySanctionForm(formData) && (
+        <>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="course_select">Curso</Label>
+              <Select
+                value={selectedCourseIdConducta}
+                onValueChange={setSelectedCourseIdConducta}
+                disabled={isLoadingCourses}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingCourses
+                        ? "Cargando cursos..."
+                        : "Selecciona un curso"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id.toString()}>
+                      {getCourseLabel(course)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="student_id">Estudiante</Label>
+              <Select
+                value={formData.student_id}
+                onValueChange={(value) =>
+                  handleChange<DisciplinarySanctionForm>("student_id", value)
+                }
+                disabled={isLoadingStudents || !selectedCourseIdConducta}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !selectedCourseIdConducta
+                        ? "Primero selecciona un curso"
+                        : isLoadingStudents
+                        ? "Cargando estudiantes..."
+                        : "Selecciona un estudiante"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {students.map((student) => (
+                    <SelectItem key={student.id} value={student.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        {student.photo ? (
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={student.photo} />
+                            <AvatarFallback className="text-xs">
+                              {student.full_name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs">
+                              {student.full_name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <span>{student.full_name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="sanction_type">Tipo de Sanción</Label>
+              <Select
+                value={formData.sanction_type}
+                onValueChange={(value) =>
+                  handleChange<DisciplinarySanctionForm>("sanction_type", value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tipo de sanción" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SANCTION_TYPES.ADMONITION}>
+                    {SANCTION_LABELS[SANCTION_TYPES.ADMONITION]}
+                  </SelectItem>
+                  <SelectItem value={SANCTION_TYPES.WARNING}>
+                    {SANCTION_LABELS[SANCTION_TYPES.WARNING]}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="quantity">Cantidad</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                placeholder="1"
+                value={formData.quantity}
+                onChange={(e) =>
+                  handleChange<DisciplinarySanctionForm>("quantity", e.target.value)
+                }
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="date">Fecha</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) =>
+                  handleChange<DisciplinarySanctionForm>("date", e.target.value)
+                }
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe la situación que motivó la sanción disciplinaria... (mínimo 10 caracteres)"
+                value={formData.description}
+                onChange={(e) =>
+                  handleChange<DisciplinarySanctionForm>("description", e.target.value)
+                }
+                className="min-h-[100px]"
+                maxLength={500}
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Mínimo 10 caracteres</span>
+                <span>{formData.description.length}/500</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>
