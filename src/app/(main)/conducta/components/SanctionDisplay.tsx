@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { parseLocalDate } from "@/utils/dateHelpers";
 
 interface SanctionDisplayProps {
   sanctions: DisciplinarySanction[];
@@ -60,8 +61,8 @@ export function SanctionDisplay({
 
   const sortedSanctions = [...sanctions].sort((a, b) => {
     // Primero por fecha (más reciente primero)
-    const dateA = new Date(a.date).getTime();
-    const dateB = new Date(b.date).getTime();
+    const dateA = parseLocalDate(a.date).getTime();
+    const dateB = parseLocalDate(b.date).getTime();
     if (dateB !== dateA) return dateB - dateA;
     
     // Luego por severidad (más grave primero)

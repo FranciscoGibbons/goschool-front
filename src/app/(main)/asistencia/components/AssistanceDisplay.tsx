@@ -25,13 +25,21 @@ import type { Assistance, UpdateAssistance } from "../../../../types/assistance"
 import AssistanceStats from "./AssistanceStats";
 import AssistanceCalendar from "./AssistanceCalendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  formatAssistanceDate, 
+  getAssistanceTimestamp,
+  getMonthKey,
+  getMonthName 
+} from "@/utils/dateHelpers";
 
 interface AssistanceDisplayProps {
   selectedStudentId?: number;
+  refreshTrigger?: number; // Para forzar refresh externo
 }
 
 export default function AssistanceDisplay({
   selectedStudentId,
+  refreshTrigger,
 }: AssistanceDisplayProps) {
   const { userInfo } = userInfoStore();
   const [orderBy, setOrderBy] = useState<string>("date_desc");
@@ -55,12 +63,21 @@ export default function AssistanceDisplay({
     error,
     updateAssistance,
     deleteAssistance,
+    fetchAssistances,
   } = useAssistance(assistanceFilters);
 
   useEffect(() => {
     // Actualizar la ref con el studentId actual
     currentStudentIdRef.current = selectedStudentId;
   }, [selectedStudentId]);
+
+  // Refrescar cuando cambie el trigger externo
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      console.log('🔄 External refresh triggered');
+      fetchAssistances();
+    }
+  }, [refreshTrigger, fetchAssistances]);
 
   // Filtrar y ordenar asistencias
   let filteredAssistances = [...assistances];
@@ -71,11 +88,11 @@ export default function AssistanceDisplay({
   
   if (orderBy === "date_desc") {
     filteredAssistances.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => getAssistanceTimestamp(b.date) - getAssistanceTimestamp(a.date)
     );
   } else if (orderBy === "date_asc") {
     filteredAssistances.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => getAssistanceTimestamp(a.date) - getAssistanceTimestamp(b.date)
     );
   }
 
@@ -172,9 +189,8 @@ export default function AssistanceDisplay({
 
   // Agrupar asistencias por mes
   const assistancesByMonth = filteredAssistances.reduce((groups, assistance) => {
-    const date = new Date(assistance.date);
-    const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-    const monthName = date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+    const monthKey = getMonthKey(assistance.date);
+    const monthName = getMonthName(assistance.date);
     
     if (!groups[monthKey]) {
       groups[monthKey] = {
@@ -274,12 +290,7 @@ export default function AssistanceDisplay({
                           <div className="flex items-center gap-2">
                             <CalendarIcon className="size-5 text-muted-foreground" />
                             <span className="font-medium text-foreground">
-                              {new Date(assistance.date).toLocaleDateString("es-ES", {
-                                weekday: "long",
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
+                              {formatAssistanceDate(assistance.date)}
                             </span>
                           </div>
                           

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import type { Assistance } from "../../../../types/assistance";
+import { getDateKey } from "@/utils/dateHelpers";
 
 interface AssistanceCalendarProps {
   assistances: Assistance[];
@@ -29,7 +30,7 @@ export default function AssistanceCalendar({
     // Crear un mapa de asistencias por fecha
     const assistanceMap = new Map<string, Assistance>();
     assistances.forEach(assistance => {
-      const dateKey = new Date(assistance.date).toISOString().split('T')[0];
+      const dateKey = getDateKey(assistance.date);
       assistanceMap.set(dateKey, assistance);
     });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon } from "@heroicons/react/24/outline";
+import { Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
@@ -58,23 +58,35 @@ function HorarioContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Cargando horarios...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <CalendarIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Horario
-          </h1>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="icon-wrapper">
+                  <Calendar className="h-6 w-6" />
+                </div>
+                <h1 className="text-4xl font-bold text-foreground">
+                  Horarios
+                </h1>
+              </div>
+            </div>
+            <div className="dashboard-card text-center py-8">
+              <p className="text-destructive">{error}</p>
+            </div>
+          </div>
         </div>
-        <div className="text-center py-8 text-red-500">{error}</div>
       </div>
     );
   }
@@ -82,18 +94,27 @@ function HorarioContent() {
   // Para estudiantes, mostrar directamente el horario
   if (userInfo?.role === "student") {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <CalendarIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Horario
-          </h1>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3">
+              <div className="icon-wrapper">
+                <Calendar className="h-6 w-6" />
+              </div>
+              <h1 className="text-4xl font-bold text-foreground">
+                Horarios
+              </h1>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Aquí puedes ver tu cronograma de clases
+            </p>
+          </div>
+          <TimetableClient
+            courses={courses}
+            initialCourseId={undefined}
+            initialTimetables={[]}
+          />
         </div>
-        <TimetableClient
-          courses={courses}
-          initialCourseId={undefined}
-          initialTimetables={[]}
-        />
       </div>
     );
   }
@@ -101,54 +122,72 @@ function HorarioContent() {
   // Para padres sin hijo seleccionado
   if (userInfo?.role === "father" && !selectedChild) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <CalendarIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Horario
-          </h1>
-        </div>
-        <div className="text-center py-12">
-          <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">
-            Selecciona un hijo
-          </h3>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
-            Usa el selector en la barra lateral para elegir el hijo cuyo horario
-            deseas ver.
-          </p>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3">
+              <div className="icon-wrapper">
+                <Calendar className="h-6 w-6" />
+              </div>
+              <h1 className="text-4xl font-bold text-foreground">
+                Horarios
+              </h1>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Consulta los horarios de clases de tu hijo
+            </p>
+          </div>
+          <div className="dashboard-card text-center py-12">
+            <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              Selecciona un hijo
+            </h3>
+            <p className="text-muted-foreground">
+              Usa el selector en la barra lateral para elegir el hijo cuyo horario
+              deseas ver.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <CalendarIcon className="size-8 text-primary" />
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Horario
-        </h1>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-3">
+            <div className="icon-wrapper">
+              <Calendar className="h-6 w-6" />
+            </div>
+            <h1 className="text-4xl font-bold text-foreground">
+              Horarios
+            </h1>
+          </div>
+          <p className="text-lg text-muted-foreground">
+            Gestiona y consulta los cronogramas académicos
+          </p>
+        </div>
 
-      {currentStep === "course" && (
-        <CourseSelector
-          courses={courses}
-          onCourseSelect={handleCourseSelect}
-          selectedCourseId={selectedCourseId}
-          title="Seleccionar Curso"
-          subtitle="Elige el curso para ver el horario"
-        />
-      )}
-
-      {currentStep === "timetable" &&
-        (selectedCourseId || userInfo?.role === "father") && (
-          <TimetableClient
+        {currentStep === "course" && (
+          <CourseSelector
             courses={courses}
-            initialCourseId={selectedCourseId || selectedChild?.course_id}
-            initialTimetables={[]}
+            onCourseSelect={handleCourseSelect}
+            selectedCourseId={selectedCourseId}
+            title="Seleccionar Curso"
+            subtitle="Elige el curso para ver el horario"
           />
         )}
+
+        {currentStep === "timetable" &&
+          (selectedCourseId || userInfo?.role === "father") && (
+            <TimetableClient
+              courses={courses}
+              initialCourseId={selectedCourseId || selectedChild?.course_id}
+              initialTimetables={[]}
+            />
+          )}
+      </div>
     </div>
   );
 }

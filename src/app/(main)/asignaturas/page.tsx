@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenIcon } from "@heroicons/react/24/outline";
+import { BookOpen } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
@@ -100,19 +100,25 @@ function AsignaturasContent() {
   // Error state
   if (error) {
     return (
-      <div className="space-y-6">
-        <header>
-          <div className="flex items-center gap-3">
-            <BookOpenIcon className="size-8 text-primary" aria-hidden="true" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Asignaturas
-            </h1>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="icon-wrapper">
+                  <BookOpen className="h-6 w-6" />
+                </div>
+                <h1 className="text-4xl font-bold text-foreground">
+                  Asignaturas
+                </h1>
+              </div>
+            </div>
+            <ErrorDisplay 
+              error={error}
+              retry={() => window.location.reload()}
+            />
           </div>
-        </header>
-        <ErrorDisplay 
-          error={error}
-          retry={() => window.location.reload()}
-        />
+        </div>
       </div>
     );
   }
@@ -120,98 +126,112 @@ function AsignaturasContent() {
   // Para estudiantes y padres, mostrar directamente las asignaturas
   if (userInfo?.role === "student" || userInfo?.role === "father") {
     return (
-      <div className="space-y-6">
-        <header>
-          <div className="flex items-center gap-3">
-            <BookOpenIcon className="size-8 text-primary" aria-hidden="true" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Asignaturas
-            </h1>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3">
+              <div className="icon-wrapper">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <h1 className="text-4xl font-bold text-foreground">
+                Asignaturas
+              </h1>
+            </div>
+            <p className="text-lg text-muted-foreground">
+              Aquí puedes ver todas las materias disponibles
+            </p>
           </div>
-        </header>
-        <main>
-          <SubjectSelectorWrapper selectedCourseId={selectedChild?.course_id} />
-        </main>
+          <main>
+            <SubjectSelectorWrapper selectedCourseId={selectedChild?.course_id} />
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <div className="flex items-center gap-3">
-          <BookOpenIcon className="size-8 text-primary" aria-hidden="true" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Asignaturas
-          </h1>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-3">
+            <div className="icon-wrapper">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <h1 className="text-4xl font-bold text-foreground">
+              Asignaturas
+            </h1>
+          </div>
+          <p className="text-lg text-muted-foreground">
+            Gestiona las materias y contenidos académicos
+          </p>
         </div>
-      </header>
 
-      <main>
-        {currentStep === "course" && (
-          <ErrorBoundary
-            fallback={
-              <ErrorDisplay 
-                error="Error al cargar los cursos"
-                retry={handleBackToCourse}
-              />
-            }
-          >
-            <Suspense fallback={<LoadingCard />}>
-              <section aria-label="Selección de curso">
-                <CourseSelector
-                  courses={courses}
-                  onCourseSelect={handleCourseSelect}
-                  selectedCourseId={selectedCourseId}
-                  title="Selecciona un curso"
-                  description="Elige el curso para ver las asignaturas"
+        <main>
+          {currentStep === "course" && (
+            <ErrorBoundary
+              fallback={
+                <ErrorDisplay 
+                  error="Error al cargar los cursos"
+                  retry={handleBackToCourse}
                 />
-              </section>
-            </Suspense>
-          </ErrorBoundary>
-        )}
+              }
+            >
+              <Suspense fallback={<LoadingCard />}>
+                <section aria-label="Selección de curso">
+                  <CourseSelector
+                    courses={courses}
+                    onCourseSelect={handleCourseSelect}
+                    selectedCourseId={selectedCourseId}
+                    title="Selecciona un curso"
+                    description="Elige el curso para ver las asignaturas"
+                  />
+                </section>
+              </Suspense>
+            </ErrorBoundary>
+          )}
 
-        {currentStep === "student" && (
-          <ErrorBoundary
-            fallback={
-              <ErrorDisplay 
-                error="Error al cargar los estudiantes"
-                retry={handleBackToCourse}
-              />
-            }
-          >
-            <Suspense fallback={<SkeletonList items={4} />}>
-              <section aria-label="Selección de estudiante">
-                <StudentSelector
-                  students={students}
-                  onStudentSelect={handleStudentSelect}
-                  onBack={handleBackToCourse}
-                  selectedStudentId={selectedStudentId}
-                  title="Selecciona un estudiante"
-                  description="Elige el estudiante para ver sus asignaturas"
+          {currentStep === "student" && (
+            <ErrorBoundary
+              fallback={
+                <ErrorDisplay 
+                  error="Error al cargar los estudiantes"
+                  retry={handleBackToCourse}
                 />
-              </section>
-            </Suspense>
-          </ErrorBoundary>
-        )}
+              }
+            >
+              <Suspense fallback={<SkeletonList items={4} />}>
+                <section aria-label="Selección de estudiante">
+                  <StudentSelector
+                    students={students}
+                    onStudentSelect={handleStudentSelect}
+                    onBack={handleBackToCourse}
+                    selectedStudentId={selectedStudentId}
+                    title="Selecciona un estudiante"
+                    description="Elige el estudiante para ver sus asignaturas"
+                  />
+                </section>
+              </Suspense>
+            </ErrorBoundary>
+          )}
 
-        {currentStep === "subjects" && (
-          <section aria-label="Lista de asignaturas" className="space-y-6">
-            <nav aria-label="Navegación de regreso">
-              {!(userInfo?.role === "teacher" || userInfo?.role === "admin" || userInfo?.role === "preceptor") && (
-                <button
-                  onClick={handleBackToStudent}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
-                  aria-label="Volver a selección de estudiante"
-                >
-                  ← Volver a selección de estudiante
-                </button>
-              )}
-            </nav>
-            <SubjectSelectorWrapper selectedCourseId={selectedCourseId} />
-          </section>
-        )}
-      </main>
+          {currentStep === "subjects" && (
+            <section aria-label="Lista de asignaturas" className="space-y-6">
+              <nav aria-label="Navegación de regreso">
+                {!(userInfo?.role === "teacher" || userInfo?.role === "admin" || userInfo?.role === "preceptor") && (
+                  <button
+                    onClick={handleBackToStudent}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                    aria-label="Volver a selección de estudiante"
+                  >
+                    ← Volver a selección de estudiante
+                  </button>
+                )}
+              </nav>
+              <SubjectSelectorWrapper selectedCourseId={selectedCourseId} />
+            </section>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,166 +1,86 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  /* Radios consistentes para el sistema de diseño */
-  --radius-xs: calc(var(--radius) - 6px);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  
-  /* Espaciado del sistema de diseño */
-  --spacing-section: 2rem; /* 32px - espaciado entre secciones */
-  --spacing-component: 1.5rem; /* 24px - espaciado interno de componentes */
-  --spacing-element: 1rem; /* 16px - espaciado entre elementos */
-  --spacing-tight: 0.5rem; /* 8px - espaciado compacto */
-  
-  /* Alturas estándar para elementos interactivos */
-  --height-input: 2.5rem; /* 40px - altura mínima para accesibilidad */
-  --height-button-sm: 2rem; /* 32px */
-  --height-button: 2.5rem; /* 40px */
-  --height-button-lg: 3rem; /* 48px */
-  
-  /* Tipografía del sistema */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  
-  /* Pesos de fuente consistentes */
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  
-  /* Sombras del sistema */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  
-  /* Tokens de color del sistema */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
 
 :root {
   /* Configuración base del radius */
-  --radius: 0.625rem; /* 10px - más suave y moderno */
+  --radius: 0.5rem; /* 8px - más limpio y moderno */
   
-  /* Colores modo claro */
-  --background: oklch(99% 0 0); /* Blanco más puro */
-  --foreground: oklch(9% 0 0); /* Negro más suave */
-  --card: oklch(100% 0 0);
-  --card-foreground: oklch(9% 0 0);
-  --popover: oklch(100% 0 0);
-  --popover-foreground: oklch(9% 0 0);
-  --primary: oklch(20% 0 0); /* Negro elegante */
-  --primary-foreground: oklch(98% 0 0);
-  --secondary: oklch(96% 0 0); /* Gris muy claro */
-  --secondary-foreground: oklch(20% 0 0);
-  --muted: oklch(96% 0 0);
-  --muted-foreground: oklch(55% 0 0); /* Gris medio mejorado */
-  --accent: oklch(96% 0 0);
-  --accent-foreground: oklch(20% 0 0);
-  --destructive: oklch(58% 0.24 27); /* Rojo más vibrante */
-  --destructive-foreground: oklch(98% 0 0);
-  --border: oklch(92% 0 0); /* Border más definido */
-  --input: oklch(92% 0 0);
-  --ring: oklch(20% 0 0); /* Focus ring más definido */
+  /* Colores modo claro - Sistema unificado basado en #FFFFFF */
+  --background: 0 0% 100%; /* Blanco puro */
+  --foreground: 240 10% 3.9%; /* Texto oscuro principal */
+  --card: 0 0% 100%; /* Cards blancas */
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 240 5.2% 33.9%; /* Gris oscuro elegante */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%; /* Gris muy claro */
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%; /* Bordes más definidos */
+  --input: 240 5.9% 90%;
+  --ring: 240 5.2% 33.9%; /* Focus ring elegante */
   
-  /* Colores para gráficos - paleta educativa */
-  --chart-1: oklch(65% 0.22 41); /* Naranja educativo */
-  --chart-2: oklch(60% 0.12 185); /* Azul académico */
-  --chart-3: oklch(40% 0.07 227); /* Azul oscuro */
-  --chart-4: oklch(83% 0.19 84); /* Verde éxito */
-  --chart-5: oklch(77% 0.19 70); /* Verde claro */
+  /* Colores para gráficos - paleta moderna y limpia */
+  --chart-1: 221 83% 53%; /* Azul principal */
+  --chart-2: 142 71% 45%; /* Verde */
+  --chart-3: 262 83% 58%; /* Púrpura */
+  --chart-4: 34 89% 60%; /* Naranja */
+  --chart-5: 355 84% 60%; /* Rosa */
   
-  /* Sidebar - adaptado para entorno educativo */
-  --sidebar: oklch(98% 0 0);
-  --sidebar-foreground: oklch(9% 0 0);
-  --sidebar-primary: oklch(20% 0 0);
-  --sidebar-primary-foreground: oklch(98% 0 0);
-  --sidebar-accent: oklch(96% 0 0);
-  --sidebar-accent-foreground: oklch(20% 0 0);
-  --sidebar-border: oklch(92% 0 0);
-  --sidebar-ring: oklch(70% 0 0);
+  /* Sidebar - minimalista */
+  --sidebar: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary: 240 5.2% 33.9%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 4.8% 95.9%;
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border: 240 5.9% 90%;
+  --sidebar-ring: 240 5.2% 33.9%;
 }
 
 .dark {
-  /* Colores modo oscuro - optimizados para accesibilidad */
-  --background: oklch(8% 0 0); /* Fondo más oscuro */
-  --foreground: oklch(95% 0 0); /* Texto más claro */
-  --card: oklch(12% 0 0); /* Cards más definidas */
-  --card-foreground: oklch(95% 0 0);
-  --popover: oklch(12% 0 0);
-  --popover-foreground: oklch(95% 0 0);
-  --primary: oklch(90% 0 0); /* Primary más claro */
-  --primary-foreground: oklch(12% 0 0);
-  --secondary: oklch(18% 0 0); /* Secondary más contrastado */
-  --secondary-foreground: oklch(95% 0 0);
-  --muted: oklch(18% 0 0);
-  --muted-foreground: oklch(65% 0 0); /* Muted text más legible */
-  --accent: oklch(18% 0 0);
-  --accent-foreground: oklch(95% 0 0);
-  --destructive: oklch(70% 0.19 22); /* Destructive más visible */
-  --destructive-foreground: oklch(95% 0 0);
-  --border: oklch(100% 0 0 / 15%); /* Border más sutil */
-  --input: oklch(100% 0 0 / 20%); /* Input más visible */
-  --ring: oklch(90% 0 0); /* Ring más claro */
+  /* Colores modo oscuro - Sistema unificado basado en #020817 */
+  --background: 222.2 84% 4.9%; /* #020817 - color principal */
+  --foreground: 210 40% 98%; /* Texto claro */
+  --card: 222.2 84% 4.9%; /* Cards con mismo fondo */
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 210 40% 98%; /* Primary claro para contraste */
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%; /* Gris oscuro */
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%; /* Bordes sutiles */
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%; /* Ring claro */
   
-  /* Gráficos modo oscuro */
-  --chart-1: oklch(49% 0.24 264);
-  --chart-2: oklch(70% 0.17 162);
-  --chart-3: oklch(77% 0.19 70);
-  --chart-4: oklch(63% 0.26 304);
-  --chart-5: oklch(65% 0.25 16);
+  /* Gráficos modo oscuro - adaptados para #020817 */
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
   
   /* Sidebar modo oscuro */
-  --sidebar: oklch(12% 0 0);
-  --sidebar-foreground: oklch(95% 0 0);
-  --sidebar-primary: oklch(49% 0.24 264);
-  --sidebar-primary-foreground: oklch(95% 0 0);
-  --sidebar-accent: oklch(18% 0 0);
-  --sidebar-accent-foreground: oklch(95% 0 0);
-  --sidebar-border: oklch(100% 0 0 / 15%);
-  --sidebar-ring: oklch(55% 0 0);
+  --sidebar: 222.2 84% 4.9%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 220 70% 50%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 217.2 32.6% 17.5%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-ring: 212.7 26.8% 83.9%;
 }
 
 @layer base {
@@ -172,10 +92,9 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: system-ui, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Mejores métricas tipográficas */
     font-feature-settings: "cv01", "cv02", "cv03", "cv04", "ss01", "ss02";
     text-rendering: optimizeLegibility;
   }
@@ -212,54 +131,54 @@
     color: hsl(var(--primary-foreground));
   }
   
-  /* Tipografía escalable */
+  /* Tipografía escalable y moderna */
   h1, .heading-1 {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
+    font-size: 2.25rem;
+    line-height: 2.5rem;
     font-weight: 700;
     letter-spacing: -0.025em;
   }
   
   h2, .heading-2 {
-    font-size: 1.5rem;
-    line-height: 2rem;
+    font-size: 1.875rem;
+    line-height: 2.25rem;
     font-weight: 600;
     letter-spacing: -0.025em;
   }
   
   h3, .heading-3 {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
+    font-size: 1.5rem;
+    line-height: 2rem;
     font-weight: 600;
   }
   
   h4, .heading-4 {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     line-height: 1.75rem;
     font-weight: 500;
   }
   
   h5, .heading-5 {
-    font-size: 1rem;
-    line-height: 1.5rem;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
     font-weight: 500;
   }
   
   h6, .heading-6 {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
     font-weight: 500;
   }
   
   /* Textos de párrafo */
   p, .body-text {
     font-size: 1rem;
-    line-height: 1.625;
+    line-height: 1.5;
   }
   
   .body-small {
     font-size: 0.875rem;
-    line-height: 1.625;
+    line-height: 1.5;
   }
   
   .caption {
@@ -269,19 +188,150 @@
   }
 }
 
-/* Utilidades del sistema de diseño */
+/* Componentes del nuevo design system */
+@layer components {
+  .academic-card {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) + 2px);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    transition: all 0.2s ease-out;
+  }
+  
+  .academic-card:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transform: translateY(-1px);
+  }
+  
+  .dashboard-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    transition: all 0.2s ease-out;
+  }
+  
+  .dashboard-card:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  
+  .stat-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 1rem;
+    transition: all 0.2s ease-out;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  
+  .action-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+  }
+  
+  .action-card:hover {
+    background: hsl(var(--accent));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  
+  .icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius);
+    background: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+  }
+  
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  
+  .grade-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+}
+
+/* Estados de exámenes/tareas con nueva paleta */
 @layer utilities {
-  /* Espaciado del sistema */
+  .exam-pending {
+    background-color: hsl(48 96% 89%);
+    color: hsl(25 95% 53%);
+    border-color: hsl(48 96% 77%);
+  }
+  
+  .dark .exam-pending {
+    background-color: hsl(32 95% 44% / 0.1);
+    color: hsl(48 96% 77%);
+    border-color: hsl(25 95% 53%);
+  }
+  
+  .exam-completed {
+    background-color: hsl(143 85% 96%);
+    color: hsl(140 100% 27%);
+    border-color: hsl(145 92% 91%);
+  }
+  
+  .dark .exam-completed {
+    background-color: hsl(140 100% 27% / 0.1);
+    color: hsl(145 92% 91%);
+    border-color: hsl(140 100% 27%);
+  }
+  
+  .exam-overdue {
+    background-color: hsl(0 93% 94%);
+    color: hsl(0 84% 37%);
+    border-color: hsl(0 93% 94%);
+  }
+  
+  .dark .exam-overdue {
+    background-color: hsl(0 84% 37% / 0.1);
+    color: hsl(0 93% 94%);
+    border-color: hsl(0 84% 37%);
+  }
+  
+  /* Utilidades de espaciado consistente */
   .spacing-section {
-    margin: var(--spacing-section) 0;
+    margin: 2rem 0;
   }
   
   .spacing-component {
-    padding: var(--spacing-component);
+    padding: 1.5rem;
   }
   
   .spacing-element {
-    gap: var(--spacing-element);
+    gap: 1rem;
+  }
+  
+  .spacing-tight {
+    gap: 0.5rem;
   }
   
   /* Estados de interacción */
@@ -294,65 +344,46 @@
   }
   
   .hover-lift:hover {
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
   
   .focus-ring:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
-  
-  /* Layout helpers */
-  .container-custom {
-    container-type: inline-size;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 1rem;
-    padding-right: 1rem;
+}
+
+/* Responsive helpers */
+@media (max-width: 640px) {
+  .academic-card {
+    padding: 1rem;
   }
   
-  @media (min-width: 640px) {
-    .container-custom {
-      padding-left: 1.5rem;
-      padding-right: 1.5rem;
-    }
+  .dashboard-card {
+    padding: 1rem;
   }
   
-  @media (min-width: 1024px) {
-    .container-custom {
-      padding-left: 2rem;
-      padding-right: 2rem;
-    }
+  h1, .heading-1 {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
   }
   
-  .grid-auto-fit {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  }
-  
-  .grid-auto-fill {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  h2, .heading-2 {
+    font-size: 1.5rem;
+    line-height: 2rem;
   }
 }
 
-/* Animaciones del sistema */
-@keyframes message-fade-in {
+/* Animaciones suaves */
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes pulse-soft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
   }
 }
 
@@ -367,124 +398,84 @@
   }
 }
 
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Clases de animación */
-.message-fade-in {
-  animation: message-fade-in 0.5s ease-out forwards;
-  opacity: 0;
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
 
-.animate-slide-down {
-  animation: slide-down 0.3s ease-out;
+/* Dropdown/Modal Opaque Backgrounds */
+[data-radix-popper-content-wrapper] {
+  z-index: 50;
 }
 
-.animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
+/* Dropdown Content - Force solid backgrounds */
+[role="listbox"],
+[role="menu"],
+[data-radix-select-content],
+[data-radix-dropdown-menu-content],
+[data-radix-context-menu-content] {
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
 }
 
-/* Componentes académicos específicos */
-.academic-card {
-  background-color: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transition: all 0.2s ease-out;
+/* Modal/Dialog - Force solid backgrounds */
+[data-radix-dialog-content] {
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
 }
 
-.academic-card:hover {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+/* Popover - Force solid backgrounds */
+[data-radix-popover-content] {
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
 }
 
-.status-indicator {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
+/* Tooltip - Force solid backgrounds */
+[data-radix-tooltip-content] {
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
-.grade-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
+/* Override any transparency classes */
+.bg-opacity-95,
+.bg-opacity-90,
+.bg-opacity-80,
+.backdrop-blur-sm,
+.backdrop-blur {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
 }
 
-/* Estados de exámenes/tareas */
-.exam-pending {
-  background-color: rgb(254 249 195);
-  color: rgb(133 77 14);
-  border-color: rgb(254 240 138);
+/* Force solid backgrounds on all shadcn/ui components */
+.bg-popover {
+  background: hsl(var(--background)) !important;
 }
 
-.dark .exam-pending {
-  background-color: rgb(113 63 18 / 0.2);
-  color: rgb(253 224 71);
-  border-color: rgb(133 77 14);
+.bg-card {
+  background: hsl(var(--card)) !important;
 }
 
-.exam-completed {
-  background-color: rgb(220 252 231);
-  color: rgb(22 101 52);
-  border-color: rgb(187 247 208);
+.text-popover-foreground {
+  color: hsl(var(--foreground)) !important;
 }
 
-.dark .exam-completed {
-  background-color: rgb(20 83 45 / 0.2);
-  color: rgb(134 239 172);
-  border-color: rgb(22 101 52);
+/* Additional overrides for Radix UI primitives */
+[data-radix-portal] * {
+  backdrop-filter: none !important;
 }
 
-.exam-overdue {
-  background-color: rgb(254 226 226);
-  color: rgb(153 27 27);
-  border-color: rgb(252 165 165);
+[data-side],
+[data-align] {
+  background: hsl(var(--background)) !important;
 }
 
-.dark .exam-overdue {
-  background-color: rgb(127 29 29 / 0.2);
-  color: rgb(248 113 113);
-  border-color: rgb(153 27 27);
-}
-
-/* Responsive helpers específicos para el contexto educativo */
-@media (max-width: 640px) {
-  .container-custom {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .academic-card {
-    padding: 1rem;
-  }
-  
-  h1, .heading-1 {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-  
-  h2, .heading-2 {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-  }
+/* Ensure no transparent elements in UI */
+* {
+  --tw-bg-opacity: 1 !important;
 }

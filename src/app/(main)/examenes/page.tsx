@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { AcademicCapIcon } from "@heroicons/react/24/outline";
+import { GraduationCap } from "lucide-react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
@@ -130,66 +130,90 @@ function ExamsContent() {
   // Error state
   if (coursesError) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <AcademicCapIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Evaluaciones</h1>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 max-w-7xl">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="icon-wrapper">
+                  <GraduationCap className="h-6 w-6" />
+                </div>
+                <h1 className="text-4xl font-bold text-foreground">
+                  Exámenes
+                </h1>
+              </div>
+            </div>
+            <ErrorDisplay 
+              error={coursesError}
+              retry={() => window.location.reload()}
+            />
+          </div>
         </div>
-        <ErrorDisplay 
-          error={coursesError}
-          retry={() => window.location.reload()}
-        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <AcademicCapIcon className="size-8 text-primary" />
-        <h1 className="text-3xl font-bold text-foreground">Evaluaciones</h1>
-      </div>
-
-      {currentStep === "course" && (
-        <ErrorBoundary
-          fallback={
-            <ErrorDisplay 
-              error="Error al cargar los cursos"
-              retry={handleBackToCourse}
-            />
-          }
-        >
-          <Suspense fallback={<LoadingCard />}>
-            <CourseSelector
-              courses={courses}
-              onCourseSelect={handleCourseSelect}
-              selectedCourseId={selectedCourseId}
-              title="Selecciona un curso"
-              description="Elige el curso para ver las evaluaciones"
-            />
-          </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {currentStep === "exams" && (
-        <div className="space-y-6">
-          {userInfo?.role !== "student" && userInfo?.role !== "father" && (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleBackToCourse}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                ← Volver a selección de curso
-              </button>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-3">
+            <div className="icon-wrapper">
+              <GraduationCap className="h-6 w-6" />
             </div>
-          )}
-          <ExamListWrapper 
-            exams={filteredExams} 
-            role={userInfo?.role as Role} 
-            subjects={filteredSubjects} 
-          />
+            <h1 className="text-4xl font-bold text-foreground">
+              Exámenes
+            </h1>
+          </div>
+          <p className="text-lg text-muted-foreground">
+            {userInfo?.role === "student" || userInfo?.role === "father" 
+              ? "Aquí puedes ver todas tus evaluaciones programadas"
+              : "Gestiona y programa las evaluaciones del colegio"
+            }
+          </p>
         </div>
-      )}
+
+        {currentStep === "course" && (
+          <ErrorBoundary
+            fallback={
+              <ErrorDisplay 
+                error="Error al cargar los cursos"
+                retry={handleBackToCourse}
+              />
+            }
+          >
+            <Suspense fallback={<LoadingCard />}>
+              <CourseSelector
+                courses={courses}
+                onCourseSelect={handleCourseSelect}
+                selectedCourseId={selectedCourseId}
+                title="Selecciona un curso"
+                description="Elige el curso para ver las evaluaciones"
+              />
+            </Suspense>
+          </ErrorBoundary>
+        )}
+
+        {currentStep === "exams" && (
+          <div className="space-y-6">
+            {userInfo?.role !== "student" && userInfo?.role !== "father" && (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleBackToCourse}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  ← Volver a selección de curso
+                </button>
+              </div>
+            )}
+            <ExamListWrapper 
+              exams={filteredExams} 
+              role={userInfo?.role as Role} 
+              subjects={filteredSubjects} 
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

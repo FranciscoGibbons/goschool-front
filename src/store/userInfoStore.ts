@@ -239,7 +239,10 @@ const userInfoStore = create<UserInfoStore>()(
               ...processedData, 
               role: userRole, 
               photo: profilePicture,
-              children: processedChildren
+              children: processedChildren,
+              // Mantener name y last_name para compatibilidad con componentes existentes
+              name: processedData.name,
+              last_name: processedData.last_name
             };
 
             set({ 

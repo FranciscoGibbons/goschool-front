@@ -182,7 +182,10 @@ export function useAssistance(filters?: AssistanceFilter) {
       }
 
       toast.success("Asistencia registrada correctamente");
-      await doFetch(filters); // Recargar la lista
+      
+      // Recargar con los filtros específicos del estudiante creado
+      const reloadFilters = { student_id: newAssistance.student_id };
+      await doFetch(reloadFilters);
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Error al crear asistencia";
@@ -192,7 +195,7 @@ export function useAssistance(filters?: AssistanceFilter) {
     } finally {
       setIsLoading(false);
     }
-  }, [doFetch, filters, checkExistingAssistance]);
+  }, [doFetch, checkExistingAssistance]);
 
   // Función para actualizar asistencia
   const updateAssistance = useCallback(async (

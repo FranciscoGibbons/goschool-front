@@ -14,7 +14,7 @@ import { LoadingPage, LoadingCard } from "@/components/ui/loading-spinner";
 import { SkeletonList } from "@/components/ui/skeleton";
 
 // Componente wrapper para AssistanceDisplay con error boundary
-function AssistanceDisplayWrapper({ selectedStudentId }: { selectedStudentId?: number | null }) {
+function AssistanceDisplayWrapper({ selectedStudentId, refreshTrigger }: { selectedStudentId?: number | null, refreshTrigger?: number }) {
   return (
     <ErrorBoundary
       fallback={
@@ -25,7 +25,7 @@ function AssistanceDisplayWrapper({ selectedStudentId }: { selectedStudentId?: n
       }
     >
       <Suspense fallback={<SkeletonList items={5} />}>
-        <AssistanceDisplay selectedStudentId={selectedStudentId || undefined} />
+        <AssistanceDisplay selectedStudentId={selectedStudentId || undefined} refreshTrigger={refreshTrigger} />
       </Suspense>
     </ErrorBoundary>
   );
@@ -35,6 +35,7 @@ function AsistenciaContent() {
   const { userInfo } = userInfoStore();
   const { selectedChild } = childSelectionStore();
   const [currentStep, setCurrentStep] = useState<"course" | "student" | "assistance">("course");
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Para trigger manual refresh
   
   const {
     courses,
@@ -86,6 +87,12 @@ function AsistenciaContent() {
     setSelectedStudentId(null);
   };
 
+  // Función para manejar cuando se crea una asistencia
+  const handleAssistanceCreated = () => {
+    console.log('🔄 Assistance created, triggering refresh');
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   // Loading states
   if (isLoading) {
     return <LoadingPage message="Cargando información de asistencia..." />;
@@ -119,7 +126,7 @@ function AsistenciaContent() {
             Asistencia
           </h1>
         </div>
-        <AssistanceDisplayWrapper selectedStudentId={selectedChild?.id} />
+        <AssistanceDisplayWrapper selectedStudentId={selectedChild?.id} refreshTrigger={refreshTrigger} />
       </div>
     );
   }
@@ -219,13 +226,14 @@ function AsistenciaContent() {
                 <AssistanceForm 
                   studentId={selectedStudentId}
                   studentName={students.find(s => s.id === selectedStudentId)?.full_name}
+                  onAssistanceCreated={handleAssistanceCreated}
                 />
               </div>
             )}
             
             {/* Display de asistencia */}
             <div className={`${userInfo?.role && ["admin", "preceptor"].includes(userInfo.role) ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
-              <AssistanceDisplayWrapper selectedStudentId={selectedStudentId || undefined} />
+              <AssistanceDisplayWrapper selectedStudentId={selectedStudentId || undefined} refreshTrigger={refreshTrigger} />
             </div>
           </div>
         </div>

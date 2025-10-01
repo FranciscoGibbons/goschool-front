@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAssistance } from "@/hooks/useAssistance";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,15 +19,23 @@ interface AssistanceFormProps {
   studentId?: number;
   studentName?: string;
   onSuccess?: () => void;
+  onAssistanceCreated?: () => void; // Nuevo callback para notificar creación
 }
 
 export default function AssistanceForm({ 
   studentId, 
   studentName, 
-  onSuccess 
+  onSuccess,
+  onAssistanceCreated 
 }: AssistanceFormProps) {
   const { userInfo } = userInfoStore();
-  const { createAssistance } = useAssistance();
+  
+  // Usar filtros específicos del estudiante si está disponible
+  const assistanceFilters = useMemo(() => {
+    return studentId ? { student_id: studentId } : undefined;
+  }, [studentId]);
+  
+  const { createAssistance } = useAssistance(assistanceFilters);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<NewAssistance>({
     student_id: studentId || 0,
@@ -58,6 +66,7 @@ export default function AssistanceForm({
           date: new Date().toISOString().split('T')[0],
         });
         onSuccess?.();
+        onAssistanceCreated?.(); // Notificar que se creó una asistencia
       }
     } catch (error) {
       console.error("Error creating assistance:", error);

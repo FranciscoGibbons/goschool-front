@@ -2,20 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
   BookOpen,
   ArrowRight,
-  Clock,
   AlertCircle,
+  FileText,
 } from "lucide-react";
-import { Exam, translateExamType, getExamTypeColor } from "@/utils/types";
+import { Exam, translateExamType } from "@/utils/types";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import axios from "axios";
-import { cn } from "@/lib/utils";
 
 export default function DashStudentFather() {
   const [exams, setExams] = useState<Exam[]>([]);
@@ -40,10 +36,6 @@ export default function DashStudentFather() {
     fetchExams();
   }, []);
 
-  const handleViewExams = () => {
-    router.push("/examenes");
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("es-ES", {
       year: "numeric",
@@ -56,17 +48,6 @@ export default function DashStudentFather() {
     return translateExamType(type);
   };
 
-  const getExamTypeColorLocal = (type: string) => {
-    return getExamTypeColor(type);
-  };
-
-  const getGreeting = () => {
-    const hours = new Date().getHours();
-    if (hours < 12) return "Buenos días";
-    if (hours < 18) return "Buenas tardes";
-    return "Buenas noches";
-  };
-
   const isExamSoon = (dateString: string) => {
     const examDate = new Date(dateString);
     const today = new Date();
@@ -77,181 +58,168 @@ export default function DashStudentFather() {
 
   if (loading) {
     return (
-      <div>
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner size="lg" />
-        </div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   const upcomingExams = exams.slice(0, 3);
-  const hasUpcomingExams = upcomingExams.length > 0;
 
   return (
-    <div className="space-y-8">
-      {/* Header de bienvenida */}
-      <div className="space-y-4">
-        <div>
-          <h1 className="heading-1">{getGreeting()}</h1>
-          <p className="body-text text-muted-foreground">
-            Aquí tienes un resumen de tu actividad académica
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+        {/* Header Section */}
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Bienvenido. Aquí está el resumen de hoy.
           </p>
         </div>
-      </div>
 
-      {/* Card principal de exámenes */}
-      <Card className="academic-card">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-primary/10 rounded-lg">
-                <BookOpen className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="heading-3">Próximos Exámenes</CardTitle>
-                <p className="body-small text-muted-foreground">
-                  Mantente al día con tus evaluaciones
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="stat-card group">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Evaluaciones
+                  </p>
+                </div>
+                <p className="text-3xl font-bold text-foreground">
+                  {exams.length}
                 </p>
               </div>
-            </div>
-            <Button
-              onClick={handleViewExams}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              Ver todos
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!hasUpcomingExams ? (
-            <div className="text-center py-8">
-              <div className="mb-4">
-                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
+              <div className="icon-wrapper">
+                <FileText className="h-6 w-6" />
               </div>
-              <h3 className="heading-4 mb-2">No hay exámenes próximos</h3>
-              <p className="body-text text-muted-foreground">
-                ¡Perfecto! No tienes evaluaciones pendientes por ahora
-              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {upcomingExams.map((exam) => (
-                <div
-                  key={exam.id}
-                  className={cn(
-                    "p-4 border rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md hover:border-accent-foreground/20",
-                    isExamSoon(exam.due_date) && "bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800"
-                  )}
-                  onClick={() => router.push("/examenes")}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-foreground truncate">
-                          {exam.task}
-                        </h4>
-                        {isExamSoon(exam.due_date) && (
-                          <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-3 text-sm">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(exam.due_date)}</span>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Quick Actions */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Acciones Rápidas</h3>
+            <div className="space-y-4">
+              <div
+                className="action-card group"
+                onClick={() => router.push("/calificaciones")}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="icon-wrapper">
+                      <FileText className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">
+                        Ver Calificaciones
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Consultar notas
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </div>
+
+              <div
+                className="action-card group"
+                onClick={() => router.push("/examenes")}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="icon-wrapper">
+                      <BookOpen className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">
+                        Ver Exámenes
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Próximas evaluaciones
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </div>
+
+              <div
+                className="action-card group"
+                onClick={() => router.push("/horario")}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="icon-wrapper">
+                      <Calendar className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">
+                        Ver Horarios
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Consultar cronograma
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Upcoming Events */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Próximos Eventos</h3>
+            <div className="space-y-4">
+              {upcomingExams.length > 0 ? (
+                upcomingExams.map((exam) => (
+                  <div key={exam.id} className="dashboard-card">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <div className="status-indicator exam-pending">
+                          exam
                         </div>
-                        
-                        <Badge 
-                          variant="outline" 
-                          className={cn("text-xs", getExamTypeColorLocal(exam.type))}
-                        >
-                          {getExamTypeLabel(exam.type)}
-                        </Badge>
-                        
+                        <div>
+                          <h4 className="font-medium text-foreground">{exam.task}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {getExamTypeLabel(exam.type)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-foreground">
+                          {formatDate(exam.due_date)}
+                        </p>
                         {isExamSoon(exam.due_date) && (
-                          <Badge variant="warning" className="text-xs">
-                            <Clock className="h-3 w-3 mr-1" />
-                            Próximo
-                          </Badge>
+                          <div className="flex items-center space-x-1 text-xs text-yellow-600 dark:text-yellow-400">
+                            <AlertCircle className="h-3 w-3" />
+                            <span>Próximo</span>
+                          </div>
                         )}
                       </div>
                     </div>
-                    
-                    <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
                   </div>
-                </div>
-              ))}
-
-              {exams.length > 3 && (
-                <div className="text-center pt-3 border-t">
-                  <p className="body-small text-muted-foreground">
-                    Y {exams.length - 3} exámenes más...
+                ))
+              ) : (
+                <div className="dashboard-card text-center py-8">
+                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h4 className="font-medium text-foreground mb-2">No hay exámenes próximos</h4>
+                  <p className="text-sm text-muted-foreground">
+                    ¡Perfecto! No tienes evaluaciones pendientes por ahora
                   </p>
                 </div>
               )}
             </div>
-          )}
-
-          <div className="mt-6">
-            <Button
-              onClick={handleViewExams}
-              variant="outline"
-              className="w-full"
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              Ver todos los exámenes
-            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Cards adicionales para futuras funcionalidades */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="academic-card opacity-60">
-          <CardContent className="p-6 text-center">
-            <div className="mb-4">
-              <div className="p-3 bg-muted rounded-lg inline-block">
-                <Calendar className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-            <h3 className="heading-4 mb-2">Horarios</h3>
-            <p className="body-small text-muted-foreground">
-              Próximamente disponible
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="academic-card opacity-60">
-          <CardContent className="p-6 text-center">
-            <div className="mb-4">
-              <div className="p-3 bg-muted rounded-lg inline-block">
-                <BookOpen className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-            <h3 className="heading-4 mb-2">Calificaciones</h3>
-            <p className="body-small text-muted-foreground">
-              Próximamente disponible
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="academic-card opacity-60">
-          <CardContent className="p-6 text-center">
-            <div className="mb-4">
-              <div className="p-3 bg-muted rounded-lg inline-block">
-                <ArrowRight className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-            <h3 className="heading-4 mb-2">Mensajes</h3>
-            <p className="body-small text-muted-foreground">
-              Próximamente disponible
-            </p>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

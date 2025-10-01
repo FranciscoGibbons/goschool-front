@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AddActionHandler } from "./AddActionHandler";
 import userInfoStore from "@/store/userInfoStore";
 import { Role } from "@/utils/types";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   BookOpen,
   Calendar,
@@ -18,7 +17,6 @@ import {
 } from "lucide-react";
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import axios from "axios";
-import { cn } from "@/lib/utils";
 
 type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
 
@@ -45,15 +43,6 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
     }
     
     return userInfo.full_name || "Usuario";
-  };
-
-  const getRoleLabel = (userRole: ActionableRole) => {
-    const roleLabels = {
-      admin: "Administrador",
-      teacher: "Profesor",
-      preceptor: "Preceptor"
-    };
-    return roleLabels[userRole];
   };
 
   useEffect(() => {
@@ -246,67 +235,94 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header de bienvenida */}
-      <div className="mb-6">
-        <h1 className="heading-1 mb-2">Panel de {getRoleLabel(role)}</h1>
-        <p className="body-text text-muted-foreground">
-          Bienvenido, {getUserDisplayName()}. Gestiona el sistema académico desde aquí.
-        </p>
-      </div>
-
-      {/* Estadísticas rápidas */}
-      {statsCards.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {statsCards.map((card, index) => (
-            <Card key={index} className="academic-card">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={cn("p-2 rounded-lg", card.color)}>
-                    <card.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="body-small text-muted-foreground">{card.title}</p>
-                    <p className="text-2xl font-bold">{card.value}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+        {/* Header Section */}
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Bienvenida, {getUserDisplayName()}. Aquí está el resumen de hoy.
+          </p>
         </div>
-      )}
 
-      {/* Acciones rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {quickActions.map((action, index) => (
-          <Card
-            key={index}
-            className="academic-card cursor-pointer transition-all duration-200 hover:shadow-md group"
-            onClick={() => router.push(action.href)}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-lg text-primary">
-                  <action.icon className="h-6 w-6" />
+        {/* Stats Cards Grid */}
+        {statsCards.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {statsCards.map((card, index) => (
+              <div key={index} className="stat-card group">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <card.icon className="h-5 w-5 text-muted-foreground" />
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {card.title}
+                      </p>
+                    </div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {card.value}
+                    </p>
+                  </div>
+                  <div className="icon-wrapper">
+                    <card.icon className="h-6 w-6" />
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-foreground mb-1">
-                    {action.title}
-                  </h3>
-                  <p className="body-small text-muted-foreground">
-                    {action.description}
-                  </p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        )}
 
-      {/* Botón de acción flotante */}
-      <div className="fixed right-6 bottom-6 z-50 lg:bottom-22">
-        <AddActionHandler role={role} />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Quick Actions */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Acciones Rápidas</h3>
+            <div className="space-y-4">
+              {quickActions.map((action, index) => (
+                <div
+                  key={index}
+                  className="action-card group"
+                  onClick={() => router.push(action.href)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="icon-wrapper">
+                        <action.icon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">
+                          {action.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {action.description}
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Upcoming Events */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Próximos Eventos</h3>
+            <div className="dashboard-card">
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground text-center">
+                  No hay eventos próximos programados
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Action Button */}
+        <div className="fixed right-6 bottom-6 z-50 lg:bottom-22">
+          <AddActionHandler role={role} />
+        </div>
       </div>
     </div>
   );

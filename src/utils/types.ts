@@ -39,14 +39,18 @@ export interface Child {
 // Interfaz para información del usuario (más estricta)
 export interface UserInfo {
   readonly id: number;
-  readonly name: string;
-  readonly last_name: string;
-  readonly full_name?: string; // Para compatibilidad con APIs que devuelven full_name
+  readonly full_name: string; // Campo principal que devuelve el backend
+  readonly phone_number?: string; // Campo del backend PersonalData
+  readonly address?: string; // Campo del backend PersonalData  
+  readonly birth_date?: string; // Campo del backend PersonalData (NaiveDate como string)
   readonly email: string;
   readonly role: Role;
   readonly photo?: string | null;
   readonly children?: readonly Child[]; // Solo para padres
   readonly course_id?: number; // Solo para estudiantes
+  // Campos computados para compatibilidad (ya no se usan)
+  readonly name?: string; // Extraído de full_name para compatibilidad
+  readonly last_name?: string; // Extraído de full_name para compatibilidad
 }
 
 // Formulario base para examen (campos comunes)

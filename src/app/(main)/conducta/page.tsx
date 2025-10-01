@@ -11,6 +11,7 @@ import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
+import { parseLocalDate } from "@/utils/dateHelpers";
 import { LoadingPage, LoadingCard } from "@/components/ui/loading-spinner";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -292,7 +293,7 @@ function ConductaContent() {
                     <p className="font-medium text-muted-foreground">Este mes</p>
                     <p className="text-2xl font-bold">
                       {sanctions.filter(s => {
-                        const sanctionDate = new Date(s.date);
+                        const sanctionDate = parseLocalDate(s.date);
                         const now = new Date();
                         return sanctionDate.getMonth() === now.getMonth() && 
                                sanctionDate.getFullYear() === now.getFullYear();
@@ -303,7 +304,11 @@ function ConductaContent() {
                     <p className="font-medium text-muted-foreground">Más reciente</p>
                     <p className="text-sm">
                       {sanctions.length > 0 
-                        ? new Date(Math.max(...sanctions.map(s => new Date(s.date).getTime()))).toLocaleDateString('es-ES')
+                        ? parseLocalDate(
+                            sanctions.reduce((latest, s) => 
+                              parseLocalDate(s.date).getTime() > parseLocalDate(latest.date).getTime() ? s : latest
+                            ).date
+                          ).toLocaleDateString('es-ES')
                         : 'Sin registros'
                       }
                     </p>
