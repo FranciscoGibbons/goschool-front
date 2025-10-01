@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from 'react';
+import "./dashboard-no-scroll.css";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import userInfoStore from "@/store/userInfoStore";
 import DashAdminPreceptorTeacher from "./components/adm_pre_tea/DashAdminPreceptorTeacher";

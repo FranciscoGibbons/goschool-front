@@ -67,10 +67,10 @@ export default function DashStudentFather() {
   const upcomingExams = exams.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
+    <div className="dashboard-no-scroll h-full bg-background">
+      <div className="dashboard-container container mx-auto p-6 space-y-6 max-w-7xl">
         {/* Header Section */}
-        <div className="space-y-2">
+        <div className="dashboard-header space-y-2">
           <h1 className="text-4xl font-bold text-foreground">
             Dashboard
           </h1>
@@ -80,7 +80,7 @@ export default function DashStudentFather() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="dashboard-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="stat-card group">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
@@ -102,9 +102,9 @@ export default function DashStudentFather() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="dashboard-content gap-8">
           {/* Quick Actions */}
-          <div className="space-y-6">
+          <div className="dashboard-section space-y-6">
             <h3 className="text-xl font-semibold text-foreground">Acciones Rápidas</h3>
             <div className="space-y-4">
               <div
@@ -176,7 +176,7 @@ export default function DashStudentFather() {
           </div>
 
           {/* Upcoming Events */}
-          <div className="space-y-6">
+          <div className="dashboard-section space-y-6">
             <h3 className="text-xl font-semibold text-foreground">Próximos Eventos</h3>
             <div className="space-y-4">
               {upcomingExams.length > 0 ? (

@@ -1,0 +1,76 @@
+/* Dashboard No Scroll Styles */
+
+/* Ensure dashboard pages don't have scroll */
+.dashboard-no-scroll {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.dashboard-no-scroll .dashboard-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-no-scroll .dashboard-header {
+  flex-shrink: 0;
+}
+
+.dashboard-no-scroll .dashboard-stats {
+  flex-shrink: 0;
+}
+
+.dashboard-no-scroll .dashboard-content {
+  flex: 1;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-no-scroll .dashboard-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+.dashboard-no-scroll .dashboard-section {
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Custom scrollbar for dashboard sections */
+.dashboard-section::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dashboard-section::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.1);
+  border-radius: 2px;
+}
+
+.dashboard-section::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 2px;
+}
+
+.dashboard-section::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* Ensure main layout doesn't interfere */
+.main-layout-no-scroll {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content-no-scroll {
+  height: calc(100vh - 4rem); /* Accounting for header/navbar */
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .main-content-no-scroll {
+    height: calc(100vh - 6rem); /* Accounting for bottom navbar */
+  }
+}

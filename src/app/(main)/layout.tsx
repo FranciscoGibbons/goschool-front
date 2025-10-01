@@ -31,13 +31,13 @@ export default async function DashboardLayout({
       </aside>
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col w-full min-h-screen bg-background">
+      <div className="flex-1 flex flex-col w-full h-screen bg-background overflow-hidden">
         {/* Mobile header - Client component for interactivity */}
         <MobileHeaderClient />
         
         {/* Page content */}
-        <main className="flex-1 pt-16 lg:pt-0 overflow-y-auto pb-20 lg:pb-24">
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 pt-16 lg:pt-0 overflow-hidden pb-20 lg:pb-24">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-full overflow-y-auto">
             {children}
           </div>
         </main>
