@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import "../../dashboard-modal.css";
 import {
   FormsObj,
   MessageForm,
@@ -1899,7 +1900,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} className="dashboard-modal-button-secondary">
           Volver
         </Button>
         <Button
@@ -1911,6 +1912,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
               isSelfAssessableExamForm(formData) &&
               !canCreateSelfAssessable())
           }
+          className="dashboard-modal-button"
         >
           {isLoading ? "Enviando..." : "Crear"}
         </Button>

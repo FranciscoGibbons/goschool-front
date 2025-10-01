@@ -479,3 +479,69 @@
 * {
   --tw-bg-opacity: 1 !important;
 }
+
+/* Force solid backgrounds for all modal/dialog components */
+[data-radix-dialog-overlay] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+[data-radix-dialog-content] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+[data-radix-alert-dialog-overlay] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+[data-radix-alert-dialog-content] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Force solid backgrounds for Select components */
+[data-radix-select-content] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+[data-radix-select-trigger] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Force solid backgrounds for Popover components */
+[data-radix-popover-content] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+/* AGGRESSIVE OVERRIDES - Force all modal backgrounds to be solid */
+[data-state="open"][data-radix-dialog-overlay],
+[data-radix-dialog-overlay] {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Force solid for any element with opacity or transparency */
+.bg-black\/80,
+.bg-background\/95,
+.bg-background\/90,
+.bg-background\/80,
+.bg-white\/80,
+.bg-gray-900\/80 {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Override Tailwind opacity utilities in modals */
+[data-radix-dialog-content] .bg-opacity-95,
+[data-radix-dialog-content] .bg-opacity-90,
+[data-radix-dialog-content] .bg-opacity-80,
+[data-radix-dialog-overlay] * {
+  background: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}

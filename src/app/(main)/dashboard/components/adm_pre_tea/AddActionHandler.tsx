@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import "../../dashboard-modal.css";
 
 import { Role, FormsObj } from "@/utils/types";
 
@@ -56,7 +57,7 @@ export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
           <span className="text-4xl font-[350] leading-none">+</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl bg-background border border-border">
+      <DialogContent className="max-w-2xl dashboard-modal-content">
         <DialogTitle>{action || "Crear tarea"}</DialogTitle>
         {!action ? (
           <Select onValueChange={(value) => setAction(value as keyof FormsObj)}>

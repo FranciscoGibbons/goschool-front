@@ -40,7 +40,7 @@ export default function LoginForm() {
           id="email"
           value={formData.email}
           onChange={handleInputChange("email")}
-          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none text-foreground placeholder-muted-foreground"
+          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2.5 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder-muted-foreground transition-all duration-200"
           placeholder="Ingresa tu correo electrónico"
           required
           autoComplete="email"
@@ -60,7 +60,7 @@ export default function LoginForm() {
           id="password"
           value={formData.password}
           onChange={handleInputChange("password")}
-          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none text-foreground placeholder-muted-foreground"
+          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2.5 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder-muted-foreground transition-all duration-200"
           placeholder="Ingresa tu contraseña"
           required
           autoComplete="current-password"
@@ -88,7 +88,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={isLoading || !isFormValid}
-        className="w-full py-2 px-4 rounded-md text-primary-foreground bg-primary hover:bg-primary/90 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full py-3 px-4 rounded-md login-button-primary transition-all duration-300 cursor-pointer"
       >
         {isLoading ? (
           <div className="flex items-center justify-center">
@@ -124,19 +124,19 @@ export default function LoginForm() {
         </SelectContent>
       </Select>
 
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <button
           type="button"
           onClick={resetForm}
           disabled={isLoading}
-          className="flex-1 py-2 px-4 rounded-md text-foreground bg-secondary hover:bg-secondary/80 transition-colors disabled:opacity-70"
+          className="flex-1 py-2.5 px-4 rounded-md text-foreground bg-secondary hover:bg-secondary/80 focus:bg-secondary/80 active:bg-secondary/70 transition-all duration-200 disabled:opacity-50 font-medium shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
         >
           Volver
         </button>
         <button
           type="submit"
           disabled={isLoading || !role}
-          className="flex-1 py-2 px-4 rounded-md text-primary-foreground bg-primary hover:bg-primary/90 transition-colors disabled:opacity-70"
+          className="flex-1 py-2.5 px-4 rounded-md login-button-primary transition-all duration-300"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
@@ -152,10 +152,10 @@ export default function LoginForm() {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 login-form">
       {errorLogin && (
-        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-destructive text-sm">{errorLogin}</p>
+        <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md backdrop-blur-none">
+          <p className="text-destructive text-sm font-medium">{errorLogin}</p>
         </div>
       )}
 

@@ -116,7 +116,7 @@ export function LoadingOverlay({
 
   return (
     <div className={cn(
-      "absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm",
+      "absolute inset-0 bg-background",
       "flex items-center justify-center z-50",
       className
     )}>
