@@ -67,35 +67,32 @@ export default function DashStudentFather() {
   const upcomingExams = exams.slice(0, 3);
 
   return (
-    <div className="dashboard-no-scroll h-full bg-background">
-      <div className="dashboard-container container mx-auto p-6 space-y-6 max-w-7xl">
+    <div className="dashboard-no-scroll bg-background">
+      <div className="dashboard-container mx-auto">
         {/* Header Section */}
-        <div className="dashboard-header space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">
+        <div className="dashboard-header space-y-1">
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground">
             Dashboard
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Bienvenido. Aquí está el resumen de hoy.
-          </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="dashboard-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="dashboard-stats grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
           <div className="stat-card group">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
+              <div className="space-y-1 lg:space-y-2">
                 <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm font-medium text-muted-foreground">
+                  <FileText className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
+                  <p className="text-xs lg:text-sm font-medium text-muted-foreground">
                     Evaluaciones
                   </p>
                 </div>
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-2xl lg:text-3xl font-bold text-foreground">
                   {exams.length}
                 </p>
               </div>
               <div className="icon-wrapper">
-                <FileText className="h-6 w-6" />
+                <FileText className="h-5 w-5 lg:h-6 lg:w-6" />
               </div>
             </div>
           </div>

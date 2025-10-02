@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AddActionHandler } from "./AddActionHandler";
-import userInfoStore from "@/store/userInfoStore";
 import { Role } from "@/utils/types";
 import {
   BookOpen,
@@ -30,20 +29,9 @@ interface DashboardStats {
 }
 
 const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
-  const { userInfo } = userInfoStore();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({});
   const [loading, setLoading] = useState(true);
-
-  const getUserDisplayName = () => {
-    if (!userInfo) return "Usuario";
-    
-    if (userInfo.name && userInfo.last_name) {
-      return `${userInfo.name} ${userInfo.last_name}`;
-    }
-    
-    return userInfo.full_name || "Usuario";
-  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -235,37 +223,34 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
   }
 
   return (
-    <div className="dashboard-no-scroll h-full bg-background">
-      <div className="dashboard-container container mx-auto p-6 space-y-6 max-w-7xl">
+    <div className="dashboard-no-scroll bg-background">
+      <div className="dashboard-container mx-auto">
         {/* Header Section */}
-        <div className="dashboard-header space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">
+        <div className="dashboard-header space-y-1">
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground">
             Dashboard
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Bienvenida, {getUserDisplayName()}. Aquí está el resumen de hoy.
-          </p>
         </div>
 
         {/* Stats Cards Grid */}
         {statsCards.length > 0 && (
-          <div className="dashboard-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="dashboard-stats grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
             {statsCards.map((card, index) => (
               <div key={index} className="stat-card group">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-2">
+                  <div className="space-y-1 lg:space-y-2">
                     <div className="flex items-center space-x-2">
-                      <card.icon className="h-5 w-5 text-muted-foreground" />
-                      <p className="text-sm font-medium text-muted-foreground">
+                      <card.icon className="h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
+                      <p className="text-xs lg:text-sm font-medium text-muted-foreground">
                         {card.title}
                       </p>
                     </div>
-                    <p className="text-3xl font-bold text-foreground">
+                    <p className="text-2xl lg:text-3xl font-bold text-foreground">
                       {card.value}
                     </p>
                   </div>
                   <div className="icon-wrapper">
-                    <card.icon className="h-6 w-6" />
+                    <card.icon className="h-5 w-5 lg:h-6 lg:w-6" />
                   </div>
                 </div>
               </div>

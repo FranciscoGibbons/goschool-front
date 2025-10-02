@@ -254,6 +254,52 @@
     background: hsl(var(--primary) / 0.1);
     color: hsl(var(--primary));
   }
+
+  /* Dashboard Layout Styles */
+  .dashboard-container {
+    padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .dashboard-header {
+    margin-bottom: 2rem;
+  }
+
+  .dashboard-stats {
+    margin-bottom: 2rem;
+  }
+
+  .dashboard-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .dashboard-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-container {
+      padding: 1.5rem 2rem;
+    }
+
+    .dashboard-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .dashboard-stats {
+      margin-bottom: 1.5rem;
+    }
+
+    .dashboard-content {
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+  }
   
   .status-indicator {
     display: inline-flex;
@@ -544,4 +590,41 @@
 [data-radix-dialog-overlay] * {
   background: hsl(var(--background)) !important;
   backdrop-filter: none !important;
+}
+
+/* Hide scrollbars globally when not needed */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Dashboard specific - ensure no unwanted scrollbars */
+.dashboard-layout {
+  overflow: hidden !important;
+}
+
+/* Global scrollbar hiding for dashboard pages */
+body:has(.dashboard-no-scroll) {
+  overflow: hidden;
+}
+
+/* Ensure main layout respects dashboard requirements */
+.dashboard-no-scroll * {
+  box-sizing: border-box;
+}
+
+/* Hide any potential scrollbars in dashboard */
+.dashboard-no-scroll,
+.dashboard-no-scroll * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.dashboard-no-scroll::-webkit-scrollbar,
+.dashboard-no-scroll *::-webkit-scrollbar {
+  display: none !important;
 }
