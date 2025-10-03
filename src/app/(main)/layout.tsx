@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   // No necesitamos verificar aquí para evitar conflictos
   
   return (
-    <div className="min-h-screen w-full bg-background flex">
+   <div className="w-full bg-background flex">
       {/* Mobile sidebar overlay */}
       <div 
         className="fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity duration-300 opacity-0 pointer-events-none" 
@@ -31,13 +31,13 @@ export default async function DashboardLayout({
       </aside>
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col w-full h-screen bg-background overflow-hidden">
+      <div className="flex-1 w-full bg-background">
         {/* Mobile header - Client component for interactivity */}
         <MobileHeaderClient />
         
         {/* Page content */}
-        <main className="flex-1 pt-16 lg:pt-0 overflow-hidden pb-20 lg:pb-24">
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-full overflow-y-auto">
+        <main className="pt-16 lg:pt-0 pb-20 lg:pb-6">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>
         </main>

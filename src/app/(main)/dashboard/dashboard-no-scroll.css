@@ -1,29 +1,42 @@
-/* Dashboard No Scroll Styles */
+/* Dashboard Layout Styles - Content-based height */
 
-/* Mobile: allow natural scroll with default browser scrollbar */
-@media (max-width: 1023px) {
-  .dashboard-no-scroll {
-    height: auto;
-    min-height: calc(100vh - 8rem);
-    overflow: visible;
+.dashboard-no-scroll .dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  min-height: auto; /* Only use needed height */
+}
+
+@media (min-width: 640px) {
+  .dashboard-no-scroll .dashboard-container {
+    gap: 1.5rem;
+    padding: 1.5rem;
   }
 }
 
-/* Desktop: use default page scrollbar, no custom scroll containers */
-@media (min-width: 1024px) {
-  .dashboard-no-scroll {
-    height: auto;
-    overflow: visible;
-  }
+.dashboard-no-scroll .dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-  .dashboard-container {
-    padding: 1.5rem 2rem;
-  }
-
-  .dashboard-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+@media (min-width: 640px) {
+  .dashboard-no-scroll .dashboard-content {
     gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-no-scroll .dashboard-content {
+    flex-direction: row;
+    gap: 2rem;
+    align-items: flex-start; /* Prevent stretching */
+  }
+  
+  .dashboard-no-scroll .dashboard-section {
+    flex: 1;
+    min-height: auto; /* Only use needed height */
   }
 }
 

@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Calendar,
   Users,
   GraduationCap,
 } from "lucide-react";
@@ -139,10 +138,7 @@ export default function CourseSelector({
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>Seleccionar curso</span>
-              </div>
+              <div className="h-4.5"></div>
             </CardContent>
           </Card>
         ))}

@@ -20,9 +20,9 @@ export function MobileHeaderClient() {
   };
 
   return (
-    <header className="lg:hidden h-16 bg-background border-b border-gray-200 dark:border-gray-800 flex items-center px-4 fixed top-0 left-0 right-0 z-30">
+    <header className="lg:hidden h-16 bg-background/98 backdrop-blur-lg border-b border-border/20 flex items-center px-4 fixed top-0 left-0 right-0 z-30 shadow-sm supports-[backdrop-filter]:bg-background/80">
       <button 
-        className="p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+        className="p-2 rounded-md text-foreground/70 hover:text-foreground hover:bg-accent/50 transition-colors"
         onClick={toggleSidebar}
         aria-label="Toggle menu"
       >
