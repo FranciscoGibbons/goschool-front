@@ -1,0 +1,109 @@
+/* Login page specific styles */
+
+/* Ensure all form elements have solid backgrounds except primary buttons */
+.login-form input,
+.login-form select,
+.login-form button:not(.login-button-primary) {
+  background-color: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Override any Radix UI transparency in login forms */
+.login-form [data-radix-select-trigger] {
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+.login-form [data-radix-select-content] {
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  backdrop-filter: none !important;
+}
+
+/* Login form container */
+.login-container {
+  background: hsl(var(--card)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Ensure inputs are never transparent */
+.login-form input[type="text"],
+.login-form input[type="password"],
+.login-form input[type="email"] {
+  background-color: hsl(var(--background)) !important;
+  opacity: 1 !important;
+}
+
+/* Better focus states for login form */
+.login-form input:focus {
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2) !important;
+}
+
+/* Button enhancements for login */
+.login-button-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 100%) !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.025em !important;
+}
+
+.login-button-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.9) 0%, hsl(var(--primary) / 0.75) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.18) !important;
+}
+
+.login-button-primary:active:not(:disabled) {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12) !important;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.95) 0%, hsl(var(--primary) / 0.8) 100%) !important;
+}
+
+.login-button-primary:disabled {
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  transform: none !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+
+.login-button-primary:focus-visible {
+  outline: 2px solid hsl(var(--primary)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Background image container improvements */
+.login-bg-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg-overlay {
+  background: linear-gradient(135deg, hsl(var(--background) / 0.8) 0%, hsl(var(--background) / 0.6) 100%);
+}
+
+/* Dark mode specific improvements */
+.dark .login-bg-overlay {
+  background: linear-gradient(135deg, hsl(var(--background) / 0.9) 0%, hsl(var(--background) / 0.7) 100%);
+}
+
+/* Remove any blur effects that might cause issues */
+.login-form *,
+.login-container * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Checkbox styling improvements */
+.login-form input[type="checkbox"] {
+  background-color: hsl(var(--background)) !important;
+  border: 2px solid hsl(var(--border)) !important;
+}
+
+.login-form input[type="checkbox"]:checked {
+  background-color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+}

@@ -1,0 +1,151 @@
+/* Estilos personalizados para el diseño de Vercel en exámenes */
+
+/* Tipografía Inter para mejor legibilidad */
+.exam-vercel-font {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
+
+/* Efectos de hover muy sutiles */
+.exam-card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.exam-card-hover:hover {
+  transform: translateY(-1px);
+}
+
+/* Gradientes sutiles al estilo Vercel */
+.exam-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.05) 0%,
+    rgba(147, 51, 234, 0.05) 100%
+  );
+}
+
+.exam-green-gradient {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.1) 0%,
+    rgba(16, 185, 129, 0.1) 100%
+  );
+}
+
+/* Bordes con transparencia */
+.exam-border-subtle {
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.dark .exam-border-subtle {
+  border: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+/* Sombras muy sutiles */
+.exam-shadow-subtle {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Animaciones suaves */
+.exam-fade-in {
+  animation: examFadeIn 0.3s ease-out;
+}
+
+@keyframes examFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estados de carga mejorados */
+.exam-skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: examSkeleton 1.5s infinite;
+}
+
+.dark .exam-skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes examSkeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Botones con estilo Vercel */
+.exam-btn-vercel {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.exam-btn-vercel:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Badges con estilo minimalista */
+.exam-badge-vercel {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.dark .exam-badge-vercel {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Indicadores de estado */
+.exam-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.exam-status-pending {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+/* Scrollbar personalizada */
+.exam-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.exam-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.exam-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.exam-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.exam-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
