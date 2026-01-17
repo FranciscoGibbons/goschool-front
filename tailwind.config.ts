@@ -1,3 +1,17 @@
+/**
+ * Tailwind CSS Configuration
+ * ==========================================================================
+ * DESIGN CONTRACT COMPLIANT
+ * See DESIGN_CONTRACT.md for usage rules
+ *
+ * RULES:
+ * - No colors outside the token system
+ * - No border-radius outside the scale
+ * - No shadows heavier than shadow-sm
+ * - No decorative animations
+ * ==========================================================================
+ */
+
 const config = {
   darkMode: "class",
   content: [
@@ -7,7 +21,9 @@ const config = {
   ],
   theme: {
     extend: {
-      // Tipografía escalable y consistente
+      // =======================================================================
+      // TYPOGRAPHY - Per DESIGN_CONTRACT.md
+      // =======================================================================
       fontSize: {
         xs: ["0.75rem", { lineHeight: "1rem" }],
         sm: ["0.875rem", { lineHeight: "1.25rem" }],
@@ -18,25 +34,67 @@ const config = {
         "3xl": ["1.875rem", { lineHeight: "2.25rem" }],
         "4xl": ["2.25rem", { lineHeight: "2.5rem" }],
       },
-      
-      // Espaciado consistente
+
+      fontWeight: {
+        // Only allowed weights per DESIGN_CONTRACT.md
+        normal: "400",
+        medium: "500",
+        semibold: "600",
+      },
+
+      // =======================================================================
+      // SPACING - 4px base unit per DESIGN_CONTRACT.md
+      // =======================================================================
       spacing: {
         "18": "4.5rem",
         "88": "22rem",
         "128": "32rem",
       },
-      
-      // Colores del sistema de diseño
+
+      // =======================================================================
+      // COLORS - Semantic tokens per DESIGN_CONTRACT.md
+      // =======================================================================
       colors: {
+        // Core backgrounds
+        background: "hsl(var(--background))",
+        surface: "hsl(var(--surface))",
+        "surface-muted": "hsl(var(--surface-muted))",
+
+        // Borders
         border: "hsl(var(--border))",
+        "border-muted": "hsl(var(--border-muted))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
+
+        // Text hierarchy
         foreground: "hsl(var(--foreground))",
+        "text-primary": "hsl(var(--text-primary))",
+        "text-secondary": "hsl(var(--text-secondary))",
+        "text-muted": "hsl(var(--text-muted))",
+        "text-inverse": "hsl(var(--text-inverse))",
+
+        // Primary (use sparingly)
         primary: {
           DEFAULT: "hsl(var(--primary))",
+          hover: "hsl(var(--primary-hover))",
           foreground: "hsl(var(--primary-foreground))",
         },
+
+        // Status colors (functional only)
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          muted: "hsl(var(--success-muted))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          muted: "hsl(var(--warning-muted))",
+        },
+        error: {
+          DEFAULT: "hsl(var(--error))",
+          muted: "hsl(var(--error-muted))",
+        },
+
+        // Legacy shadcn/ui compatibility
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -61,6 +119,8 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+
+        // Sidebar
         sidebar: {
           DEFAULT: "hsl(var(--sidebar))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -71,6 +131,8 @@ const config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+
+        // Charts
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -79,44 +141,38 @@ const config = {
           "5": "hsl(var(--chart-5))",
         },
       },
-      
-      // Border radius consistente
+
+      // =======================================================================
+      // BORDER RADIUS - Per DESIGN_CONTRACT.md (max: radius-lg)
+      // =======================================================================
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        xl: "calc(var(--radius) + 4px)",
-        "2xl": "calc(var(--radius) + 8px)",
+        none: "0",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        // Aliases for shadcn compatibility
+        DEFAULT: "var(--radius)",
       },
-      
-      // Sombras del sistema
+
+      // =======================================================================
+      // SHADOWS - Only shadow-sm allowed per DESIGN_CONTRACT.md
+      // =======================================================================
       boxShadow: {
-        xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        sm: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        DEFAULT: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-        md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-        lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-        xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
-        "2xl": "0 25px 50px -12px rgb(0 0 0 / 0.25)",
-        inner: "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)",
+        // The ONLY shadow allowed in the design system
+        sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        // Explicitly mark others as deprecated
+        DEFAULT: "0 1px 2px 0 rgb(0 0 0 / 0.05)", // Alias to sm
+        xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)", // Alias to sm
       },
-      
-      // Animaciones suaves
+
+      // =======================================================================
+      // ANIMATIONS - Functional only per DESIGN_CONTRACT.md
+      // =======================================================================
       transitionDuration: {
-        "250": "250ms",
-        "350": "350ms",
+        "150": "150ms", // Standard transitions
+        "200": "200ms", // Slightly slower
       },
-      
-      // Container consistente
-      container: {
-        center: true,
-        padding: "1rem",
-        screens: {
-          "2xl": "1400px",
-        },
-      },
-      
-      // Keyframes para animaciones
+
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -127,24 +183,36 @@ const config = {
           to: { height: "0" },
         },
         "fade-in": {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
-        "fade-out": {
-          "0%": { opacity: "1", transform: "translateY(0)" },
-          "100%": { opacity: "0", transform: "translateY(-10px)" },
+        "slide-in-right": {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
         },
-        "slide-in": {
+        "slide-in-left": {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(0)" },
         },
       },
+
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
-        "fade-out": "fade-out 0.3s ease-out",
-        "slide-in": "slide-in 0.3s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
+        "slide-in-right": "slide-in-right 0.2s ease-out",
+        "slide-in-left": "slide-in-left 0.2s ease-out",
+      },
+
+      // =======================================================================
+      // CONTAINER - Consistent max-width
+      // =======================================================================
+      container: {
+        center: true,
+        padding: "1rem",
+        screens: {
+          "2xl": "1280px", // Max-width per DESIGN_CONTRACT.md
+        },
       },
     },
   },

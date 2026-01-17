@@ -1,24 +1,40 @@
 "use client";
-import { useState, useEffect } from "react";
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea";
-// import { Label } from "@/components/ui/label";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { toast } from "sonner";
-import axios from "axios";
 
+/**
+ * Subject Messages Component
+ * ==========================================================================
+ * DESIGN CONTRACT COMPLIANT
+ *
+ * Uses semantic color tokens and sacred components.
+ * ==========================================================================
+ */
+
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   DocumentIcon,
   ChatBubbleLeftIcon,
   ArrowDownTrayIcon,
   PencilIcon,
   TrashIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import clsx from "clsx";
-import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
+import { cn } from "@/lib/utils";
+import {
+  Button,
+  Badge,
+  EmptyState,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+  FormGroup,
+  Label,
+  Input,
+  Textarea,
+  Select,
+} from "@/components/sacred";
 import userInfoStore from "@/store/userInfoStore";
 
 interface SubjectMessage {
@@ -36,10 +52,28 @@ interface SubjectMessagesProps {
   subjectName: string;
 }
 
+// Semantic color mapping using design tokens
+const typeConfig = {
+  file: {
+    iconBg: "bg-primary/10 text-primary border-primary/20",
+    badge: "info" as const,
+    label: "Archivo",
+  },
+  link: {
+    iconBg: "bg-primary/10 text-primary border-primary/20",
+    badge: "info" as const,
+    label: "Link",
+  },
+  message: {
+    iconBg: "bg-success-muted text-success border-success/20",
+    badge: "success" as const,
+    label: "Mensaje",
+  },
+} as const;
+
 function groupMessagesByDate(messages: SubjectMessage[]) {
   return messages.reduce((groups: Record<string, SubjectMessage[]>, msg) => {
     const date = new Date(msg.created_at);
-    // Solo la fecha, sin hora
     const key = date.toLocaleDateString("es-ES", {
       year: "numeric",
       month: "2-digit",
@@ -52,10 +86,8 @@ function groupMessagesByDate(messages: SubjectMessage[]) {
 }
 
 function formatDateHeader(dateString: string) {
-  // dateString viene en formato dd/mm/yyyy
   const [day, month, year] = dateString.split("/");
   const date = new Date(`${year}-${month}-${day}`);
-  // Ejemplo: Lunes, 16/06/2025
   return date.toLocaleDateString("es-ES", {
     weekday: "long",
     day: "2-digit",
@@ -81,12 +113,10 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
     const loadMessages = async () => {
       try {
         const messagesData = await axios.get(
-          `/api/proxy/subject-messages/?subject_id=${subjectId}`, {
-            withCredentials: true,
-          }
+          `/api/proxy/subject-messages/?subject_id=${subjectId}`,
+          { withCredentials: true }
         );
-        const messagesResult = messagesData.data;
-        setMessages(messagesResult);
+        setMessages(messagesData.data);
       } catch {
         setMessages([]);
       } finally {
@@ -102,8 +132,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
   );
+
   const dateKeys = Object.keys(grouped).sort((a, b) => {
-    // Orden descendente (más reciente primero)
     const [da, ma, ya] = a.split("/");
     const [db, mb, yb] = b.split("/");
     return (
@@ -112,15 +142,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
     );
   });
 
-  const getIconBg = (type: string) => {
-    switch (type) {
-      case "file":
-        return "bg-blue-100 text-blue-600 border-blue-300";
-      case "link":
-        return "bg-purple-100 text-purple-600 border-purple-300";
-      default:
-        return "bg-green-100 text-green-600 border-green-300";
-    }
+  const getTypeConfig = (type: string) => {
+    return typeConfig[type as keyof typeof typeConfig] || typeConfig.message;
   };
 
   const getIcon = (type: string) => {
@@ -131,28 +154,6 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
         return <ArrowDownTrayIcon className="w-6 h-6" />;
       default:
         return <ChatBubbleLeftIcon className="w-6 h-6" />;
-    }
-  };
-
-  const getLabel = (type: string) => {
-    switch (type) {
-      case "file":
-        return "Archivo";
-      case "link":
-        return "Link";
-      default:
-        return "Mensaje";
-    }
-  };
-
-  const getLabelBg = (type: string) => {
-    switch (type) {
-      case "file":
-        return "bg-blue-100 text-blue-800";
-      case "link":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-green-100 text-green-800";
     }
   };
 
@@ -184,161 +185,207 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
     document.body.removeChild(link);
   };
 
+  const handleDelete = async (messageId: number) => {
+    if (!confirm("¿Seguro que quieres borrar este mensaje?")) return;
+    setDeletingId(messageId);
+    try {
+      await axios.delete(`/api/proxy/subject-messages/${messageId}/`, {
+        withCredentials: true,
+      });
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    } catch {
+      alert("Error al borrar el mensaje");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMessage) return;
+
+    setIsSaving(true);
+    try {
+      const res = await axios.put(
+        `/api/proxy/subject-messages/${editingMessage.id}/`,
+        {
+          title: editData.title || "",
+          content: editData.content || "",
+          type: editData.type || "message",
+        },
+        { withCredentials: true }
+      );
+
+      if (res && res.data) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === editingMessage.id
+              ? {
+                  ...m,
+                  ...editData,
+                  id: editingMessage.id,
+                  subject_id: editingMessage.subject_id,
+                }
+              : m
+          )
+        );
+        setEditingMessage(null);
+      } else {
+        alert("Error al actualizar el mensaje");
+      }
+    } catch {
+      alert("Error de red al actualizar");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const canEdit =
+    userInfo?.role &&
+    ["admin", "teacher", "preceptor"].includes(userInfo.role);
+
   if (isLoading) {
-    return <div className="text-center py-8">Cargando mensajes...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
+          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          <span>Cargando mensajes...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-8">
       {dateKeys.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16">
-          <EmptyStateSVG className="w-96 h-72 mb-4 opacity-80" />
-          <span className="text-muted-foreground text-lg opacity-60">
-            No hay mensajes en esta materia
-          </span>
-        </div>
+        <EmptyState
+          icon="document"
+          title="No hay mensajes"
+          description="No hay mensajes en esta materia"
+        />
       )}
+
       {dateKeys.map((dateKey) => (
         <div key={dateKey} className="space-y-4">
-          <div className="text-lg font-bold text-primary mb-2 flex items-center gap-2">
+          <div className="text-lg font-semibold text-primary mb-2 flex items-center gap-2">
             <span>{formatDateHeader(dateKey)}</span>
           </div>
+
           {grouped[dateKey].map((message, index) => (
             <div key={`${message.id}-${index}`} className="flex items-start gap-3">
-              {/* Icono lateral */}
+              {/* Icon */}
               <div
-                className={clsx(
+                className={cn(
                   "flex-shrink-0 rounded-full border-2 p-2 mt-2",
-                  getIconBg(message.type)
+                  getTypeConfig(message.type).iconBg
                 )}
               >
                 {getIcon(message.type)}
               </div>
-              {/* Burbuja */}
+
+              {/* Message bubble */}
               <div className="flex-1">
-                <div className="rounded-xl border border-border bg-card shadow-sm px-6 py-4">
+                <div className="rounded-lg border border-border bg-surface px-6 py-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-foreground text-base">
+                    <span className="font-semibold text-text-primary text-base">
                       {message.title}
                     </span>
-                    <span
-                      className={clsx(
-                        "ml-2 px-2 py-0.5 rounded text-xs font-semibold",
-                        getLabelBg(message.type)
-                      )}
-                    >
-                      {getLabel(message.type)}
-                    </span>
+                    <Badge variant={getTypeConfig(message.type).badge}>
+                      {getTypeConfig(message.type).label}
+                    </Badge>
                     <div className="flex-1" />
-                    {userInfo?.role &&
-                      ["admin", "teacher", "preceptor"].includes(
-                        userInfo.role
-                      ) && (
-                        <div className="flex gap-1 ml-2">
-                          <button
-                            className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
-                            title="Editar"
-                            onClick={() => {
-                              setEditingMessage(message);
-                              setEditData({ ...message });
-                            }}
-                          >
-                            <PencilIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
-                            title="Borrar"
-                            onClick={async () => {
-                              if (
-                                !confirm(
-                                  "¿Seguro que quieres borrar este mensaje?"
-                                )
-                              )
-                                return;
-                              setDeletingId(message.id);
-                              try {
-                                                                         await axios.delete(
-          `/api/proxy/subject-messages/${message.id}/`, {
-            withCredentials: true,
-          }
-        );
-                                setMessages((prev) =>
-                                  prev.filter((m) => m.id !== message.id)
-                                );
-                              } catch {
-                                alert("Error al borrar el mensaje");
-                              } finally {
-                                setDeletingId(null);
-                              }
-                            }}
-                            disabled={deletingId === message.id}
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
-                        </div>
-                      )}
+
+                    {canEdit && (
+                      <div className="flex gap-1 ml-2">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => {
+                            setEditingMessage(message);
+                            setEditData({ ...message });
+                          }}
+                          aria-label="Editar"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleDelete(message.id)}
+                          disabled={deletingId === message.id}
+                          aria-label="Borrar"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
+
                   {message.type === "message" && (
-                    <p className="text-muted-foreground mb-2 whitespace-pre-line">
+                    <p className="text-text-secondary mb-2 whitespace-pre-line">
                       {message.content}
                     </p>
                   )}
+
                   {message.type === "file" && (
                     <>
-                      {message.content &&
-                        !message.content.startsWith("http") && (
-                          <p className="text-muted-foreground mb-2 whitespace-pre-line">
-                            {message.content}
-                          </p>
-                        )}
+                      {message.content && !message.content.startsWith("http") && (
+                        <p className="text-text-secondary mb-2 whitespace-pre-line">
+                          {message.content}
+                        </p>
+                      )}
                       {getDownloadUrl(message) ? (
                         <div className="flex items-center gap-2 mb-2">
-                          <button
+                          <Button
+                            variant="primary"
+                            size="sm"
                             onClick={() =>
-                              handleDownload(
-                                getDownloadUrl(message)!,
-                                message.title
-                              )
+                              handleDownload(getDownloadUrl(message)!, message.title)
                             }
-                            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                           >
                             <ArrowDownTrayIcon className="size-4" />
                             {message.title}
-                          </button>
+                          </Button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 text-orange-600 text-sm mb-2">
-                          <span>⚠️</span>
+                        <div className="flex items-center gap-2 text-warning text-sm mb-2">
+                          <ExclamationTriangleIcon className="size-4" />
                           <span>Archivo no disponible</span>
                         </div>
                       )}
                     </>
                   )}
+
                   {message.type === "link" && (
                     <>
                       {message.content && (
-                        <p className="text-muted-foreground mb-2 whitespace-pre-line">
+                        <p className="text-text-secondary mb-2 whitespace-pre-line">
                           {message.content}
                         </p>
                       )}
-                      {message.content &&
-                        message.content.startsWith("http") && (
-                          <div className="flex items-center gap-2 mb-2">
+                      {message.content && message.content.startsWith("http") && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            asChild
+                          >
                             <a
                               href={message.content}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                             >
                               <ArrowDownTrayIcon className="size-4" />
                               Abrir enlace
                             </a>
-                          </div>
-                        )}
+                          </Button>
+                        </div>
+                      )}
                     </>
                   )}
+
                   <div className="flex justify-end gap-2 mt-2">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-text-muted">
                       {formatTime(message.created_at)}
                     </span>
                   </div>
@@ -348,114 +395,80 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
           ))}
         </div>
       ))}
-      {editingMessage && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
-            <h2 className="text-lg font-bold mb-4">
-              Editar mensaje de materia
-            </h2>
-            <form
-              className="space-y-4"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!editingMessage) return;
-                
-                setIsSaving(true);
-                try {
-                  const res = await axios.put(
-                    `/api/proxy/subject-messages/${editingMessage.id}/`,
-                    {
-                      title: editData.title || '',
-                      content: editData.content || '',
-                      type: editData.type || 'message',
-                    },
-                    { withCredentials: true }
-                  );
-                  
-                  if (res && res.data) {
-                    setMessages((prev) =>
-                      prev.map((m) =>
-                        m.id === editingMessage.id 
-                          ? { ...m, ...editData, id: editingMessage.id, subject_id: editingMessage.subject_id }
-                          : m
-                      )
-                    );
-                    setEditingMessage(null);
-                  } else {
-                    alert("Error al actualizar el mensaje");
-                  }
-                } catch {
-                  alert("Error de red al actualizar");
-                } finally {
-                  setIsSaving(false);
+
+      {/* Edit Modal - Using Sacred Modal component */}
+      <Modal
+        open={!!editingMessage}
+        onOpenChange={() => {
+          setEditingMessage(null);
+          setEditData({});
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Editar mensaje de materia</ModalTitle>
+          </ModalHeader>
+
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <FormGroup>
+              <Label htmlFor="edit-title">Título</Label>
+              <Input
+                id="edit-title"
+                value={editData.title || ""}
+                onChange={(e) =>
+                  setEditData({ ...editData, title: e.target.value })
                 }
-              }}
-            >
-              <div>
-                <label className="block text-sm font-medium mb-1">Título</label>
-                <input
-                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
-                  value={editData.title || ""}
-                  onChange={(e) =>
-                    setEditData({ ...editData, title: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Tipo</label>
-                <select
-                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
-                  value={editData.type || "message"}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      type: e.target.value as "message" | "file" | "link",
-                    })
-                  }
-                  required
-                >
-                  <option value="message">Mensaje</option>
-                  <option value="file">Archivo</option>
-                  <option value="link">Link</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Contenido
-                </label>
-                <textarea
-                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
-                  value={editData.content || ""}
-                  onChange={(e) =>
-                    setEditData({ ...editData, content: e.target.value })
-                  }
-                  required
-                  rows={4}
-                />
-              </div>
-              <div className="flex gap-2 mt-4 justify-end">
-                <button
-                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
-                  type="button"
-                  onClick={() => setEditingMessage(null)}
-                  disabled={isSaving}
-                >
-                  <TrashIcon className="w-4 h-4" /> Cancelar
-                </button>
-                <button
-                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
-                  type="submit"
-                  disabled={isSaving}
-                >
-                  <PencilIcon className="w-4 h-4" />{" "}
-                  {isSaving ? "Guardando..." : "Guardar cambios"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="edit-type">Tipo</Label>
+              <Select
+                id="edit-type"
+                value={editData.type || "message"}
+                onChange={(e) =>
+                  setEditData({
+                    ...editData,
+                    type: e.target.value as "message" | "file" | "link",
+                  })
+                }
+                required
+              >
+                <option value="message">Mensaje</option>
+                <option value="file">Archivo</option>
+                <option value="link">Link</option>
+              </Select>
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="edit-content">Contenido</Label>
+              <Textarea
+                id="edit-content"
+                value={editData.content || ""}
+                onChange={(e) =>
+                  setEditData({ ...editData, content: e.target.value })
+                }
+                required
+              />
+            </FormGroup>
+
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setEditingMessage(null)}
+                disabled={isSaving}
+              >
+                Cancelar
+              </Button>
+              <Button variant="primary" type="submit" loading={isSaving}>
+                Guardar cambios
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

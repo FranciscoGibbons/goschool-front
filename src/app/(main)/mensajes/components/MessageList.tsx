@@ -1,20 +1,34 @@
 "use client";
 
+/**
+ * Message List Component
+ * ==========================================================================
+ * DESIGN CONTRACT COMPLIANT
+ *
+ * Uses semantic color tokens and sacred components.
+ * ==========================================================================
+ */
+
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import EmptyStateSVG from "@/components/ui/EmptyStateSVG";
 import { useInView } from "react-intersection-observer";
 
 import userInfoStore from "@/store/userInfoStore";
 import { toast } from "sonner";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// import { Input } from "@/components/ui/input";
-// import { Label } from "@/components/ui/label";
-// import { Textarea } from "@/components/ui/textarea";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Button,
+  EmptyState,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+  FormGroup,
+  Label,
+  Input,
+  Textarea,
+} from "@/components/sacred";
 import axios from "axios";
 
 interface Message {
@@ -213,7 +227,7 @@ export default function MessageList() {
   if (loading && messages.length === 0) {
     return (
       <div className="flex justify-center items-center py-16">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-text-secondary">
           <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
           <span>Cargando mensajes...</span>
         </div>
@@ -224,45 +238,43 @@ export default function MessageList() {
   if (error) {
     return (
       <div className="flex justify-center items-center py-16">
-        <p className="text-red-500">{error}</p>
+        <p className="text-error">{error}</p>
       </div>
     );
   }
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <EmptyStateSVG className="w-96 h-72 mb-4 opacity-80" />
-        <span className="text-muted-foreground text-lg opacity-60">
-          No hay mensajes disponibles
-        </span>
-      </div>
+      <EmptyState
+        icon="document"
+        title="No hay mensajes"
+        description="No hay mensajes disponibles"
+      />
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Contador de mensajes mostrados */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-text-secondary">
         Mostrando {visibleMessages.length} de {messages.length} mensajes
       </div>
 
       {/* Lista de mensajes */}
       <div className="flex flex-col space-y-4">
-        {visibleMessages.map((message, index) => {
+        {visibleMessages.map((message) => {
           const sender = sendersMap.get(message.sender_id);
           const initials = sender ? getInitials(sender.full_name) : "??";
 
           return (
             <div
               key={message.id}
-              className="flex items-start p-4 bg-card rounded-lg shadow-sm border border-border hover:shadow-md transition message-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="flex items-start p-4 bg-surface rounded-lg border border-border transition-colors hover:border-border-muted"
             >
               <Avatar className="h-12 w-12 mr-4">
                 {sender?.photo ? (
-                  <AvatarImage 
-                    src={sender.photo} 
+                  <AvatarImage
+                    src={sender.photo}
                     alt={sender.full_name}
                     onError={(e) => {
                       console.error("Error cargando imagen de avatar:", sender.photo, e);
@@ -278,45 +290,46 @@ export default function MessageList() {
               <div className="flex flex-col w-full">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="font-medium text-card-foreground">
+                    <p className="font-medium text-text-primary">
                       {sender?.full_name || "Usuario Desconocido"}
                     </p>
                   </div>
-                  {/* ID eliminado */}
                   {(userInfo?.role === "admin" ||
                     userInfo?.role === "preceptor") && (
                     <div className="flex gap-1 ml-2">
-                      <button
-                        className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
-                        title="Editar"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => {
                           setUpdatingMessage(message);
                           setEditMessage({ ...message });
                         }}
+                        aria-label="Editar"
                       >
-                        <PencilIcon className="w-5 h-5" />
-                      </button>
-                      <button
-                        className="p-1 rounded-md transition-colors focus:outline-none text-foreground opacity-80 hover:opacity-100 hover:bg-muted hover:rounded-sm"
-                        title="Borrar"
+                        <PencilIcon className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => handleDelete(Number(message.id))}
                         disabled={deletingId === Number(message.id)}
+                        aria-label="Borrar"
                       >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
+                        <TrashIcon className="w-4 h-4" />
+                      </Button>
                     </div>
                   )}
                 </div>
 
                 <div className="mt-1">
-                  <p className="font-semibold text-card-foreground mb-1">
+                  <p className="font-semibold text-text-primary mb-1">
                     {message.title}
                   </p>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <p className="text-text-secondary text-sm leading-relaxed">
                     {message.message}
                   </p>
                   {message.courses && (
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-text-muted mt-2">
                       Cursos: {message.courses}
                     </p>
                   )}
@@ -330,7 +343,7 @@ export default function MessageList() {
       {/* Elemento "sentinela" para detectar cuando cargar más */}
       {hasMore && (
         <div ref={loadMoreRef} className="flex justify-center py-8">
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-text-secondary">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
             <span>Cargando más mensajes...</span>
           </div>
@@ -339,100 +352,103 @@ export default function MessageList() {
 
       {/* Mensaje cuando se han cargado todos */}
       {!hasMore && messages.length > 0 && (
-        <div className="text-center py-8 text-muted-foreground">
+        <div className="text-center py-8 text-text-muted">
           <span>Has visto todos los mensajes</span>
         </div>
       )}
 
-      {/* Modal de actualización (solo UI editable, sin lógica de update aún) */}
-      {updatingMessage && editMessage && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card border border-border p-6 rounded-lg shadow-lg w-full max-w-md text-foreground">
-            <h2 className="text-lg font-bold mb-4">Actualizar mensaje</h2>
-            <form
-              className="space-y-4"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setIsSaving(true);
-                try {
-                  const res = await fetch(
-                    `/api/proxy/messages/${updatingMessage.id}`,
-                    {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      credentials: "include",
-                      body: JSON.stringify({
-                        title: editMessage.title,
-                        message: editMessage.message,
-                      }),
-                    }
+      {/* Edit Modal - Using Sacred Modal component */}
+      <Modal
+        open={!!(updatingMessage && editMessage)}
+        onOpenChange={() => {
+          setUpdatingMessage(null);
+          setEditMessage(null);
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Actualizar mensaje</ModalTitle>
+          </ModalHeader>
+
+          <form
+            className="space-y-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!editMessage || !updatingMessage) return;
+              setIsSaving(true);
+              try {
+                const res = await fetch(
+                  `/api/proxy/messages/${updatingMessage.id}`,
+                  {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                      title: editMessage.title,
+                      message: editMessage.message,
+                    }),
+                  }
+                );
+                if (res.ok) {
+                  toast.success("Mensaje actualizado");
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      Number(msg.id) === Number(updatingMessage.id)
+                        ? { ...msg, ...editMessage }
+                        : msg
+                    )
                   );
-                  if (res.ok) {
-                    toast.success("Mensaje actualizado");
-                    setMessages((prev) =>
-                      prev.map((msg) =>
-                        Number(msg.id) === Number(updatingMessage.id)
-                          ? { ...msg, ...editMessage }
-                          : msg
-                      )
-                    );
-                    setUpdatingMessage(null);
-                  } else {
-                    toast.error("Error al actualizar el mensaje");
-                  }
-                } catch {
-                  toast.error("Error de red al actualizar");
-                } finally {
-                  setIsSaving(false);
+                  setUpdatingMessage(null);
+                } else {
+                  toast.error("Error al actualizar el mensaje");
                 }
-              }}
-            >
-              <div>
-                <label className="block text-sm font-medium mb-1">Título</label>
-                <input
-                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
-                  value={editMessage.title}
-                  onChange={(e) =>
-                    setEditMessage({ ...editMessage, title: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Mensaje
-                </label>
-                <textarea
-                  className="w-full border rounded px-3 py-2 bg-background text-foreground"
-                  value={editMessage.message}
-                  onChange={(e) =>
-                    setEditMessage({ ...editMessage, message: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="flex gap-2 mt-4 justify-end">
-                <button
-                  className="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 flex items-center gap-1"
-                  type="button"
-                  onClick={() => setUpdatingMessage(null)}
-                  disabled={isSaving}
-                >
-                  <TrashIcon className="w-4 h-4" /> Cancelar
-                </button>
-                <button
-                  className="px-3 py-1 bg-blue-500 text-black rounded hover:bg-blue-600 flex items-center gap-1"
-                  type="submit"
-                  disabled={isSaving}
-                >
-                  <PencilIcon className="w-4 h-4" />{" "}
-                  {isSaving ? "Guardando..." : "Guardar cambios"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              } catch {
+                toast.error("Error de red al actualizar");
+              } finally {
+                setIsSaving(false);
+              }
+            }}
+          >
+            <FormGroup>
+              <Label htmlFor="edit-title">Título</Label>
+              <Input
+                id="edit-title"
+                value={editMessage?.title || ""}
+                onChange={(e) =>
+                  setEditMessage(editMessage ? { ...editMessage, title: e.target.value } : null)
+                }
+                required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="edit-message">Mensaje</Label>
+              <Textarea
+                id="edit-message"
+                value={editMessage?.message || ""}
+                onChange={(e) =>
+                  setEditMessage(editMessage ? { ...editMessage, message: e.target.value } : null)
+                }
+                required
+              />
+            </FormGroup>
+
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setUpdatingMessage(null)}
+                disabled={isSaving}
+              >
+                Cancelar
+              </Button>
+              <Button variant="primary" type="submit" loading={isSaving}>
+                Guardar cambios
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

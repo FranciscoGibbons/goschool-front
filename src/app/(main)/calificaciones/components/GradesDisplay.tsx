@@ -196,12 +196,13 @@ export default function GradesDisplay({ selectedStudentId }: GradesDisplayProps)
     return grade.toString();
   };
 
+  // Uses design token colors per DESIGN_CONTRACT.md
   const getGradeColor = (grade: number | string, type: string) => {
-    if (type === "conceptual") return "bg-blue-50 text-blue-700 border-blue-200";
+    if (type === "conceptual") return "bg-primary/10 text-primary border-primary/20";
     const numGrade = typeof grade === "number" ? grade : parseFloat(grade as string);
-    if (numGrade >= 8) return "bg-green-50 text-green-700 border-green-200";
-    if (numGrade >= 6) return "bg-yellow-50 text-yellow-700 border-yellow-200";
-    return "bg-red-50 text-red-700 border-red-200";
+    if (numGrade >= 8) return "bg-success-muted text-success border-success/20";
+    if (numGrade >= 6) return "bg-warning-muted text-warning border-warning/20";
+    return "bg-error-muted text-error border-error/20";
   };
 
   const getTypeLabel = (type: string) => {

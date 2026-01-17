@@ -1,8 +1,16 @@
 "use client";
 
+/**
+ * Assistance Stats Component
+ * ==========================================================================
+ * DESIGN CONTRACT COMPLIANT
+ *
+ * Uses semantic color tokens from the design system.
+ * ==========================================================================
+ */
+
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/sacred";
 import {
   CalendarDaysIcon,
   UserIcon,
@@ -17,9 +25,33 @@ interface AssistanceStatsProps {
   studentName?: string;
 }
 
-export default function AssistanceStats({ 
-  assistances, 
-  studentName 
+// Semantic status variants using design tokens
+const statusVariants = {
+  present: {
+    bg: "bg-success-muted",
+    text: "text-success",
+    badge: "success" as const,
+  },
+  absent: {
+    bg: "bg-error-muted",
+    text: "text-error",
+    badge: "error" as const,
+  },
+  late: {
+    bg: "bg-warning-muted",
+    text: "text-warning",
+    badge: "warning" as const,
+  },
+  justified: {
+    bg: "bg-primary/10",
+    text: "text-primary",
+    badge: "info" as const,
+  },
+};
+
+export default function AssistanceStats({
+  assistances,
+  studentName
 }: AssistanceStatsProps) {
   const stats = useMemo(() => {
     const total = assistances.length;
@@ -51,11 +83,11 @@ export default function AssistanceStats({
     };
   }, [assistances]);
 
-  const getAttendanceStatus = (percentage: number) => {
-    if (percentage >= 90) return { color: "bg-green-100 text-green-800", label: "Excelente" };
-    if (percentage >= 80) return { color: "bg-blue-100 text-blue-800", label: "Buena" };
-    if (percentage >= 70) return { color: "bg-yellow-100 text-yellow-800", label: "Regular" };
-    return { color: "bg-red-100 text-red-800", label: "Deficiente" };
+  const getAttendanceStatus = (percentage: number): { badge: "success" | "info" | "warning" | "error"; label: string } => {
+    if (percentage >= 90) return { badge: "success", label: "Excelente" };
+    if (percentage >= 80) return { badge: "info", label: "Buena" };
+    if (percentage >= 70) return { badge: "warning", label: "Regular" };
+    return { badge: "error", label: "Deficiente" };
   };
 
   const attendanceStatus = getAttendanceStatus(stats.presentPercentage);
@@ -69,13 +101,13 @@ export default function AssistanceStats({
             Estadísticas de Asistencia
           </CardTitle>
           {studentName && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-secondary">
               Estudiante: {studentName}
             </p>
           )}
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center py-4">
+          <p className="text-text-muted text-center py-4">
             No hay registros de asistencia para mostrar estadísticas.
           </p>
         </CardContent>
@@ -91,7 +123,7 @@ export default function AssistanceStats({
           Estadísticas de Asistencia
         </CardTitle>
         {studentName && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-text-secondary">
             Estudiante: {studentName}
           </p>
         )}
@@ -100,71 +132,71 @@ export default function AssistanceStats({
         {/* Resumen general */}
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{stats.total}</div>
-            <div className="text-sm text-muted-foreground">Total de días</div>
+            <div className="text-2xl font-semibold text-primary">{stats.total}</div>
+            <div className="text-sm text-text-secondary">Total de días</div>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl font-bold text-green-600">
+              <span className="text-2xl font-semibold text-success">
                 {stats.presentPercentage}%
               </span>
-              <Badge className={attendanceStatus.color}>
+              <Badge variant={attendanceStatus.badge}>
                 {attendanceStatus.label}
               </Badge>
             </div>
-            <div className="text-sm text-muted-foreground">Asistencia</div>
+            <div className="text-sm text-text-secondary">Asistencia</div>
           </div>
         </div>
 
         {/* Desglose detallado */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
+          <div className={`flex items-center justify-between p-3 rounded-lg ${statusVariants.present.bg}`}>
             <div className="flex items-center gap-3">
-              <CheckCircleIcon className="size-5 text-green-600" />
-              <span className="font-medium">Presente</span>
+              <CheckCircleIcon className={`size-5 ${statusVariants.present.text}`} />
+              <span className="font-medium text-text-primary">Presente</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold">{stats.present}</span>
-              <Badge className="bg-green-100 text-green-800">
+              <span className="font-semibold text-text-primary">{stats.present}</span>
+              <Badge variant="success">
                 {stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0}%
               </Badge>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
+          <div className={`flex items-center justify-between p-3 rounded-lg ${statusVariants.absent.bg}`}>
             <div className="flex items-center gap-3">
-              <ExclamationCircleIcon className="size-5 text-red-600" />
-              <span className="font-medium">Ausente</span>
+              <ExclamationCircleIcon className={`size-5 ${statusVariants.absent.text}`} />
+              <span className="font-medium text-text-primary">Ausente</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold">{stats.absent}</span>
-              <Badge className="bg-red-100 text-red-800">
+              <span className="font-semibold text-text-primary">{stats.absent}</span>
+              <Badge variant="error">
                 {stats.total > 0 ? Math.round((stats.absent / stats.total) * 100) : 0}%
               </Badge>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+          <div className={`flex items-center justify-between p-3 rounded-lg ${statusVariants.late.bg}`}>
             <div className="flex items-center gap-3">
-              <ClockIcon className="size-5 text-yellow-600" />
-              <span className="font-medium">Tardanza</span>
+              <ClockIcon className={`size-5 ${statusVariants.late.text}`} />
+              <span className="font-medium text-text-primary">Tardanza</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold">{stats.late}</span>
-              <Badge className="bg-yellow-100 text-yellow-800">
+              <span className="font-semibold text-text-primary">{stats.late}</span>
+              <Badge variant="warning">
                 {stats.total > 0 ? Math.round((stats.late / stats.total) * 100) : 0}%
               </Badge>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+          <div className={`flex items-center justify-between p-3 rounded-lg ${statusVariants.justified.bg}`}>
             <div className="flex items-center gap-3">
-              <UserIcon className="size-5 text-blue-600" />
-              <span className="font-medium">Justificado</span>
+              <UserIcon className={`size-5 ${statusVariants.justified.text}`} />
+              <span className="font-medium text-text-primary">Justificado</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold">{stats.justified}</span>
-              <Badge className="bg-blue-100 text-blue-800">
+              <span className="font-semibold text-text-primary">{stats.justified}</span>
+              <Badge variant="info">
                 {stats.total > 0 ? Math.round((stats.justified / stats.total) * 100) : 0}%
               </Badge>
             </div>
@@ -173,25 +205,25 @@ export default function AssistanceStats({
 
         {/* Barra de progreso visual */}
         <div className="space-y-2">
-          <div className="text-sm font-medium">Distribución de asistencia</div>
-          <div className="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700">
-            <div className="flex h-3 rounded-full overflow-hidden">
+          <div className="text-sm font-medium text-text-primary">Distribución de asistencia</div>
+          <div className="w-full bg-surface-muted rounded-lg h-3">
+            <div className="flex h-3 rounded-lg overflow-hidden">
               <div
-                className="bg-green-500"
+                className="bg-success"
                 style={{ width: `${(stats.present / stats.total) * 100}%` }}
-              ></div>
+              />
               <div
-                className="bg-yellow-500"
+                className="bg-warning"
                 style={{ width: `${(stats.late / stats.total) * 100}%` }}
-              ></div>
+              />
               <div
-                className="bg-blue-500"
+                className="bg-primary"
                 style={{ width: `${(stats.justified / stats.total) * 100}%` }}
-              ></div>
+              />
               <div
-                className="bg-red-500"
+                className="bg-error"
                 style={{ width: `${(stats.absent / stats.total) * 100}%` }}
-              ></div>
+              />
             </div>
           </div>
         </div>
