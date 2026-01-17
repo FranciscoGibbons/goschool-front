@@ -8,19 +8,22 @@ const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 });
 
-export async function GET(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ user_id: string }> }
+) {
   try {
+    const { user_id } = await params;
     const cookie = request.headers.get('cookie') || '';
-    const { searchParams } = new URL(request.url);
-    const queryString = searchParams.toString();
-    const url = `${BACKEND_URL}/api/v1/subjects/${queryString ? `?${queryString}` : ''}`;
+    const formData = await request.formData();
 
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await fetch(`${BACKEND_URL}/api/v1/profile_pictures/${user_id}`, {
+      method: 'PUT',
       headers: {
         'Cookie': cookie,
       },
       credentials: 'include',
+      body: formData,
       // @ts-expect-error - httpsAgent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
@@ -28,37 +31,42 @@ export async function GET(request: NextRequest) {
     const data = await safeJson(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error fetching subjects:', error);
+    console.error('Error updating profile picture:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch subjects' },
+      { error: 'Failed to update profile picture' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ user_id: string }> }
+) {
   try {
+    const { user_id } = await params;
     const cookie = request.headers.get('cookie') || '';
-    const body = await request.json();
 
-    const response = await fetch(`${BACKEND_URL}/api/v1/subjects/`, {
-      method: 'POST',
+    const response = await fetch(`${BACKEND_URL}/api/v1/profile_pictures/${user_id}`, {
+      method: 'DELETE',
       headers: {
         'Cookie': cookie,
-        'Content-Type': 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify(body),
       // @ts-expect-error - httpsAgent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
 
+    if (response.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+
     const data = await safeJson(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Error creating subject:', error);
+    console.error('Error deleting profile picture:', error);
     return NextResponse.json(
-      { error: 'Failed to create subject' },
+      { error: 'Failed to delete profile picture' },
       { status: 500 }
     );
   }

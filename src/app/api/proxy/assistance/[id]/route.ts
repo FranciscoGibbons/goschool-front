@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'https';
+import { safeJson } from '@/lib/api/safe-json';
 
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost:3001';
 
@@ -25,7 +26,7 @@ export async function GET(
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
 
-    const data = await response.json();
+    const data = await safeJson(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error fetching assistance:', error);
@@ -57,7 +58,7 @@ export async function PUT(
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
 
-    const data = await response.json();
+    const data = await safeJson(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error updating assistance:', error);
@@ -90,7 +91,7 @@ export async function DELETE(
       return new NextResponse(null, { status: 204 });
     }
 
-    const data = await response.json();
+    const data = await safeJson(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error deleting assistance:', error);

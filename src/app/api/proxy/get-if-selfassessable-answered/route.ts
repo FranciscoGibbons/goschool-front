@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'https';
+import { safeJson } from '@/lib/api/safe-json';
 
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost:3001';
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
 
-    const data = await response.json();
+    const data = await safeJson(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error checking if selfassessable answered:', error);

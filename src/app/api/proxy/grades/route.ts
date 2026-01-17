@@ -57,7 +57,9 @@ export async function POST(request: NextRequest) {
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
 
-    const data = await response.json();
+    // Handle empty responses (like 201 Created)
+    const text = await response.text();
+    const data = text && text.trim() ? JSON.parse(text) : { success: true };
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error creating grade:', error);

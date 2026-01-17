@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'https';
+import { safeJson } from '@/lib/api/safe-json';
 
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost:3001';
 
@@ -9,14 +10,15 @@ const httpsAgent = new https.Agent({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const cookieHeader = request.headers.get('cookie') || '';
     const formData = await request.formData();
 
     const response = await fetch(
-      `${BACKEND_URL}/api/v1/chats/${params.id}/upload`,
+      `${BACKEND_URL}/api/v1/chats/${id}/upload`,
       {
         method: 'POST',
         headers: {
@@ -29,13 +31,8 @@ export async function POST(
       }
     );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data, { status: 200 });
+    const data = await safeJson(response);
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error uploading file:', error);
     return NextResponse.json(

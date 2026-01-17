@@ -295,7 +295,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     try {
       // Obtener estudiantes del backend (ahora incluye full_name)
       const studentsResponse = await axios.get(
-        buildProxyUrl('/api/proxy/students/', { course_id: courseId }), {
+        buildProxyUrl('/api/proxy/students/', { course_id: courseId, role: 'student' }), {
           withCredentials: true,
         }
       );

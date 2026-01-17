@@ -59,14 +59,17 @@ export function useWebSocket() {
       return;
     }
 
-    console.log('🔌 Connecting to WebSocket:', WS_URL);
-    console.log('📍 Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
+    console.log('🔌 [WS DEBUG] Connecting to WebSocket:', WS_URL);
+    console.log('📍 [WS DEBUG] Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
+    console.log('🔄 [WS DEBUG] Attempt:', reconnectAttemptsRef.current + 1);
 
     try {
       const ws = new WebSocket(WS_URL);
+      console.log('🔌 [WS DEBUG] WebSocket object created, waiting for connection...');
 
       ws.onopen = () => {
-        console.log('✅ WebSocket connected');
+        console.log('✅ [WS DEBUG] WebSocket connected successfully');
+        console.log('📊 [WS DEBUG] ReadyState:', ws.readyState, '(1 = OPEN)');
         setConnected(true);
         reconnectAttemptsRef.current = 0;
         startHeartbeat();
@@ -82,8 +85,10 @@ export function useWebSocket() {
       };
 
       ws.onmessage = (event) => {
+        console.log('📩 [WS DEBUG] Raw message received:', event.data);
         try {
           const message: WSServerMessage = JSON.parse(event.data);
+          console.log('📩 [WS DEBUG] Parsed message type:', message.type);
 
           switch (message.type) {
             case 'NewMessage':
@@ -158,21 +163,22 @@ export function useWebSocket() {
       };
 
       ws.onerror = (error) => {
-        console.error('❌ WebSocket error:', error);
-        console.error('❌ WebSocket error details:', {
+        console.error('❌ [WS DEBUG] WebSocket error event fired');
+        console.error('❌ [WS DEBUG] Error details:', {
           url: WS_URL,
           readyState: ws.readyState,
-          error: error
+          readyStateLabel: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][ws.readyState],
+          error: error,
+          type: (error as Event).type,
         });
 
         // Common error messages
-        if (ws.readyState === WebSocket.CLOSED) {
-          console.error('💡 Connection failed. Possible causes:');
-          console.error('   1. Self-signed certificate not accepted for WebSocket');
-          console.error('   2. Backend not running');
-          console.error('   3. Not logged in (no JWT cookie)');
-          console.error('   4. CORS or security policy blocking connection');
-        }
+        console.error('💡 [WS DEBUG] Troubleshooting:');
+        console.error('   1. Check if backend is running: docker-compose logs backend');
+        console.error('   2. Check JWT cookie exists in browser DevTools > Application > Cookies');
+        console.error('   3. For self-signed certs, visit backend URL first and accept certificate');
+        console.error('   4. Check browser console Network tab for WS connection details');
+        console.error('   5. Verify NEXT_PUBLIC_BACKEND_URL is correct:', process.env.NEXT_PUBLIC_BACKEND_URL);
       };
 
       ws.onclose = (event) => {

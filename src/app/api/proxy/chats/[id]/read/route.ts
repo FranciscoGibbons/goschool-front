@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'https';
+import { safeJson } from '@/lib/api/safe-json';
 
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost:3001';
 
@@ -7,17 +8,18 @@ const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 });
 
-export async function POST(
+export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const cookieHeader = request.headers.get('cookie') || '';
 
     const response = await fetch(
-      `${BACKEND_URL}/api/v1/chats/${params.id}/read`,
+      `${BACKEND_URL}/api/v1/chats/${id}/read`,
       {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Cookie: cookieHeader,
@@ -32,13 +34,8 @@ export async function POST(
       return new NextResponse(null, { status: 204 });
     }
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data, { status: 200 });
+    const data = await safeJson(response);
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error marking chat as read:', error);
     return NextResponse.json(

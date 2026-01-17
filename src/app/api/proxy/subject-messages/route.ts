@@ -60,26 +60,36 @@ export async function POST(request: NextRequest) {
         agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
       });
 
-      const data = await response.json();
+      // Handle empty responses (like 201 Created)
+      const text = await response.text();
+      const data = text && text.trim() ? JSON.parse(text) : { success: true };
       return NextResponse.json(data, { status: response.status });
     }
 
-    // Handle JSON
+    // Handle JSON - convert to FormData since backend expects multipart
     const body = await request.json();
+
+    // Create FormData from JSON body
+    const formData = new FormData();
+    if (body.subject_id) formData.append('subject_id', String(body.subject_id));
+    if (body.title) formData.append('title', body.title);
+    if (body.content) formData.append('content', body.content);
+    if (body.type) formData.append('type', body.type);
 
     const response = await fetch(`${BACKEND_URL}/api/v1/subject_messages/`, {
       method: 'POST',
       headers: {
         'Cookie': cookie,
-        'Content-Type': 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify(body),
+      body: formData,
       // @ts-expect-error - httpsAgent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
 
-    const data = await response.json();
+    // Handle empty responses (like 201 Created)
+    const text = await response.text();
+    const data = text && text.trim() ? JSON.parse(text) : { success: true };
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Error creating subject message:', error);
