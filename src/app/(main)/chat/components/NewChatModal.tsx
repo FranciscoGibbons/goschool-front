@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Search, Users, MessageCircle } from 'lucide-react';
+import { Search, Users, MessageCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -51,11 +51,19 @@ export default function NewChatModal({ isOpen, onClose }: NewChatModalProps) {
   };
 
   const handleUserToggle = (userId: number) => {
-    setSelectedUsers((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
-    );
+    if (chatType === 'direct') {
+      // For direct chats, only allow one user selection
+      setSelectedUsers((prev) =>
+        prev.includes(userId) ? [] : [userId]
+      );
+    } else {
+      // For group chats, allow multiple selections
+      setSelectedUsers((prev) =>
+        prev.includes(userId)
+          ? prev.filter((id) => id !== userId)
+          : [...prev, userId]
+      );
+    }
   };
 
   const handleCreate = async () => {
@@ -113,7 +121,10 @@ export default function NewChatModal({ isOpen, onClose }: NewChatModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={chatType} onValueChange={(v) => setChatType(v as 'direct' | 'group')}>
+        <Tabs value={chatType} onValueChange={(v) => {
+          setChatType(v as 'direct' | 'group');
+          setSelectedUsers([]); // Clear selection when changing tab
+        }}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="direct" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
@@ -149,13 +160,13 @@ export default function NewChatModal({ isOpen, onClose }: NewChatModalProps) {
                 filteredUsers.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedUsers.includes(user.id)
+                        ? 'bg-primary/10 ring-2 ring-primary'
+                        : 'hover:bg-accent'
+                    }`}
                     onClick={() => handleUserToggle(user.id)}
                   >
-                    <Checkbox
-                      checked={selectedUsers.includes(user.id)}
-                      onCheckedChange={() => handleUserToggle(user.id)}
-                    />
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={user.photo || undefined} />
                       <AvatarFallback className="bg-primary/10 text-primary">

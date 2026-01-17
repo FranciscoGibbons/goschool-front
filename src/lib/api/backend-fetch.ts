@@ -26,27 +26,28 @@ export async function backendFetch<T = unknown>(
 ): Promise<BackendFetchResult<T>> {
   const { method = 'GET', headers = {}, body, cookie } = options;
 
+  // Build headers with cookie always included
+  const requestHeaders: Record<string, string> = {
+    ...headers,
+    ...(cookie ? { Cookie: cookie } : {}),
+  };
+
+  // Add Content-Type for JSON body (not FormData)
+  if (body !== undefined && !(body instanceof FormData)) {
+    requestHeaders['Content-Type'] = 'application/json';
+  }
+
   const config: AxiosRequestConfig = {
     method,
     url: `${BACKEND_URL}${endpoint}`,
-    headers: {
-      ...headers,
-      ...(cookie ? { Cookie: cookie } : {}),
-    },
+    headers: requestHeaders,
     httpsAgent,
     validateStatus: () => true, // Don't throw on any status code
+    withCredentials: true,
   };
 
   if (body !== undefined) {
-    if (body instanceof FormData) {
-      config.data = body;
-    } else {
-      config.data = body;
-      config.headers = {
-        ...config.headers,
-        'Content-Type': 'application/json',
-      };
-    }
+    config.data = body;
   }
 
   const response: AxiosResponse<T> = await axios(config);
