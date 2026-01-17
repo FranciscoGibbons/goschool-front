@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       {/* Right side - Form */}
       <div className="w-full md:w-3/5 flex items-center justify-center p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-md space-y-6 bg-card p-6 sm:p-8 rounded-lg shadow-lg border border-border login-container">
+        <div className="w-full max-w-md space-y-6 bg-surface p-6 sm:p-8 rounded-lg border border-border login-container">
           {/* Mobile logo */}
           <div className="md:hidden mb-6 text-center">
             <div className="w-32 mx-auto mb-4">
@@ -61,7 +61,7 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-foreground">
               Iniciar sesión
             </h2>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-text-secondary mt-2">
               Ingresa tus credenciales para continuar
             </p>
           </div>

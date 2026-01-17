@@ -132,15 +132,15 @@ export default function EnhancedAnswerSelfAssessable({
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded-lg w-1/3"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-8 bg-surface-muted rounded-lg w-1/3"></div>
+            <div className="h-4 bg-surface-muted rounded w-1/2"></div>
             <Card>
               <CardContent className="p-8">
                 <div className="space-y-4">
-                  <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-6 bg-surface-muted rounded w-3/4"></div>
                   <div className="space-y-2">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+                      <div key={i} className="h-4 bg-surface-muted rounded w-full"></div>
                     ))}
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export default function EnhancedAnswerSelfAssessable({
             Volver
           </Button>
           
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 dark:bg-red-950/20 dark:border-red-800 dark:text-red-200">
+          <div className="bg-error-muted border border-border rounded-lg p-4 text-error">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               <span>{error}</span>
@@ -174,10 +174,10 @@ export default function EnhancedAnswerSelfAssessable({
           </div>
           
           <div className="mt-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <AlertCircle className="h-8 w-8 text-gray-400" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-muted flex items-center justify-center">
+              <AlertCircle className="h-8 w-8 text-text-muted" />
             </div>
-            <p className="text-muted-foreground">No se pudieron cargar las preguntas</p>
+            <p className="text-text-secondary">No se pudieron cargar las preguntas</p>
             <Button 
               className="mt-4" 
               onClick={() => loadSelfAssessableData(assessmentId)}
@@ -206,11 +206,11 @@ export default function EnhancedAnswerSelfAssessable({
           </Button>
           
           <div className="text-center py-12">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <BookOpen className="h-10 w-10 text-gray-400" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-surface-muted flex items-center justify-center">
+              <BookOpen className="h-10 w-10 text-text-muted" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Sin preguntas disponibles</h3>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-text-secondary mb-6">
               Este autoevaluable no tiene preguntas configuradas
             </p>
             <Button onClick={() => router.back()}>
@@ -238,8 +238,7 @@ export default function EnhancedAnswerSelfAssessable({
           </Button>
           
           {isAnswered && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              <CheckCircle className="h-3 w-3 mr-1" />
+            <Badge variant="success">
               Completado
             </Badge>
           )}
@@ -250,7 +249,7 @@ export default function EnhancedAnswerSelfAssessable({
           <h1 className="text-3xl font-bold text-foreground mb-2">
             {assessmentName}
           </h1>
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-4 text-text-secondary">
             <div className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
               <span>{subjectName}</span>
@@ -267,7 +266,7 @@ export default function EnhancedAnswerSelfAssessable({
         {/* Progress Bar */}
         {viewMode === 'quiz' && (
           <div className="mb-8">
-            <div className="flex justify-between text-sm text-muted-foreground mb-2">
+            <div className="flex justify-between text-sm text-text-secondary mb-2">
               <span>Progreso</span>
               <span>{answeredQuestions} de {totalQuestions} respondidas</span>
             </div>
@@ -277,9 +276,9 @@ export default function EnhancedAnswerSelfAssessable({
 
         {/* Results View */}
         {viewMode === 'results' && isAnswered && (
-          <Card className="mb-8 border-green-200 bg-green-50 dark:bg-green-950/20">
+          <Card className="mb-8 border-border bg-success-muted">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+              <CardTitle className="flex items-center gap-2 text-success">
                 <Award className="h-5 w-5" />
                 Autoevaluación Completada
               </CardTitle>
@@ -287,29 +286,29 @@ export default function EnhancedAnswerSelfAssessable({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  <div className="text-2xl font-bold text-success">
                     {totalQuestions}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-text-secondary">
                     Preguntas respondidas
                   </div>
                 </div>
                 {stats?.best_score && (
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                    <div className="text-2xl font-bold text-success">
                       {stats.best_score.toFixed(1)}%
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-text-secondary">
                       Puntuación obtenida
                     </div>
                   </div>
                 )}
                 {stats?.total_attempts && (
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                    <div className="text-2xl font-bold text-success">
                       {stats.total_attempts}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-text-secondary">
                       {stats.total_attempts === 1 ? "Intento" : "Intentos"}
                     </div>
                   </div>
@@ -404,8 +403,8 @@ export default function EnhancedAnswerSelfAssessable({
                     size="sm"
                     className={cn(
                       "w-10 h-10",
-                      selectedAnswers[questions[index].id] && index !== currentQuestionIndex && 
-                      "bg-green-100 border-green-300 text-green-700 hover:bg-green-200"
+                      selectedAnswers[questions[index].id] && index !== currentQuestionIndex &&
+                      "bg-success-muted border-border text-success hover:bg-success-muted/80"
                     )}
                     onClick={() => goToQuestion(index)}
                   >
@@ -450,7 +449,7 @@ export default function EnhancedAnswerSelfAssessable({
                     <CardTitle>Confirmar envío</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground mb-4">
+                    <p className="text-text-secondary mb-4">
                       ¿Estás seguro que quieres enviar tus respuestas? Una vez enviadas no podrás modificarlas.
                     </p>
                     <div className="text-sm space-y-1">

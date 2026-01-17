@@ -1319,7 +1319,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                         onClick={() => setCurrentQuestion(index)}
                         className={
                           isQuestionComplete(index)
-                            ? "bg-green-100 dark:bg-green-900"
+                            ? "bg-success-muted"
                             : ""
                         }
                       >

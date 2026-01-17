@@ -96,7 +96,7 @@ export default function SelfAssessablePage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando autoevaluable...</p>
+          <p className="text-text-secondary">Cargando autoevaluable...</p>
         </div>
       </div>
     );
@@ -107,12 +107,12 @@ export default function SelfAssessablePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-800 dark:bg-red-950/20 dark:border-red-800 dark:text-red-200">
+          <div className="bg-error-muted border border-border rounded-lg p-6 text-error">
             <h2 className="text-xl font-semibold mb-2">Error al cargar</h2>
             <p>{error}</p>
             <button
               onClick={() => assessmentId && fetchAssessment(assessmentId)}
-              className="mt-4 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-red-800 transition-colors"
+              className="mt-4 px-4 py-2 bg-error-muted hover:bg-error/10 rounded-lg text-error transition-colors"
             >
               Reintentar
             </button>
@@ -128,7 +128,7 @@ export default function SelfAssessablePage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl font-semibold mb-4">Autoevaluable no encontrado</h2>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-text-secondary mb-6">
             El autoevaluable que buscas no existe o no tienes permisos para verlo.
           </p>
           <button

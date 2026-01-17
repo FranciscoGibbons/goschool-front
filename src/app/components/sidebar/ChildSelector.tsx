@@ -62,7 +62,7 @@ export default function ChildSelector() {
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-sidebar border border-sidebar-border rounded-lg shadow-lg z-50">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-sidebar border border-sidebar-border rounded-lg shadow-sm z-50">
             {children.map((child) => (
               <button
                 key={child.id}

@@ -83,7 +83,7 @@ export default function AssistanceForm({
           Registrar Asistencia
         </CardTitle>
         {studentName && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-text-secondary">
             Estudiante: {studentName}
           </p>
         )}
@@ -121,25 +121,25 @@ export default function AssistanceForm({
               <SelectContent>
                 <SelectItem value="present">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-success rounded-full"></div>
                     Presente
                   </div>
                 </SelectItem>
                 <SelectItem value="absent">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-error rounded-full"></div>
                     Ausente
                   </div>
                 </SelectItem>
                 <SelectItem value="late">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-warning rounded-full"></div>
                     Tardanza
                   </div>
                 </SelectItem>
                 <SelectItem value="justified">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                     Justificado
                   </div>
                 </SelectItem>

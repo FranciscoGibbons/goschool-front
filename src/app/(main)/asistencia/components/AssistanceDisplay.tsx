@@ -92,12 +92,12 @@ export default function AssistanceDisplay({
 
   const getPresenceConfig = (status: string) => {
     const configs: Record<string, { label: string; color: string; icon: typeof Check }> = {
-      present: { label: "Presente", color: "bg-green-50 text-green-700 border-green-200", icon: Check },
-      absent: { label: "Ausente", color: "bg-red-50 text-red-700 border-red-200", icon: User },
-      late: { label: "Tardanza", color: "bg-yellow-50 text-yellow-700 border-yellow-200", icon: Clock },
-      justified: { label: "Justificado", color: "bg-blue-50 text-blue-700 border-blue-200", icon: Calendar },
+      present: { label: "Presente", color: "bg-success-muted text-success border-border", icon: Check },
+      absent: { label: "Ausente", color: "bg-error-muted text-error border-border", icon: User },
+      late: { label: "Tardanza", color: "bg-warning-muted text-warning border-border", icon: Clock },
+      justified: { label: "Justificado", color: "bg-primary/10 text-primary border-border", icon: Calendar },
     };
-    return configs[status] || { label: status, color: "bg-gray-50 text-gray-700 border-gray-200", icon: User };
+    return configs[status] || { label: status, color: "bg-surface-muted text-text-secondary border-border", icon: User };
   };
 
   const handleEdit = (assistance: Assistance) => {
@@ -146,7 +146,7 @@ export default function AssistanceDisplay({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
           <span>Cargando asistencia...</span>
         </div>
@@ -211,7 +211,7 @@ export default function AssistanceDisplay({
             <div className="space-y-6">
               {Object.entries(assistancesByMonth).map(([monthKey, monthData]) => (
                 <div key={monthKey} className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-text-secondary flex items-center gap-2">
                     <CalendarDays className="h-4 w-4" />
                     {monthData.name}
                   </h3>
@@ -250,13 +250,13 @@ export default function AssistanceDisplay({
                                   onClick={() => handleEdit(assistance)}
                                   className="p-1.5 rounded hover:bg-accent transition-colors"
                                 >
-                                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <Pencil className="h-3.5 w-3.5 text-text-secondary" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(assistance.id)}
                                   className="p-1.5 rounded hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <Trash2 className="h-3.5 w-3.5 text-text-secondary" />
                                 </button>
                               </div>
                             )}

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/sacred";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BookOpen, 
@@ -104,15 +103,15 @@ export default function SelfAssessableView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-blue-500" />
+          <h2 className="text-2xl font-semibold flex items-center gap-2 text-text-primary">
+            <BookOpen className="h-6 w-6 text-primary" />
             Autoevaluables
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-text-secondary">
             Sistema de evaluación interactiva y autónoma
           </p>
         </div>
-        <Badge variant="outline" className="text-lg px-3 py-1">
+        <Badge variant="neutral">
           {stats.total} total
         </Badge>
       </div>
@@ -149,15 +148,15 @@ export default function SelfAssessableView({
             {/* Estadísticas por estado */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-text-secondary">
                   Disponibles hoy
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-semibold text-primary">
                   {stats.byStatus.available}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-blue-600">
+                <div className="flex items-center gap-1 text-xs text-primary">
                   <Activity className="h-3 w-3" />
                   Activos
                 </div>
@@ -166,15 +165,15 @@ export default function SelfAssessableView({
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-text-secondary">
                   Pendientes
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">
+                <div className="text-2xl font-semibold text-warning">
                   {stats.byStatus.pending}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-orange-600">
+                <div className="flex items-center gap-1 text-xs text-warning">
                   <Calendar className="h-3 w-3" />
                   Próximos
                 </div>
@@ -183,15 +182,15 @@ export default function SelfAssessableView({
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-text-secondary">
                   Vencidos
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-2xl font-semibold text-error">
                   {stats.byStatus.expired}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-red-600">
+                <div className="flex items-center gap-1 text-xs text-error">
                   <TrendingUp className="h-3 w-3" />
                   Pasados
                 </div>
@@ -200,15 +199,15 @@ export default function SelfAssessableView({
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-text-secondary">
                   Total materias
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-600">
+                <div className="text-2xl font-semibold text-text-primary">
                   {stats.bySubject.length}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-purple-600">
+                <div className="flex items-center gap-1 text-xs text-text-secondary">
                   <Users className="h-3 w-3" />
                   Activas
                 </div>
@@ -233,21 +232,21 @@ export default function SelfAssessableView({
                       <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center gap-2 flex-1">
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{subject}</div>
+                            <div className="text-sm font-medium truncate text-text-primary">{subject}</div>
                             <div className="flex items-center gap-2 mt-1">
-                              <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                                <div 
-                                  className="bg-blue-600 h-2 rounded-full" 
+                              <div className="w-full bg-surface-muted rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full"
                                   style={{ width: `${percentage}%` }}
                                 />
                               </div>
-                              <span className="text-xs text-muted-foreground min-w-[3rem]">
+                              <span className="text-xs text-text-muted min-w-[3rem]">
                                 {percentage.toFixed(1)}%
                               </span>
                             </div>
                           </div>
                         </div>
-                        <Badge variant="outline" className="ml-2">
+                        <Badge variant="neutral" className="ml-2">
                           {count}
                         </Badge>
                       </div>
@@ -283,23 +282,22 @@ export default function SelfAssessableView({
                       <div key={exam.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1 min-w-0">
                           <div className="font-medium truncate">{exam.task}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-text-secondary">
                             {subject?.name || "Sin materia"}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-medium">
-                            {dueDate.toLocaleDateString("es-AR", { 
-                              day: "numeric", 
-                              month: "short" 
+                          <div className="text-sm font-medium text-text-primary">
+                            {dueDate.toLocaleDateString("es-AR", {
+                              day: "numeric",
+                              month: "short"
                             })}
                           </div>
-                          <Badge 
-                            variant={daysUntil <= 1 ? "destructive" : daysUntil <= 3 ? "default" : "secondary"}
-                            className="text-xs"
+                          <Badge
+                            variant={daysUntil <= 1 ? "error" : daysUntil <= 3 ? "warning" : "neutral"}
                           >
-                            {daysUntil === 0 ? "Hoy" : 
-                             daysUntil === 1 ? "Mañana" : 
+                            {daysUntil === 0 ? "Hoy" :
+                             daysUntil === 1 ? "Mañana" :
                              `${daysUntil} días`}
                           </Badge>
                         </div>
@@ -317,7 +315,7 @@ export default function SelfAssessableView({
               <CardTitle>Vista de Calendario</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center text-muted-foreground py-8">
+              <div className="text-center text-text-secondary py-8">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Vista de calendario próximamente</p>
                 <p className="text-sm">Mientras tanto, revisa los próximos autoevaluables arriba</p>

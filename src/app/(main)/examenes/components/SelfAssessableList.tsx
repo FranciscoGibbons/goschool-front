@@ -154,23 +154,23 @@ export default function SelfAssessableList({
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div className="minimal-card text-center">
             <p className="text-2xl font-semibold">{statusCounts.total}</p>
-            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="text-xs text-text-secondary">Total</p>
           </div>
           <div className="minimal-card text-center">
-            <p className="text-2xl font-semibold text-gray-600">{statusCounts.pending}</p>
-            <p className="text-xs text-muted-foreground">Pendientes</p>
+            <p className="text-2xl font-semibold text-text-secondary">{statusCounts.pending}</p>
+            <p className="text-xs text-text-muted">Pendientes</p>
           </div>
           <div className="minimal-card text-center">
-            <p className="text-2xl font-semibold text-blue-600">{statusCounts.available}</p>
-            <p className="text-xs text-muted-foreground">Disponibles</p>
+            <p className="text-2xl font-semibold text-primary">{statusCounts.available}</p>
+            <p className="text-xs text-text-muted">Disponibles</p>
           </div>
           <div className="minimal-card text-center">
-            <p className="text-2xl font-semibold text-green-600">{statusCounts.completed}</p>
-            <p className="text-xs text-muted-foreground">Completados</p>
+            <p className="text-2xl font-semibold text-success">{statusCounts.completed}</p>
+            <p className="text-xs text-text-muted">Completados</p>
           </div>
           <div className="minimal-card text-center">
-            <p className="text-2xl font-semibold text-red-600">{statusCounts.expired}</p>
-            <p className="text-xs text-muted-foreground">Vencidos</p>
+            <p className="text-2xl font-semibold text-error">{statusCounts.expired}</p>
+            <p className="text-xs text-text-muted">Vencidos</p>
           </div>
         </div>
       )}
@@ -178,7 +178,7 @@ export default function SelfAssessableList({
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
           <Input
             placeholder="Buscar..."
             value={filters.search}
@@ -297,7 +297,7 @@ export default function SelfAssessableList({
           Autoevaluables ({sortedExams.length})
         </h3>
         {loadingAnswered && (
-          <span className="text-xs text-muted-foreground animate-pulse">
+          <span className="text-xs text-text-secondary animate-pulse">
             Verificando estado...
           </span>
         )}

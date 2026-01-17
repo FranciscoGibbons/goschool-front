@@ -32,8 +32,8 @@ export default function ChatPage() {
               <div className="flex items-center gap-1.5 text-xs">
                 {wsConnected ? (
                   <>
-                    <Wifi className="h-3.5 w-3.5 text-green-500" />
-                    <span className="text-muted-foreground">Online</span>
+                    <Wifi className="h-3.5 w-3.5 text-success" />
+                    <span className="text-text-secondary">Online</span>
                   </>
                 ) : (
                   <>
@@ -52,7 +52,7 @@ export default function ChatPage() {
               </Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-text-secondary">
             {chats.length} {chats.length === 1 ? 'conversation' : 'conversations'}
           </p>
         </div>
@@ -73,7 +73,7 @@ export default function ChatPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-semibold mb-2">Welcome to Chat</h2>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-text-secondary mb-4">
                   Select a conversation to start messaging
                 </p>
                 <Button onClick={() => setShowNewChat(true)}>

@@ -11,9 +11,7 @@ import {
   ChevronLeftIcon, 
   ChevronRightIcon 
 } from "@heroicons/react/24/outline";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button, Badge, Card, CardContent } from "@/components/sacred";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -68,16 +66,16 @@ export function SubmissionTable({
 
   const getStatusBadge = (submission: Submission) => {
     if (!submission.due_date) {
-      return <Badge variant="secondary">Sin fecha límite</Badge>;
+      return <Badge variant="neutral">Sin fecha límite</Badge>;
     }
 
     const dueDate = new Date(submission.due_date);
     const submittedDate = new Date(submission.submitted_at);
 
     if (submittedDate <= dueDate) {
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">A tiempo</Badge>;
+      return <Badge variant="success">A tiempo</Badge>;
     } else {
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">Tardía</Badge>;
+      return <Badge variant="error">Tardía</Badge>;
     }
   };
 
@@ -97,7 +95,7 @@ export function SubmissionTable({
     return (
       <Card>
         <CardContent className="p-8">
-          <div className="text-center text-muted-foreground">
+          <div className="text-center text-text-secondary">
             <EyeIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No hay entregas</h3>
             <p>No se encontraron entregas que coincidan con los filtros aplicados.</p>
@@ -136,7 +134,7 @@ export function SubmissionTable({
                           <span className="text-2xl">{fileIcon}</span>
                           <div>
                             <p className="font-medium">{fileName}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-text-secondary">
                               {submission.assessment_type && (
                                 <span className="capitalize">{submission.assessment_type}</span>
                               )}
@@ -152,7 +150,7 @@ export function SubmissionTable({
                              `Estudiante ID: ${submission.student_id}`}
                           </p>
                           {submission.course_name && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-text-secondary">
                               {submission.course_name}
                             </p>
                           )}
@@ -162,7 +160,7 @@ export function SubmissionTable({
                         <div>
                           <p className="font-medium">{submission.task_name || `Tarea ID: ${submission.task_id}`}</p>
                           {submission.subject_name && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-text-secondary">
                               {submission.subject_name}
                             </p>
                           )}
@@ -172,7 +170,7 @@ export function SubmissionTable({
                         <p className="text-sm">
                           {format(new Date(submission.submitted_at), "dd 'de' MMMM, yyyy", { locale: es })}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-text-secondary">
                           {format(new Date(submission.submitted_at), "HH:mm", { locale: es })}
                         </p>
                       </td>
@@ -254,11 +252,11 @@ export function SubmissionTable({
                       <span className="text-2xl">{fileIcon}</span>
                       <div className="flex-1">
                         <p className="font-medium">{fileName}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-text-secondary">
                           {submission.task_name || `Tarea ID: ${submission.task_id}`}
                         </p>
                         {submission.subject_name && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-text-secondary">
                             {submission.subject_name}
                           </p>
                         )}
@@ -272,7 +270,7 @@ export function SubmissionTable({
                          `${submission.student_name || ""} ${submission.student_last_name || ""}`.trim() ||
                          `Estudiante ID: ${submission.student_id}`}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-text-secondary">
                         Entregado: {format(new Date(submission.submitted_at), "dd/MM/yyyy HH:mm", { locale: es })}
                       </p>
                     </div>
@@ -341,7 +339,7 @@ export function SubmissionTable({
       {/* Paginación */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-text-secondary">
             Mostrando {startIndex + 1} a {Math.min(endIndex, submissions.length)} de {submissions.length} entregas
           </p>
           <div className="flex items-center gap-2">

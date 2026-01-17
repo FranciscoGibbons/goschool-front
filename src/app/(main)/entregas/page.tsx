@@ -256,7 +256,7 @@ function EntregasContent() {
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <CloudArrowUpIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-text-primary">
             Entregas
           </h1>
         </div>
@@ -275,7 +275,7 @@ function EntregasContent() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CloudArrowUpIcon className="size-8 text-primary" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-text-primary">
               Mis Entregas
             </h1>
           </div>
@@ -298,7 +298,7 @@ function EntregasContent() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-sm text-muted-foreground">Total entregas</p>
+                  <p className="text-sm text-text-secondary">Total entregas</p>
                 </div>
               </div>
             </CardContent>
@@ -307,12 +307,12 @@ function EntregasContent() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-success-muted rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-success" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.onTime}</p>
-                  <p className="text-sm text-muted-foreground">A tiempo</p>
+                  <p className="text-sm text-text-secondary">A tiempo</p>
                 </div>
               </div>
             </CardContent>
@@ -321,12 +321,12 @@ function EntregasContent() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                  <XCircle className="h-5 w-5 text-red-600" />
+                <div className="p-2 bg-error-muted rounded-lg">
+                  <XCircle className="h-5 w-5 text-error" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.late}</p>
-                  <p className="text-sm text-muted-foreground">Tardías</p>
+                  <p className="text-sm text-text-secondary">Tardías</p>
                 </div>
               </div>
             </CardContent>
@@ -335,12 +335,12 @@ function EntregasContent() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                  <Clock className="h-5 w-5 text-orange-600" />
+                <div className="p-2 bg-warning-muted rounded-lg">
+                  <Clock className="h-5 w-5 text-warning" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{Math.max(0, stats.pending)}</p>
-                  <p className="text-sm text-muted-foreground">Pendientes</p>
+                  <p className="text-sm text-text-secondary">Pendientes</p>
                 </div>
               </div>
             </CardContent>
@@ -358,7 +358,7 @@ function EntregasContent() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
                 <Input
                   placeholder="Buscar entregas..."
                   value={searchQuery}
@@ -430,7 +430,7 @@ function EntregasContent() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CloudArrowUpIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-text-primary">
             Entregas
           </h1>
         </div>
@@ -471,7 +471,7 @@ function EntregasContent() {
             <div className="flex items-center gap-4">
               <button
                 onClick={handleBackToStudent}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-text-secondary hover:text-foreground transition-colors"
               >
                 ← Volver a selección de estudiante
               </button>
@@ -488,7 +488,7 @@ function EntregasContent() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats.total}</p>
-                    <p className="text-sm text-muted-foreground">Total entregas</p>
+                    <p className="text-sm text-text-secondary">Total entregas</p>
                   </div>
                 </div>
               </CardContent>
@@ -497,12 +497,12 @@ function EntregasContent() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div className="p-2 bg-success-muted rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-success" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats.onTime}</p>
-                    <p className="text-sm text-muted-foreground">A tiempo</p>
+                    <p className="text-sm text-text-secondary">A tiempo</p>
                   </div>
                 </div>
               </CardContent>
@@ -511,12 +511,12 @@ function EntregasContent() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                  <div className="p-2 bg-error-muted rounded-lg">
+                    <XCircle className="h-5 w-5 text-error" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats.late}</p>
-                    <p className="text-sm text-muted-foreground">Tardías</p>
+                    <p className="text-sm text-text-secondary">Tardías</p>
                   </div>
                 </div>
               </CardContent>
@@ -525,12 +525,12 @@ function EntregasContent() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                    <Clock className="h-5 w-5 text-orange-600" />
+                  <div className="p-2 bg-warning-muted rounded-lg">
+                    <Clock className="h-5 w-5 text-warning" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{Math.max(0, stats.pending)}</p>
-                    <p className="text-sm text-muted-foreground">Pendientes</p>
+                    <p className="text-sm text-text-secondary">Pendientes</p>
                   </div>
                 </div>
               </CardContent>
@@ -548,7 +548,7 @@ function EntregasContent() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
                   <Input
                     placeholder="Buscar por estudiante o tarea..."
                     value={searchQuery}

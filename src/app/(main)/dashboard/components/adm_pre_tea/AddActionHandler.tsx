@@ -52,7 +52,7 @@ export const AddActionHandler = ({ role }: { role: ActionableRole }) => {
     <Dialog open={modalOpen} onOpenChange={setModalOpen}>
       <DialogTrigger asChild>
         <Button 
-          className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white shadow-lg rounded-full border border-blue-600 dark:border-blue-700 w-16 h-16 pb-3.5 cursor-pointer flex justify-center"
+          className="bg-primary hover:bg-primary-hover text-primary-foreground rounded-full border border-primary w-16 h-16 pb-3.5 cursor-pointer flex justify-center"
         >
           <span className="text-4xl font-[350] leading-none">+</span>
         </Button>

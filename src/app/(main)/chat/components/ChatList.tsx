@@ -3,7 +3,7 @@
 import { useChatStore } from '@/store/chatStore';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/sacred';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -34,7 +34,7 @@ export default function ChatList() {
   if (chats.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center text-muted-foreground">
+        <div className="text-center text-text-secondary">
           <p className="text-sm">No hay conversaciones</p>
           <p className="text-xs mt-1">Crea una nueva para empezar</p>
         </div>
@@ -70,7 +70,7 @@ export default function ChatList() {
                 </AvatarFallback>
               </Avatar>
               {isOnline && (
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card animate-pulse" />
+                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success border-2 border-surface" />
               )}
             </div>
 
@@ -84,21 +84,18 @@ export default function ChatList() {
                   {chat.name}
                 </h3>
                 {chat.last_message_time && (
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                  <span className="text-xs text-text-secondary flex-shrink-0">
                     {formatTime(chat.last_message_time)}
                   </span>
                 )}
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm text-muted-foreground truncate flex-1">
+                <p className="text-sm text-text-secondary truncate flex-1">
                   {chat.last_message || 'No messages yet'}
                 </p>
                 {chat.unread_count > 0 && (
-                  <Badge
-                    variant="default"
-                    className="h-5 min-w-[1.25rem] px-1.5 text-xs font-bold animate-in fade-in zoom-in"
-                  >
+                  <Badge variant="info">
                     {chat.unread_count > 99 ? '99+' : chat.unread_count}
                   </Badge>
                 )}

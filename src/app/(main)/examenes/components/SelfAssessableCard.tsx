@@ -175,10 +175,10 @@ export default function SelfAssessableCard({
   };
 
   const getStatus = () => {
-    if (answered) return { label: "Completado", color: "bg-green-50 text-green-700 border-green-200", icon: Check };
-    if (isBefore) return { label: "Pendiente", color: "bg-gray-50 text-gray-700 border-gray-200", icon: Clock };
-    if (isToday) return { label: "Disponible", color: "bg-blue-50 text-blue-700 border-blue-200", icon: Sparkles };
-    return { label: "Vencido", color: "bg-red-50 text-red-700 border-red-200", icon: AlertCircle };
+    if (answered) return { label: "Completado", color: "bg-success-muted text-success border-border", icon: Check };
+    if (isBefore) return { label: "Pendiente", color: "bg-surface-muted text-text-secondary border-border", icon: Clock };
+    if (isToday) return { label: "Disponible", color: "bg-primary/10 text-primary border-border", icon: Sparkles };
+    return { label: "Vencido", color: "bg-error-muted text-error border-border", icon: AlertCircle };
   };
 
   const status = getStatus();
@@ -194,7 +194,7 @@ export default function SelfAssessableCard({
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-sm truncate">{exam.task}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-text-secondary mt-0.5">
             {cleanSubjectName(subjectName)}
           </p>
         </div>
@@ -210,7 +210,7 @@ export default function SelfAssessableCard({
           </span>
         )}
         {!isStudent && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-600 text-xs font-medium">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-border bg-surface-muted text-text-secondary text-xs font-medium">
             <User className="h-3 w-3" />
             Vista
           </span>
@@ -218,7 +218,7 @@ export default function SelfAssessableCard({
       </div>
 
       {/* Metadata */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+      <div className="flex items-center gap-4 text-xs text-text-secondary mb-4">
         <div className="flex items-center gap-1.5">
           <Calendar className="h-3 w-3" />
           <span>
@@ -253,7 +253,7 @@ export default function SelfAssessableCard({
             <DialogTitle className="text-lg font-semibold mb-4">{exam.task}</DialogTitle>
 
             {questionsError && (
-              <div className="p-3 rounded bg-red-50 text-red-700 text-sm mb-4">
+              <div className="p-3 rounded bg-error-muted text-error text-sm mb-4">
                 {questionsError}
               </div>
             )}
@@ -312,8 +312,8 @@ export default function SelfAssessableCard({
                 className={cn(
                   "mt-4 p-3 rounded text-sm",
                   result.includes("correctamente")
-                    ? "bg-green-50 text-green-700"
-                    : "bg-red-50 text-red-700"
+                    ? "bg-success-muted text-success"
+                    : "bg-error-muted text-error"
                 )}
               >
                 {result}
@@ -325,7 +325,7 @@ export default function SelfAssessableCard({
 
       {isStudent && answered === true && (
         <div className="text-center py-2">
-          <span className="text-xs text-green-600 flex items-center justify-center gap-1">
+          <span className="text-xs text-success flex items-center justify-center gap-1">
             <Check className="h-3 w-3" />
             Ya completaste esta autoevaluacion
           </span>
@@ -334,7 +334,7 @@ export default function SelfAssessableCard({
 
       {isStudent && !isToday && !answered && (
         <div className="text-center py-2">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-text-secondary">
             {isBefore ? `Disponible el ${dueDate.toLocaleDateString("es-AR", { day: "numeric", month: "short" })}` : "Ya no disponible"}
           </span>
         </div>

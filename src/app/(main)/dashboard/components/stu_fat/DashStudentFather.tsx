@@ -128,7 +128,7 @@ export default function DashStudentFather() {
                       </div>
                     </div>
                     {isExamSoon(exam.due_date) && (
-                      <div className="flex items-center gap-1 text-xs text-yellow-600">
+                      <div className="flex items-center gap-1 text-xs text-warning">
                         <AlertCircle className="h-3 w-3" />
                         <span>Proximo</span>
                       </div>

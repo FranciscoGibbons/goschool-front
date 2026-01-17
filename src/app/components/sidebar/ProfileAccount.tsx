@@ -16,7 +16,9 @@ import {
   UserCircleIcon,
   ArrowLeftStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+import { RefreshCw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Badge } from "@/components/sacred";
 import axios from "axios";
 
 
@@ -60,36 +62,27 @@ export default function ProfileAccount() {
   };
 
   const roleDisplay = (role: string) => {
-    const roleColors: { [key: string]: string } = {
-      student:
-        "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      teacher:
-        "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-      admin: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-      preceptor:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-      father:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+    const roleVariants: { [key: string]: "success" | "info" | "error" | "warning" | "neutral" } = {
+      student: "success",
+      teacher: "info",
+      admin: "error",
+      preceptor: "warning",
+      father: "neutral",
     };
     return (
-      <span
-        className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-          roleColors[role] || "bg-gray-100 text-gray-800"
-        }`}
-      >
+      <Badge variant={roleVariants[role] || "neutral"}>
         {role.toUpperCase()}
-      </span>
+      </Badge>
     );
   };
 
   if (isLoading) {
-    // Placeholder mientras carga la información
     return (
-      <div className="flex items-center gap-3 p-2 rounded-lg animate-pulse">
-        <div className="h-10 w-10 rounded-full bg-muted"></div>
+      <div className="flex items-center gap-3 p-2 rounded-lg">
+        <div className="h-10 w-10 rounded-full bg-surface-muted"></div>
         <div className="flex flex-col gap-1">
-          <div className="h-4 w-32 bg-muted rounded"></div>
-          <div className="h-3 w-20 bg-muted rounded"></div>
+          <div className="h-4 w-32 bg-surface-muted rounded"></div>
+          <div className="h-3 w-20 bg-surface-muted rounded"></div>
         </div>
       </div>
     );
@@ -98,14 +91,14 @@ export default function ProfileAccount() {
   if (error) {
     return (
       <div className="flex items-center gap-3 p-2 rounded-lg">
-        <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-          <span className="text-red-600 text-xs">!</span>
+        <div className="h-10 w-10 rounded-full bg-error-muted flex items-center justify-center">
+          <span className="text-error text-xs">!</span>
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-sm text-red-600">Error al cargar</div>
+          <div className="text-sm text-error">Error al cargar</div>
           <button
             onClick={fetchUserInfo}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             Reintentar
           </button>
@@ -117,14 +110,14 @@ export default function ProfileAccount() {
   if (!userInfo || !userInfo.role) {
     return (
       <div className="flex items-center gap-3 p-2 rounded-lg">
-        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-          <span className="text-gray-600 text-xs">?</span>
+        <div className="h-10 w-10 rounded-full bg-surface-muted flex items-center justify-center">
+          <span className="text-text-muted text-xs">?</span>
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-sm text-gray-600">No hay datos</div>
+          <div className="text-sm text-text-muted">No hay datos</div>
           <button
             onClick={fetchUserInfo}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             Cargar datos
           </button>
@@ -189,9 +182,10 @@ export default function ProfileAccount() {
 
         <DropdownMenuItem
           onClick={forceRefresh}
-          className="flex items-center gap-2 cursor-pointer text-blue-600 focus:text-blue-600"
+          className="flex items-center gap-2 cursor-pointer text-primary focus:text-primary"
         >
-          <span>🔄 Recargar Foto</span>
+          <RefreshCw className="h-5 w-5" />
+          <span>Recargar Foto</span>
         </DropdownMenuItem>
 
         <DropdownMenuItem

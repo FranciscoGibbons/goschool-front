@@ -28,7 +28,7 @@ export async function DashStudentFatherServer({ exams }: Props) {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Card de Exámenes */}
-      <Card className="shadow-lg border-border">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
             <BookOpenIcon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
@@ -38,8 +38,8 @@ export async function DashStudentFatherServer({ exams }: Props) {
         <CardContent>
           {exams.length === 0 ? (
             <div className="text-center py-8">
-              <BookOpenIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">
+              <BookOpenIcon className="h-12 w-12 text-text-secondary mx-auto mb-4" />
+              <p className="text-text-secondary text-lg">
                 No hay exámenes asignados
               </p>
             </div>
@@ -56,7 +56,7 @@ export async function DashStudentFatherServer({ exams }: Props) {
                       <h3 className="font-semibold text-foreground mb-2">
                         {exam.task}
                       </h3>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-text-secondary">
                         <div className="flex items-center gap-1">
                           <CalendarIcon className="h-4 w-4" />
                           <span>{formatDate(exam.due_date)}</span>
@@ -70,14 +70,14 @@ export async function DashStudentFatherServer({ exams }: Props) {
                         </span>
                       </div>
                     </div>
-                    <ArrowRightIcon className="h-4 w-4 text-muted-foreground ml-2" />
+                    <ArrowRightIcon className="h-4 w-4 text-text-secondary ml-2" />
                   </div>
                 </Link>
               ))}
 
               {exams.length > 3 && (
                 <div className="text-center pt-2">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-text-secondary">
                     Y {exams.length - 3} exámenes más...
                   </p>
                 </div>

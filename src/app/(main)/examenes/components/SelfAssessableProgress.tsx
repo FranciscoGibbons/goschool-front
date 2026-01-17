@@ -1,7 +1,6 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/sacred";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle, 
   Clock, 
@@ -38,7 +37,7 @@ export default function SelfAssessableProgress({
     <Card className={cn("", className)}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Target className="h-5 w-5 text-blue-500" />
+          <Target className="h-5 w-5 text-primary" />
           Progreso del Autoevaluable
         </CardTitle>
       </CardHeader>
@@ -46,11 +45,11 @@ export default function SelfAssessableProgress({
         {/* Progreso principal */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Progreso general</span>
+            <span className="text-text-secondary">Progreso general</span>
             <span className="font-medium">{Math.round(progressPercentage)}%</span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="flex justify-between text-xs text-text-secondary">
             <span>{completedQuestions} completadas</span>
             <span>{totalQuestions} total</span>
           </div>
@@ -60,11 +59,11 @@ export default function SelfAssessableProgress({
         {currentProgress > 0 && currentProgress !== completedQuestions && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Progreso actual</span>
+              <span className="text-text-secondary">Progreso actual</span>
               <span className="font-medium">{Math.round(currentProgressPercentage)}%</span>
             </div>
-            <Progress value={currentProgressPercentage} className="h-2 bg-blue-100" />
-            <div className="flex justify-between text-xs text-muted-foreground">
+            <Progress value={currentProgressPercentage} className="h-2 bg-primary/20" />
+            <div className="flex justify-between text-xs text-text-secondary">
               <span>{currentProgress} respondidas</span>
               <span>{totalQuestions} total</span>
             </div>
@@ -75,18 +74,18 @@ export default function SelfAssessableProgress({
         <div className="grid grid-cols-2 gap-3">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Completadas</span>
+              <CheckCircle className="h-4 w-4 text-success" />
+              <span className="text-xs text-text-secondary">Completadas</span>
             </div>
-            <div className="text-lg font-semibold text-green-600">{completedQuestions}</div>
+            <div className="text-lg font-semibold text-success">{completedQuestions}</div>
           </div>
-          
+
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Clock className="h-4 w-4 text-orange-500" />
-              <span className="text-xs text-muted-foreground">Pendientes</span>
+              <Clock className="h-4 w-4 text-warning" />
+              <span className="text-xs text-text-secondary">Pendientes</span>
             </div>
-            <div className="text-lg font-semibold text-orange-600">{pendingQuestions}</div>
+            <div className="text-lg font-semibold text-warning">{pendingQuestions}</div>
           </div>
         </div>
 
@@ -97,10 +96,10 @@ export default function SelfAssessableProgress({
             {stats.total_attempts !== undefined && stats.total_attempts > 0 && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm">
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
-                  <span className="text-muted-foreground">Intentos realizados</span>
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <span className="text-text-secondary">Intentos realizados</span>
                 </div>
-                <Badge variant="outline">{stats.total_attempts}</Badge>
+                <Badge variant="neutral">{stats.total_attempts}</Badge>
               </div>
             )}
 
@@ -108,16 +107,15 @@ export default function SelfAssessableProgress({
             {stats.best_score !== undefined && stats.best_score > 0 && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm">
-                  <Target className="h-4 w-4 text-yellow-500" />
-                  <span className="text-muted-foreground">Mejor puntuación</span>
+                  <Target className="h-4 w-4 text-warning" />
+                  <span className="text-text-secondary">Mejor puntuación</span>
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className={cn(
-                    stats.best_score >= 80 ? "text-green-700 border-green-300 bg-green-50" :
-                    stats.best_score >= 60 ? "text-yellow-700 border-yellow-300 bg-yellow-50" :
-                    "text-red-700 border-red-300 bg-red-50"
-                  )}
+                <Badge
+                  variant={
+                    stats.best_score >= 80 ? "success" :
+                    stats.best_score >= 60 ? "warning" :
+                    "error"
+                  }
                 >
                   {stats.best_score.toFixed(1)}%
                 </Badge>
@@ -128,10 +126,10 @@ export default function SelfAssessableProgress({
             {stats.average_score !== undefined && stats.average_score > 0 && stats.total_attempts && stats.total_attempts > 1 && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm">
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
-                  <span className="text-muted-foreground">Puntuación promedio</span>
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <span className="text-text-secondary">Puntuación promedio</span>
                 </div>
-                <Badge variant="outline">{stats.average_score.toFixed(1)}%</Badge>
+                <Badge variant="neutral">{stats.average_score.toFixed(1)}%</Badge>
               </div>
             )}
           </div>
@@ -139,7 +137,7 @@ export default function SelfAssessableProgress({
 
         {/* Estado de alerta si hay pocas respuestas */}
         {totalQuestions > 0 && completedQuestions > 0 && progressPercentage < 50 && (
-          <div className="flex items-center gap-2 p-2 bg-orange-50 border border-orange-200 rounded-lg text-orange-800 text-sm dark:bg-orange-950/20 dark:border-orange-800 dark:text-orange-200">
+          <div className="flex items-center gap-2 p-2 bg-warning-muted border border-border rounded-lg text-warning text-sm">
             <AlertTriangle className="h-4 w-4" />
             <span>Completa más preguntas para obtener mejores resultados</span>
           </div>
@@ -147,9 +145,9 @@ export default function SelfAssessableProgress({
 
         {/* Estado de finalización */}
         {progressPercentage === 100 && (
-          <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm dark:bg-green-950/20 dark:border-green-800 dark:text-green-200">
+          <div className="flex items-center gap-2 p-2 bg-success-muted border border-border rounded-lg text-success text-sm">
             <CheckCircle className="h-4 w-4" />
-            <span>¡Autoevaluable completado!</span>
+            <span>Autoevaluable completado</span>
           </div>
         )}
       </CardContent>

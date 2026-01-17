@@ -59,10 +59,10 @@ export function QuizResults({
                 )}
                 <p
                   className={`font-medium ${
-                    isCorrect ? "text-green-600" : "text-red-600"
+                    isCorrect ? "text-success" : "text-error"
                   }`}
                 >
-                  {isCorrect ? "✓ Correcta" : "✗ Incorrecta"}
+                  {isCorrect ? "Correcta" : "Incorrecta"}
                 </p>
               </div>
             </Card>

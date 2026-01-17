@@ -207,9 +207,9 @@ function Tooltip({ text, visible, position }: TooltipProps) {
         transform: 'translateX(-50%)',
       }}
     >
-      <div className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-2 rounded-full text-sm font-medium shadow-lg whitespace-nowrap">
+      <div className="bg-text-primary text-background px-3 py-2 rounded-md text-sm font-medium shadow-sm whitespace-nowrap">
         {text}
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-100" />
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-text-primary" />
       </div>
     </div>
   );
@@ -241,7 +241,7 @@ export default function BottomNavbar() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-800/50 lg:block hidden shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border lg:block hidden">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-center space-x-1 py-2">
             {menuItems.map((item) => {
@@ -256,7 +256,7 @@ export default function BottomNavbar() {
                     "flex items-center justify-center p-3 rounded-full transition-all duration-200 relative group",
                     isActive 
                       ? "bg-primary/10 text-primary" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      : "text-text-secondary hover:text-foreground hover:bg-muted/50"
                   )}
                   onMouseEnter={(e) => handleMouseEnter(item.name, e)}
                   onMouseLeave={handleMouseLeave}
@@ -264,7 +264,7 @@ export default function BottomNavbar() {
                   <IconComponent 
                     className={cn(
                       "h-6 w-6 transition-all duration-200",
-                      isActive ? "text-primary scale-110" : "text-muted-foreground group-hover:scale-105"
+                      isActive ? "text-primary scale-110" : "text-text-secondary group-hover:scale-105"
                     )} 
                   />
                 </Link>
@@ -272,7 +272,7 @@ export default function BottomNavbar() {
             })}
             
             {/* Profile Dropdown */}
-            <div className="ml-2 pl-2 border-l border-gray-200/50 dark:border-gray-800/50">
+            <div className="ml-2 pl-2 border-l border-border">
               <ProfileDropdown 
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}

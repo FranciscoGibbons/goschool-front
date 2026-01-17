@@ -92,7 +92,7 @@ export default function ChatWindow({ chatId }: ChatWindowProps) {
           <div>
             <h2 className="font-semibold">{chat.name}</h2>
             {chat.chat_type === 'group' && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <p className="text-xs text-text-secondary flex items-center gap-1">
                 <Users className="h-3 w-3" />
                 {chat.participants?.length || 0} members
               </p>
@@ -109,7 +109,7 @@ export default function ChatWindow({ chatId }: ChatWindowProps) {
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-background to-accent/5"
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-surface"
       >
         {isLoadingMore && (
           <div className="text-center py-2">
