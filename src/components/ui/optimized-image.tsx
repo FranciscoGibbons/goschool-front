@@ -45,7 +45,8 @@ export function OptimizedImage({
       {isLoading && showLoader && (
         <div 
           className={cn(
-            'absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800',
+            'absolute inset-0 flex items-center justify-center bg-muted',
+
             loaderClassName
           )}
         >
@@ -100,13 +101,14 @@ export function AvatarImage({
 
   if (!src || imageError) {
     return (
-      <div 
-        className={cn(
-          'rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold',
-          sizeClasses[size],
-          className
-        )}
-      >
+        <div 
+          className={cn(
+            'rounded-full bg-gradient-to-br from-blue-500 via-sky-500 to-emerald-500 flex items-center justify-center text-white font-semibold',
+            sizeClasses[size],
+            className
+          )}
+        >
+
         {fallbackInitials || alt.charAt(0).toUpperCase()}
       </div>
     );
@@ -128,7 +130,8 @@ export function AvatarImage({
 
 // Componente para logos e imágenes institucionales
 interface LogoImageProps {
-  variant?: 'primary' | 'secondary' | 'dark' | 'light';
+  variant?: 'primary' | 'secondary' | 'light';
+
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -137,9 +140,9 @@ export function LogoImage({ variant = 'primary', size = 'md', className }: LogoI
   const logoSources = {
     primary: '/images/logo.webp',
     secondary: '/images/logo-secondary.webp',
-    dark: '/images/logo-dark.webp',
     light: '/images/logo-light.webp'
   };
+
 
   const sizeClasses = {
     sm: 'h-8 w-auto',
@@ -222,7 +225,8 @@ export function LazyImage({
       ) : (
         <div 
           className={cn(
-            'bg-gray-200 dark:bg-gray-700 animate-pulse',
+            'bg-muted animate-pulse',
+
             props.className
           )}
           style={{ 

@@ -11,8 +11,11 @@ import {
   ChevronLeftIcon, 
   ChevronRightIcon 
 } from "@heroicons/react/24/outline";
-import { Button, Badge, Card, CardContent } from "@/components/sacred";
-import { 
+import {
+  Button,
+  Badge,
+  Card,
+  CardContent,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -22,8 +25,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+  LoadingSpinner,
+} from "@/components/sacred";
+
 import userInfoStore from "@/store/userInfoStore";
 import type { Submission } from "@/types/submission";
 import { getFileIcon } from "@/types/submission";
@@ -96,10 +100,11 @@ export function SubmissionTable({
       <Card>
         <CardContent className="p-8">
           <div className="text-center text-text-secondary">
-            <EyeIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No hay entregas</h3>
-            <p>No se encontraron entregas que coincidan con los filtros aplicados.</p>
+            <EyeIcon className="mx-auto h-12 w-12 mb-4 opacity-50 text-text-muted" />
+            <h3 className="text-lg font-medium mb-2 text-text-primary">No hay entregas</h3>
+            <p className="text-sm text-text-secondary">No se encontraron entregas que coincidan con los filtros aplicados.</p>
           </div>
+
         </CardContent>
       </Card>
     );
@@ -112,7 +117,8 @@ export function SubmissionTable({
           {/* Vista Desktop */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-muted/50 border-b">
+              <thead className="bg-surface-muted border-b">
+
                 <tr>
                   <th className="text-left p-4 font-medium">Archivo</th>
                   <th className="text-left p-4 font-medium">Estudiante</th>
@@ -128,7 +134,8 @@ export function SubmissionTable({
                   const fileIcon = getFileIcon(fileName);
                   
                   return (
-                    <tr key={submission.id} className="border-b hover:bg-muted/25">
+                    <tr key={submission.id} className="border-b hover:bg-surface-muted">
+
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">{fileIcon}</span>

@@ -1,11 +1,21 @@
 import { useState, useEffect } from "react";
 import { NewDisciplinarySanction, UpdateDisciplinarySanction, SANCTION_TYPES, SANCTION_LABELS, SanctionType } from "@/types/disciplinarySanction";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Input,
+  Label,
+  Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/sacred";
+
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 

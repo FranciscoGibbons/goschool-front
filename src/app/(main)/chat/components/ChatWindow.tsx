@@ -71,7 +71,8 @@ export default function ChatWindow({ chatId }: ChatWindowProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60 flex items-center justify-between">
+      <div className="p-4 border-b border-border bg-card flex items-center justify-between">
+
         <div className="flex items-center gap-3">
           <Button
             size="icon"

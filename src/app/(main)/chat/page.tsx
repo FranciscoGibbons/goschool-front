@@ -12,7 +12,8 @@ import NewChatModal from './components/NewChatModal';
 
 export default function ChatPage() {
   const [showNewChat, setShowNewChat] = useState(false);
-  const { currentChatId, isConnected, chats } = useChatStore();
+  const { currentChatId, chats } = useChatStore();
+
   const { isConnected: wsConnected } = useWebSocket();
   const { fetchChats } = useChat();
 
@@ -25,7 +26,8 @@ export default function ChatPage() {
       {/* Sidebar */}
       <div className="w-80 border-r border-border flex flex-col bg-card">
         {/* Header */}
-        <div className="p-4 border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div className="p-4 border-b border-border bg-card">
+
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl font-bold">Chats</h1>
             <div className="flex items-center gap-2">

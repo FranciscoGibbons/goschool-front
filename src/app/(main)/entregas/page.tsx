@@ -1,32 +1,37 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { CloudArrowUpIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, FileText, Clock, CheckCircle, XCircle } from "lucide-react";
-
-import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
-import { useSubmissions } from "@/hooks/useSubmissions";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import userInfoStore from "@/store/userInfoStore";
+
+import { PlusIcon } from "@heroicons/react/24/outline";
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ErrorBoundary,
+  ErrorDisplay,
+  LoadingPage,
+  PageHeader,
+} from "@/components/sacred";
+import { toast } from "sonner";
+import { CheckCircle, Clock, FileText, Filter, Search, XCircle } from "lucide-react";
 import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
-import { SubmissionTable } from "./components/SubmissionTable";
 import { SubmissionForm } from "./components/SubmissionForm";
-import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
-import { LoadingPage } from "@/components/ui/loading-spinner";
-import { toast } from "sonner";
-
+import { SubmissionTable } from "./components/SubmissionTable";
+import userInfoStore from "@/store/userInfoStore";
+import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import { useSubmissions } from "@/hooks/useSubmissions";
 import type { Submission, NewSubmission, UpdateSubmission } from "@/types/submission";
+
 
 interface Task {
   id: number;
@@ -254,16 +259,12 @@ function EntregasContent() {
   if (selectionError) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <CloudArrowUpIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-text-primary">
-            Entregas
-          </h1>
-        </div>
+        <PageHeader title="Entregas" />
         <ErrorDisplay 
           error={selectionError}
           retry={() => window.location.reload()}
         />
+
       </div>
     );
   }
@@ -272,21 +273,18 @@ function EntregasContent() {
   if (userInfo?.role === "student") {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CloudArrowUpIcon className="size-8 text-primary" />
-            <h1 className="text-3xl font-bold text-text-primary">
-              Mis Entregas
-            </h1>
-          </div>
-          
-          {canCreateSubmission && (
-            <Button onClick={handleCreateSubmission}>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Nueva Entrega
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="Mis Entregas"
+          action={
+            canCreateSubmission ? (
+              <Button onClick={handleCreateSubmission}>
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Nueva Entrega
+              </Button>
+            ) : null
+          }
+        />
+
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -427,21 +425,18 @@ function EntregasContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <CloudArrowUpIcon className="size-8 text-primary" />
-          <h1 className="text-3xl font-bold text-text-primary">
-            Entregas
-          </h1>
-        </div>
-        
-        {canCreateSubmission && currentStep === "submissions" && (
-          <Button onClick={handleCreateSubmission}>
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Nueva Entrega
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Entregas"
+        action={
+          canCreateSubmission && currentStep === "submissions" ? (
+            <Button onClick={handleCreateSubmission}>
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Nueva Entrega
+            </Button>
+          ) : null
+        }
+      />
+
 
       {currentStep === "course" && (
         <CourseSelector

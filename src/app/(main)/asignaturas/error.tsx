@@ -14,7 +14,8 @@ export default function Error({
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
         <BookOpenIcon className="size-8 text-primary" />
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-foreground">
+
           Asignaturas
         </h1>
       </div>

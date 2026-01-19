@@ -50,13 +50,15 @@ const ModalOverlay = React.forwardRef<
     ref={ref}
     className={cn(
       "fixed inset-0 z-50",
-      "bg-black/40 dark:bg-black/60",
+      "bg-foreground/35",
+      "backdrop-blur-[2px]",
       "data-[state=open]:animate-fade-in",
       className
     )}
     {...props}
   />
 ));
+
 ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 // ==========================================================================
@@ -73,13 +75,14 @@ const ModalContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
-        "w-full max-w-md",
-        "bg-surface border border-border rounded-lg",
+        "w-full max-w-xl",
+        "bg-surface border border-border rounded-lg shadow-sm",
         "p-6",
         "focus:outline-none",
         "data-[state=open]:animate-fade-in",
         className
       )}
+
       {...props}
     >
       {children}

@@ -8,8 +8,8 @@ import CourseSelector from "@/components/CourseSelector";
 import TimetableClient from "./components/TimetableClient";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Button } from "@/components/ui/button";
+import { LoadingSpinner, Button, PageHeader } from "@/components/sacred";
+
 
 function HorarioContent() {
   const { userInfo } = userInfoStore();
@@ -51,14 +51,13 @@ function HorarioContent() {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="page-header">
-          <h1 className="page-title">Horario</h1>
+        <div className="space-y-6">
+          <PageHeader title="Horario" />
+          <div className="sacred-card text-center py-8">
+            <p className="text-error text-sm">{error}</p>
+          </div>
         </div>
-        <div className="minimal-card text-center py-8">
-          <p className="text-destructive text-sm">{error}</p>
-        </div>
-      </div>
+
     );
   }
 
@@ -66,10 +65,7 @@ function HorarioContent() {
   if (userInfo?.role === "student") {
     return (
       <div className="space-y-6">
-        <div className="page-header">
-          <h1 className="page-title">Horario</h1>
-          <p className="page-subtitle">Tu cronograma de clases</p>
-        </div>
+        <PageHeader title="Horario" subtitle="Tu cronograma de clases" />
         <TimetableClient
           courses={courses}
           initialCourseId={undefined}
@@ -79,30 +75,36 @@ function HorarioContent() {
     );
   }
 
+
   // Father without child selected
   if (userInfo?.role === "father" && !selectedChild) {
     return (
-      <div className="space-y-6">
-        <div className="page-header">
-          <h1 className="page-title">Horario</h1>
-          <p className="page-subtitle">Cronograma de clases</p>
+        <div className="space-y-6">
+          <PageHeader title="Horario" subtitle="Cronograma de clases" />
+          <div className="sacred-card text-center py-8">
+            <Clock className="h-10 w-10 text-text-muted mx-auto mb-3" />
+            <p className="text-sm font-medium text-text-primary">Selecciona un hijo</p>
+            <p className="text-sm text-text-secondary mt-1">
+              Usa el selector en la barra lateral
+            </p>
+          </div>
         </div>
-        <div className="empty-state">
-          <Clock className="empty-state-icon" />
-          <p className="empty-state-title">Selecciona un hijo</p>
-          <p className="empty-state-text">
-            Usa el selector en la barra lateral
-          </p>
-        </div>
-      </div>
+
+
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <div className="flex items-center gap-3">
-          {currentStep === "timetable" && (
+      <PageHeader
+        title="Horario"
+        subtitle={
+          currentStep === "course"
+            ? "Selecciona un curso"
+            : "Cronograma de clases"
+        }
+        action={
+          currentStep === "timetable" ? (
             <Button
               variant="ghost"
               size="icon"
@@ -111,17 +113,10 @@ function HorarioContent() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-          )}
-          <div>
-            <h1 className="page-title">Horario</h1>
-            <p className="page-subtitle">
-              {currentStep === "course"
-                ? "Selecciona un curso"
-                : "Cronograma de clases"}
-            </p>
-          </div>
-        </div>
-      </div>
+          ) : null
+        }
+      />
+
 
       {currentStep === "course" && (
         <CourseSelector

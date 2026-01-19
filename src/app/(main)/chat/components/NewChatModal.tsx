@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
 import { Search, Users, MessageCircle } from 'lucide-react';
 import {
   Dialog,
@@ -37,18 +38,19 @@ export default function NewChatModal({ isOpen, onClose }: NewChatModalProps) {
   const { fetchAvailableUsers, createChat } = useChat();
   const { setCurrentChat } = useChatStore();
 
-  useEffect(() => {
-    if (isOpen) {
-      loadUsers();
-    }
-  }, [isOpen]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setIsLoading(true);
     const users = await fetchAvailableUsers();
     setAvailableUsers(users);
     setIsLoading(false);
-  };
+  }, [fetchAvailableUsers]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadUsers();
+    }
+  }, [isOpen, loadUsers]);
+
 
   const handleUserToggle = (userId: number) => {
     if (chatType === 'direct') {

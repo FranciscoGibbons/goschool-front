@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, Button } from "@/components/sacred";
+
 import {
   CalendarIcon,
   UsersIcon,
@@ -70,18 +70,19 @@ export default function CourseSelector({
   if (courses.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
-        <p className="text-muted-foreground">No hay cursos disponibles</p>
+        <p className="text-text-secondary">No hay cursos disponibles</p>
       </div>
     );
   }
 
+
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2 className="text-2xl font-semibold text-text-primary mb-2">
           Selecciona un curso
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-text-secondary">
           Elige el curso para ver su horario
         </p>
       </div>
@@ -90,23 +91,24 @@ export default function CourseSelector({
         {courses.map((course) => (
           <Card
             key={course.id}
-            className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+            interactive
+            className={
               selectedCourseId === course.id
-                ? "ring-2 ring-primary bg-primary/5"
-                : "hover:bg-muted/50"
-            }`}
+                ? "border-primary/50 bg-surface-muted"
+                : ""
+            }
             onClick={() => onCourseSelect(course.id)}
           >
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-md text-primary">
                   {getCourseIcon(course)}
                 </div>
                 <div>
                   <CardTitle className="text-lg">
                     {getCourseLabel(course)}
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-text-secondary">
                     {getLevelLabel(course.level)} •{" "}
                     {getShiftLabel(course.shift)}
                   </p>
@@ -114,7 +116,7 @@ export default function CourseSelector({
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
                 <CalendarIcon className="w-4 h-4" />
                 <span>Ver horario</span>
               </div>
@@ -122,6 +124,7 @@ export default function CourseSelector({
           </Card>
         ))}
       </div>
+
 
       {selectedCourseId && (
         <div className="flex justify-center pt-4">

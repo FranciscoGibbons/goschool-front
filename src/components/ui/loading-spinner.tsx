@@ -64,26 +64,9 @@ export function LoadingPage({ message = "Cargando..." }: { message?: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
       <LoadingSpinner size="lg" />
-      <p className="text-sm text-muted-foreground">{message}</p>
+      <p className="text-sm text-text-secondary">{message}</p>
     </div>
-  );
-}
 
-// Loading states específicos
-export function LoadingCard({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center justify-center p-8", className)}>
-      <LoadingSpinner size="lg" />
-    </div>
-  );
-}
-
-export function LoadingTable({ message = "Cargando datos..." }: { message?: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 space-y-3">
-      <LoadingSpinner size="lg" />
-      <p className="text-sm text-muted-foreground">{message}</p>
-    </div>
   );
 }
 
@@ -92,13 +75,43 @@ export function LoadingForm({ fields = 5 }: { fields?: number }) {
     <div className="space-y-4">
       {Array.from({ length: fields }).map((_, i) => (
         <div key={i} className="space-y-2">
-          <div className="h-4 w-24 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-          <div className="h-10 w-full bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+          <div className="h-4 w-24 bg-surface-muted rounded animate-pulse" />
+          <div className="h-10 w-full bg-surface-muted rounded animate-pulse" />
         </div>
       ))}
     </div>
   );
 }
+
+export function LoadingCard() {
+  return (
+    <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="space-y-3">
+        <div className="h-4 w-32 bg-surface-muted rounded animate-pulse" />
+        <div className="h-3 w-full bg-surface-muted rounded animate-pulse" />
+        <div className="h-3 w-5/6 bg-surface-muted rounded animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+export function LoadingTable({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface">
+      <div className="border-b border-border p-4">
+        <div className="h-4 w-40 bg-surface-muted rounded animate-pulse" />
+      </div>
+      <div className="divide-y divide-border">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="p-4">
+            <div className="h-3 w-3/4 bg-surface-muted rounded animate-pulse" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 // Componente de overlay de loading
 interface LoadingOverlayProps {
@@ -122,8 +135,9 @@ export function LoadingOverlay({
     )}>
       <div className="flex flex-col items-center space-y-3">
         <LoadingSpinner size="lg" />
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-sm text-text-secondary">{message}</p>
       </div>
+
     </div>
   );
 }

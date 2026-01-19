@@ -70,16 +70,17 @@ export function ProfileUpload({
       {children}
 
       {/* Overlay with camera icon */}
-      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer">
-        <Camera className="h-6 w-6 text-white" />
+      <div className="absolute inset-0 flex items-center justify-center bg-foreground/35 opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer">
+        <Camera className="h-6 w-6 text-background" />
       </div>
 
       {/* Loading overlay */}
       {isUploading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+        <div className="absolute inset-0 flex items-center justify-center bg-foreground/35 rounded-full">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-background"></div>
         </div>
       )}
+
 
       {/* Hidden file input */}
       <input

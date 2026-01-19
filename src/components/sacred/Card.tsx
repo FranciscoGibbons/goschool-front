@@ -62,9 +62,10 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         interactive && [
           "cursor-pointer",
           "transition-colors duration-150",
-          "hover:border-primary/30 hover:bg-surface-muted",
+          "hover:border-primary/40 hover:bg-surface-muted",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         ],
+
         className
       )}
       tabIndex={interactive ? 0 : undefined}

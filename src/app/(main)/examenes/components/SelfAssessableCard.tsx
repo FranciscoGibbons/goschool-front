@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { RadioGroup } from "@/components/ui/radio-group";
+  Button,
+  Modal,
+  ModalContent,
+  ModalTitle,
+  ModalTrigger,
+  ModalClose,
+  ModalHeader,
+  ModalFooter,
+  RadioGroup,
+  Badge,
+} from "@/components/sacred";
+
 import axios from "axios";
 import {
   Calendar,
@@ -72,7 +76,7 @@ export default function SelfAssessableCard({
 
   const isBefore = todayOnly < dueOnly;
   const isToday = todayOnly.getTime() === dueOnly.getTime();
-  const isAfter = todayOnly > dueOnly;
+
 
   const cleanSubjectName = (name: string) => {
     return name.replace(/\s*-\s*\d+°\d+\s*$/, "").trim();
@@ -175,45 +179,42 @@ export default function SelfAssessableCard({
   };
 
   const getStatus = () => {
-    if (answered) return { label: "Completado", color: "bg-success-muted text-success border-border", icon: Check };
-    if (isBefore) return { label: "Pendiente", color: "bg-surface-muted text-text-secondary border-border", icon: Clock };
-    if (isToday) return { label: "Disponible", color: "bg-primary/10 text-primary border-border", icon: Sparkles };
-    return { label: "Vencido", color: "bg-error-muted text-error border-border", icon: AlertCircle };
+    if (answered) return { label: "Completado", variant: "success", icon: Check };
+    if (isBefore) return { label: "Pendiente", variant: "neutral", icon: Clock };
+    if (isToday) return { label: "Disponible", variant: "info", icon: Sparkles };
+    return { label: "Vencido", variant: "error", icon: AlertCircle };
   };
+
 
   const status = getStatus();
   const StatusIcon = status.icon;
 
   if (loading) {
-    return <div className="minimal-card animate-pulse h-32" />;
+    return <div className="sacred-card animate-pulse h-32" />;
   }
 
   return (
-    <div className="minimal-card hover:border-foreground/20 transition-all">
+    <div className="sacred-card">
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-sm truncate">{exam.task}</h3>
+          <h3 className="font-medium text-sm text-text-primary truncate">{exam.task}</h3>
           <p className="text-xs text-text-secondary mt-0.5">
             {cleanSubjectName(subjectName)}
           </p>
         </div>
         {isStudent && (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium shrink-0",
-              status.color
-            )}
-          >
+          <Badge variant={status.variant} className="shrink-0">
             <StatusIcon className="h-3 w-3" />
             {status.label}
-          </span>
+          </Badge>
         )}
         {!isStudent && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-border bg-surface-muted text-text-secondary text-xs font-medium">
+          <Badge variant="neutral" className="shrink-0">
             <User className="h-3 w-3" />
             Vista
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -233,8 +234,8 @@ export default function SelfAssessableCard({
 
       {/* Action */}
       {isStudent && answered !== true && isToday && (
-        <Dialog open={showQuestions} onOpenChange={setShowQuestions}>
-          <DialogTrigger asChild>
+        <Modal open={showQuestions} onOpenChange={setShowQuestions}>
+          <ModalTrigger asChild>
             <Button
               size="sm"
               onClick={handleOpenQuestions}
@@ -248,19 +249,21 @@ export default function SelfAssessableCard({
               )}
               {questionsLoading ? "Cargando..." : "Comenzar"}
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-            <DialogTitle className="text-lg font-semibold mb-4">{exam.task}</DialogTitle>
+          </ModalTrigger>
+          <ModalContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <ModalHeader>
+              <ModalTitle>{exam.task}</ModalTitle>
+            </ModalHeader>
 
             {questionsError && (
-              <div className="p-3 rounded bg-error-muted text-error text-sm mb-4">
+              <div className="p-3 rounded-md bg-error-muted text-error text-sm mb-4">
                 {questionsError}
               </div>
             )}
 
             {mcQuestions.map((q, i) => (
               <div key={i} className="mb-6">
-                <p className="font-medium text-sm mb-3">
+                <p className="font-medium text-sm text-text-primary mb-3">
                   {i + 1}. {q.question}
                 </p>
                 <RadioGroup
@@ -272,10 +275,10 @@ export default function SelfAssessableCard({
                     <label
                       key={idx}
                       className={cn(
-                        "flex items-center p-3 border rounded-lg cursor-pointer transition-colors",
+                        "flex items-center p-3 border rounded-md cursor-pointer transition-colors",
                         answers[i] === opt
-                          ? "border-foreground bg-accent"
-                          : "hover:bg-accent/50"
+                          ? "border-primary/40 bg-surface-muted"
+                          : "hover:bg-surface-muted"
                       )}
                     >
                       <input
@@ -285,19 +288,19 @@ export default function SelfAssessableCard({
                         onChange={() => handleChange(i, opt)}
                         className="h-4 w-4 mr-3"
                       />
-                      <span className="text-sm">{opt}</span>
+                      <span className="text-sm text-text-primary">{opt}</span>
                     </label>
                   ))}
                 </RadioGroup>
               </div>
             ))}
 
-            <div className="flex justify-end gap-2 mt-4">
-              <DialogClose asChild>
-                <Button variant="outline" size="sm">
+            <ModalFooter>
+              <ModalClose asChild>
+                <Button variant="secondary" size="sm">
                   Cancelar
                 </Button>
-              </DialogClose>
+              </ModalClose>
               <Button
                 size="sm"
                 onClick={handleSubmit}
@@ -305,12 +308,12 @@ export default function SelfAssessableCard({
               >
                 {submitting ? "Enviando..." : "Enviar"}
               </Button>
-            </div>
+            </ModalFooter>
 
             {result && (
               <p
                 className={cn(
-                  "mt-4 p-3 rounded text-sm",
+                  "mt-4 p-3 rounded-md text-sm",
                   result.includes("correctamente")
                     ? "bg-success-muted text-success"
                     : "bg-error-muted text-error"
@@ -319,8 +322,8 @@ export default function SelfAssessableCard({
                 {result}
               </p>
             )}
-          </DialogContent>
-        </Dialog>
+          </ModalContent>
+        </Modal>
       )}
 
       {isStudent && answered === true && (
@@ -341,4 +344,5 @@ export default function SelfAssessableCard({
       )}
     </div>
   );
+
 }

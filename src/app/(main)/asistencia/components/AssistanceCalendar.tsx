@@ -10,7 +10,8 @@
  */
 
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/sacred";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/sacred";
+
 import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import type { Assistance } from "../../../../types/assistance";
 import { getDateKey } from "@/utils/dateHelpers";

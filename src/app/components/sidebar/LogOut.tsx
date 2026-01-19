@@ -1,11 +1,12 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/sacred";
+
 import { ArrowLeftStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import axios from "axios";
 
 
 
-// Make a log out button bg-blue-900
+
 
 export default function LogOut() {
   const handleLogout = async () => {

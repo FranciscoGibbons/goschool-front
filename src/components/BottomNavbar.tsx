@@ -26,15 +26,18 @@ import {
 } from "@heroicons/react/24/solid";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
+} from "@/components/sacred";
+
+
 import userInfoStore from "@/store/userInfoStore";
 import axios from "axios";
 
@@ -132,17 +135,19 @@ function ProfileDropdown({ onMouseEnter, onMouseLeave }: ProfileDropdownProps) {
 
   if (!userInfo) {
     return (
-      <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+      <div className="h-10 w-10 rounded-full bg-surface-muted animate-pulse" />
     );
+
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger 
-        className="flex items-center justify-center p-1 rounded-full transition-all duration-200 hover:bg-muted/50 outline-none"
-        onMouseEnter={(e) => onMouseEnter("Perfil", e)}
-        onMouseLeave={onMouseLeave}
-      >
+        <DropdownMenuTrigger 
+          className="flex items-center justify-center p-1 rounded-full transition-all duration-200 hover:bg-surface-muted outline-none"
+          onMouseEnter={(e) => onMouseEnter("Perfil", e)}
+          onMouseLeave={onMouseLeave}
+        >
+
         <Avatar className="h-8 w-8">
           <AvatarImage
             src={userInfo.photo || ""}
@@ -172,21 +177,14 @@ function ProfileDropdown({ onMouseEnter, onMouseLeave }: ProfileDropdownProps) {
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="p-0">
-          <div className="flex items-center justify-between w-full px-2 py-1.5">
-            <div className="flex items-center gap-2">
-              <span>Tema</span>
-            </div>
-            <ThemeToggle />
-          </div>
-        </DropdownMenuItem>
-
         <DropdownMenuSeparator />
+
 
         <DropdownMenuItem
           onClick={handleLogout}
-          className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+          className="flex items-center gap-2 cursor-pointer text-error focus:text-error focus:bg-error-muted"
         >
+
           <ArrowLeftStartOnRectangleIcon className="h-5 w-5" />
           <span>Cerrar Sesión</span>
         </DropdownMenuItem>
@@ -241,7 +239,8 @@ export default function BottomNavbar() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border lg:block hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border lg:block hidden">
+
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-center space-x-1 py-2">
             {menuItems.map((item) => {
@@ -256,8 +255,9 @@ export default function BottomNavbar() {
                     "flex items-center justify-center p-3 rounded-full transition-all duration-200 relative group",
                     isActive 
                       ? "bg-primary/10 text-primary" 
-                      : "text-text-secondary hover:text-foreground hover:bg-muted/50"
+                      : "text-text-secondary hover:text-text-primary hover:bg-surface-muted"
                   )}
+
                   onMouseEnter={(e) => handleMouseEnter(item.name, e)}
                   onMouseLeave={handleMouseLeave}
                 >

@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/sacred";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "@/components/sacred";
+
 import { 
   CheckCircle, 
   Clock, 

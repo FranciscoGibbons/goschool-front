@@ -138,7 +138,8 @@ export default function MessageInput({ chatId }: MessageInputProps) {
   };
 
   return (
-    <div className="p-4 border-t border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+    <div className="p-4 border-t border-border bg-card">
+
       {/* File Preview */}
       {selectedFile && (
         <div className="mb-3 p-3 bg-accent rounded-lg flex items-center justify-between animate-in slide-in-from-bottom-2">

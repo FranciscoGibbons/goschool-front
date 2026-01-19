@@ -156,10 +156,11 @@ export default function AssistanceDisplay({
 
   if (error) {
     return (
-      <div className="minimal-card text-center py-8">
+      <div className="sacred-card text-center py-8">
         <p className="text-destructive text-sm">{error}</p>
       </div>
     );
+
   }
 
   return (
@@ -222,7 +223,8 @@ export default function AssistanceDisplay({
                       const Icon = config.icon;
 
                       return (
-                        <div key={assistance.id} className="minimal-card py-3">
+                        <div key={assistance.id} className="sacred-card py-3">
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                               <span className="text-sm font-medium">

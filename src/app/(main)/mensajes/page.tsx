@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail } from "lucide-react";
+
 import { ProtectedPage } from "@/components/ProtectedPage";
 import MessageList from "./components/MessageList";
 

@@ -2,8 +2,11 @@
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Download, File, Image as ImageIcon } from 'lucide-react';
+import { Download, File } from 'lucide-react';
+
+import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/types/chat';
@@ -123,13 +126,16 @@ export default function MessageBubble({ message, showAvatar }: MessageBubbleProp
 
           {message.type_message === 'image' && message.file_path && (
             <div className="mb-2 rounded-lg overflow-hidden">
-              <img
+              <Image
                 src={message.file_path}
                 alt={message.file_name || 'Image'}
+                width={640}
+                height={360}
                 className="max-w-full h-auto max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={() => window.open(message.file_path!, '_blank')}
               />
             </div>
+
           )}
 
           {/* Text Message */}

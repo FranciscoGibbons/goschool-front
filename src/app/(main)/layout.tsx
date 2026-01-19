@@ -11,13 +11,15 @@ export default async function DashboardLayout({
     <div className="w-full min-h-screen bg-background flex">
       {/* Mobile sidebar overlay */}
       <div
-        className="fixed inset-0 z-40 bg-black/40 lg:hidden transition-opacity duration-200 opacity-0 pointer-events-none"
+        className="fixed inset-0 z-40 bg-foreground/35 lg:hidden transition-opacity duration-200 opacity-0 pointer-events-none"
+
         id="sidebar-overlay"
       />
 
       {/* Sidebar - Mobile (slide-in) */}
       <aside
-        className="fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-out lg:hidden -translate-x-full bg-white dark:bg-[#020817]"
+        className="fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-out lg:hidden -translate-x-full bg-white"
+
         id="sidebar"
       >
         <Sidebar className="h-full" />

@@ -15,7 +15,8 @@ import {
   School,
   FileText,
 } from "lucide-react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner, PageHeader, Card, CardContent } from "@/components/sacred";
+
 import axios from "axios";
 
 type ActionableRole = Extract<Role, "admin" | "teacher" | "preceptor">;
@@ -160,26 +161,30 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">
-          {role === "admin" ? "Panel de administracion" : role === "preceptor" ? "Panel de preceptoria" : "Panel del docente"}
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle={
+          role === "admin"
+            ? "Panel de administracion"
+            : role === "preceptor"
+            ? "Panel de preceptoria"
+            : "Panel del docente"
+        }
+      />
 
       {/* Stats */}
       {statsCards.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {statsCards.map((card, index) => (
-            <div key={index} className="minimal-card">
-              <div className="flex items-center justify-between">
+            <Card key={index}>
+              <CardContent className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">{card.title}</p>
-                  <p className="text-2xl font-semibold mt-1">{card.value}</p>
+                  <p className="text-xs text-text-secondary">{card.title}</p>
+                  <p className="text-2xl font-semibold mt-1 text-text-primary">{card.value}</p>
                 </div>
-                <card.icon className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
+                <card.icon className="h-5 w-5 text-text-muted" />
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
@@ -187,23 +192,23 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Acciones rapidas</h3>
+          <h3 className="text-sm font-medium text-text-secondary">Acciones rapidas</h3>
           <div className="space-y-2">
             {quickActions.map((action, index) => (
               <button
                 key={index}
-                className="w-full minimal-card hover:border-foreground/20 transition-colors"
+                className="w-full sacred-card-interactive text-left"
                 onClick={() => router.push(action.href)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <action.icon className="h-4 w-4 text-muted-foreground" />
+                    <action.icon className="h-4 w-4 text-text-secondary" />
                     <div className="text-left">
-                      <p className="text-sm font-medium">{action.title}</p>
-                      <p className="text-xs text-muted-foreground">{action.description}</p>
+                      <p className="text-sm font-medium text-text-primary">{action.title}</p>
+                      <p className="text-xs text-text-secondary">{action.description}</p>
                     </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <ArrowRight className="h-4 w-4 text-text-secondary" />
                 </div>
               </button>
             ))}
@@ -212,12 +217,12 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
 
         {/* Upcoming Events */}
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Proximos eventos</h3>
-          <div className="minimal-card">
-            <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-muted-foreground">No hay eventos programados</p>
-            </div>
-          </div>
+          <h3 className="text-sm font-medium text-text-secondary">Proximos eventos</h3>
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <p className="text-sm text-text-secondary">No hay eventos programados</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -227,6 +232,7 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
       </div>
     </div>
   );
+
 };
 
 export default DashAdminPreceptorTeacher;

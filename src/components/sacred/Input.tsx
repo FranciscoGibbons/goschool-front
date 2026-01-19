@@ -22,7 +22,10 @@
  */
 
 import * as React from "react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+
 
 // ==========================================================================
 // Form Group (wrapper for label + input + help/error)
@@ -34,11 +37,12 @@ export interface FormGroupProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const FormGroup = React.forwardRef<HTMLDivElement, FormGroupProps>(
   ({ className, children, ...props }, ref) => (
-    <div ref={ref} className={cn("flex flex-col gap-1.5", className)} {...props}>
+    <div ref={ref} className={cn("flex flex-col gap-2", className)} {...props}>
       {children}
     </div>
   )
 );
+
 FormGroup.displayName = "FormGroup";
 
 // ==========================================================================
@@ -48,6 +52,14 @@ FormGroup.displayName = "FormGroup";
 export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
   required?: boolean;
 }
+
+export type SelectProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>;
+export type SelectTriggerProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>;
+export type SelectContentProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>;
+export type SelectItemProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>;
+export type SelectLabelProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>;
+export type SelectSeparatorProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>;
+
 
 const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
   ({ className, required, children, ...props }, ref) => (
@@ -127,10 +139,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     <input
       type={type}
       className={cn(
-        "flex h-10 w-full",
+        "flex h-11 w-full",
         "px-3 py-2",
         "text-sm text-text-primary",
-        "bg-background",
+        "bg-surface",
         "border border-border rounded-md",
         "placeholder:text-text-muted",
         "transition-colors duration-150",
@@ -145,6 +157,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     />
   )
 );
+
 Input.displayName = "Input";
 
 // ==========================================================================
@@ -169,10 +182,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, error, ...props }, ref) => (
     <textarea
       className={cn(
-        "flex min-h-[80px] w-full",
+        "flex min-h-[96px] w-full",
         "px-3 py-2",
         "text-sm text-text-primary",
-        "bg-background",
+        "bg-surface",
         "border border-border rounded-md",
         "placeholder:text-text-muted",
         "transition-colors duration-150",
@@ -188,37 +201,38 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     />
   )
 );
+
 Textarea.displayName = "Textarea";
 
 // ==========================================================================
 // Native Select
 // ==========================================================================
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: boolean;
 }
 
 /**
- * Sacred Select (native)
+ * Sacred Native Select
  *
  * @example
  * <FormGroup>
  *   <Label htmlFor="course">Curso</Label>
- *   <Select id="course">
+ *   <NativeSelect id="course">
  *     <option value="">Selecciona un curso</option>
  *     <option value="1">1° Primaria</option>
  *     <option value="2">2° Primaria</option>
- *   </Select>
+ *   </NativeSelect>
  * </FormGroup>
  */
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
   ({ className, error, children, ...props }, ref) => (
     <select
       className={cn(
-        "flex h-10 w-full",
+        "flex h-11 w-full",
         "px-3 py-2 pr-8",
         "text-sm text-text-primary",
-        "bg-background",
+        "bg-surface",
         "border border-border rounded-md",
         "cursor-pointer",
         "appearance-none",
@@ -238,11 +252,154 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     </select>
   )
 );
-Select.displayName = "Select";
+NativeSelect.displayName = "NativeSelect";
 
 // ==========================================================================
-// Exports
+// Radix Select
 // ==========================================================================
+
+const Select = SelectPrimitive.Root;
+const SelectGroup = SelectPrimitive.Group;
+const SelectValue = SelectPrimitive.Value;
+
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  SelectTriggerProps
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "flex h-11 w-full items-center justify-between",
+      "rounded-md border border-border bg-surface",
+      "px-3 py-2 text-sm text-text-primary",
+      "placeholder:text-text-muted",
+      "transition-colors duration-150",
+      "focus:outline-none focus:border-primary",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      "[&>span]:line-clamp-1",
+      className
+    )}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown className="h-4 w-4 text-text-muted" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+));
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
+
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  SelectContentProps
+>(({ className, children, position = "popper", ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden",
+        "rounded-md border border-border bg-surface text-text-primary shadow-sm",
+        "data-[state=open]:animate-fade-in",
+        position === "popper" &&
+          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        className
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
+        className={cn(
+          "p-1",
+          position === "popper" &&
+            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+        )}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+));
+SelectContent.displayName = SelectPrimitive.Content.displayName;
+
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  SelectItemProps
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full select-none items-center rounded-sm",
+      "py-1.5 pl-8 pr-2 text-sm text-text-primary",
+      "outline-none transition-colors",
+      "focus:bg-surface-muted focus:text-text-primary",
+      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check className="h-4 w-4 text-primary" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+));
+SelectItem.displayName = SelectPrimitive.Item.displayName;
+
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  SelectLabelProps
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("px-2 py-1.5 text-xs font-medium text-text-secondary", className)}
+    {...props}
+  />
+));
+SelectLabel.displayName = SelectPrimitive.Label.displayName;
+
+const SelectScrollUpButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn("flex items-center justify-center py-1", className)}
+    {...props}
+  >
+    <ChevronDown className="h-4 w-4 rotate-180 text-text-muted" />
+  </SelectPrimitive.ScrollUpButton>
+));
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
+
+const SelectScrollDownButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn("flex items-center justify-center py-1", className)}
+    {...props}
+  >
+    <ChevronDown className="h-4 w-4 text-text-muted" />
+  </SelectPrimitive.ScrollDownButton>
+));
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
+
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  SelectSeparatorProps
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-border", className)}
+    {...props}
+  />
+));
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
 export {
   FormGroup,
@@ -251,5 +408,16 @@ export {
   ErrorMessage,
   Input,
   Textarea,
+  NativeSelect,
   Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectLabel,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
 };
+

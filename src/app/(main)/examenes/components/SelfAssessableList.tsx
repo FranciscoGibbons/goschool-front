@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
+  Button,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/sacred";
+
 import {
   Search,
   BookOpen,
@@ -152,27 +153,28 @@ export default function SelfAssessableList({
       {/* Stats */}
       {role === "student" && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="minimal-card text-center">
+          <div className="sacred-card text-center">
             <p className="text-2xl font-semibold">{statusCounts.total}</p>
             <p className="text-xs text-text-secondary">Total</p>
           </div>
-          <div className="minimal-card text-center">
+          <div className="sacred-card text-center">
             <p className="text-2xl font-semibold text-text-secondary">{statusCounts.pending}</p>
             <p className="text-xs text-text-muted">Pendientes</p>
           </div>
-          <div className="minimal-card text-center">
+          <div className="sacred-card text-center">
             <p className="text-2xl font-semibold text-primary">{statusCounts.available}</p>
             <p className="text-xs text-text-muted">Disponibles</p>
           </div>
-          <div className="minimal-card text-center">
+          <div className="sacred-card text-center">
             <p className="text-2xl font-semibold text-success">{statusCounts.completed}</p>
             <p className="text-xs text-text-muted">Completados</p>
           </div>
-          <div className="minimal-card text-center">
+          <div className="sacred-card text-center">
             <p className="text-2xl font-semibold text-error">{statusCounts.expired}</p>
             <p className="text-xs text-text-muted">Vencidos</p>
           </div>
         </div>
+
       )}
 
       {/* Filters */}
@@ -305,17 +307,17 @@ export default function SelfAssessableList({
 
       {/* List */}
       {sortedExams.length === 0 ? (
-        <div className="empty-state">
-          <BookOpen className="empty-state-icon" />
-          <p className="empty-state-title">Sin autoevaluables</p>
-          <p className="empty-state-text">
+        <div className="sacred-card text-center py-8">
+          <BookOpen className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Sin autoevaluables</p>
+          <p className="text-sm text-text-secondary mt-1">
             {filters.search || filters.subject || filters.status
               ? "No se encontraron resultados"
               : "No hay autoevaluables disponibles"}
           </p>
           {(filters.search || filters.subject || filters.status) && (
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               className="mt-4"
               onClick={() =>
@@ -327,6 +329,7 @@ export default function SelfAssessableList({
           )}
         </div>
       ) : (
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedExams.map((exam) => {
             const subjectName =

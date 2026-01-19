@@ -1,5 +1,6 @@
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress, Card } from "@/components/sacred";
+
+
 
 interface QuizResultsProps {
   questions: string[];
@@ -18,54 +19,56 @@ export function QuizResults({
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Resultados del Quiz</h2>
-        <div className="space-y-4">
-          <div>
-            <div className="flex justify-between mb-2">
-              <span className="font-medium">Puntuación total</span>
-              <span className="font-bold">
-                {score}/{questions.length}
-              </span>
-            </div>
-            <Progress value={percentage} className="h-2" />
+      <Card>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-text-primary">Resultados del Quiz</h2>
+          <span className="text-sm text-text-muted">{Math.round(percentage)}% correcto</span>
+        </div>
+        <div className="mt-4">
+
+          <div className="flex items-center justify-between text-sm text-text-secondary">
+            <span>Puntuación total</span>
+            <span className="font-semibold text-text-primary">
+              {score}/{questions.length}
+            </span>
           </div>
+          <Progress value={percentage} className="h-2" />
         </div>
       </Card>
+
 
       <div className="space-y-4">
         {questions.map((question, index) => {
           const isCorrect = userAnswers[index] === correct[index];
           return (
-            <Card
-              key={index}
-              className={`p-6 ${
-                isCorrect ? "border-green-500" : "border-red-500"
-              }`}
-            >
-              <h3 className="text-lg font-semibold mb-2">
-                Pregunta {index + 1}: {question}
-              </h3>
-              <div className="space-y-2">
-                <p>
-                  <span className="font-medium">Tu respuesta: </span>
-                  {userAnswers[index]}
-                </p>
-                {!isCorrect && (
-                  <p>
-                    <span className="font-medium">Respuesta correcta: </span>
-                    {correct[index]}
-                  </p>
-                )}
-                <p
-                  className={`font-medium ${
-                    isCorrect ? "text-success" : "text-error"
+            <Card key={index} className={isCorrect ? "border-success/40" : "border-error/40"}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-text-primary">
+                    Pregunta {index + 1}
+                  </h3>
+                  <p className="text-sm text-text-secondary mt-1">{question}</p>
+                </div>
+                <span
+                  className={`sacred-badge ${
+                    isCorrect ? "sacred-badge-success" : "sacred-badge-error"
                   }`}
                 >
                   {isCorrect ? "Correcta" : "Incorrecta"}
+                </span>
+              </div>
+              <div className="space-y-2 text-sm mt-4">
+                <p className="text-text-secondary">
+                  <span className="font-medium text-text-primary">Tu respuesta:</span> {userAnswers[index]}
                 </p>
+                {!isCorrect && (
+                  <p className="text-text-secondary">
+                    <span className="font-medium text-text-primary">Respuesta correcta:</span> {correct[index]}
+                  </p>
+                )}
               </div>
             </Card>
+
           );
         })}
       </div>

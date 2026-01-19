@@ -23,29 +23,25 @@ export const EXAM_TYPE_TRANSLATIONS: Record<ExamType, string> = {
 
 // Colores para cada tipo de examen
 export const EXAM_TYPE_COLORS: Record<ExamType, string> = {
-  [EXAM_TYPES.exam]:
-    "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-  [EXAM_TYPES.homework]:
-    "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  [EXAM_TYPES.project]:
-    "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-  [EXAM_TYPES.oral]:
-    "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
-  [EXAM_TYPES.remedial]:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-  [EXAM_TYPES.selfassessable]:
-    "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+  [EXAM_TYPES.exam]: "sacred-badge sacred-badge-info",
+  [EXAM_TYPES.homework]: "sacred-badge sacred-badge-warning",
+  [EXAM_TYPES.project]: "sacred-badge sacred-badge-success",
+  [EXAM_TYPES.oral]: "sacred-badge sacred-badge-neutral",
+  [EXAM_TYPES.remedial]: "sacred-badge sacred-badge-error",
+  [EXAM_TYPES.selfassessable]: "sacred-badge sacred-badge-success",
+
 };
 
 // Colores para indicadores (solo el color de fondo)
 export const EXAM_TYPE_INDICATOR_COLORS: Record<ExamType, string> = {
-  [EXAM_TYPES.exam]: "bg-red-500",
-  [EXAM_TYPES.homework]: "bg-blue-500",
-  [EXAM_TYPES.project]: "bg-purple-500",
-  [EXAM_TYPES.oral]: "bg-orange-500",
-  [EXAM_TYPES.remedial]: "bg-yellow-500",
-  [EXAM_TYPES.selfassessable]: "bg-green-500",
+  [EXAM_TYPES.exam]: "bg-error",
+  [EXAM_TYPES.homework]: "bg-warning",
+  [EXAM_TYPES.project]: "bg-success",
+  [EXAM_TYPES.oral]: "bg-text-muted",
+  [EXAM_TYPES.remedial]: "bg-error",
+  [EXAM_TYPES.selfassessable]: "bg-success",
 };
+
 
 // Iconos para cada tipo (usando Heroicons)
 export const EXAM_TYPE_ICONS = {
@@ -63,10 +59,8 @@ export function translateExamType(type: string): string {
 }
 
 export function getExamTypeColor(type: string): string {
-  return (
-    EXAM_TYPE_COLORS[type as ExamType] ||
-    "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
-  );
+  return EXAM_TYPE_COLORS[type as ExamType] || "sacred-badge sacred-badge-neutral";
+
 }
 
 export function getExamTypeIndicatorColor(type: string): string {

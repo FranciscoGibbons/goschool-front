@@ -1,8 +1,8 @@
-/* Animaciones personalizadas para el perfil */
+/* Animaciones funcionales para el perfil */
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -11,30 +11,24 @@
 }
 
 .animate-in {
-  animation: fade-in 0.5s ease-out;
+  animation: fade-in 0.25s ease-out;
 }
 
-/* Hover effects adicionales */
+/* Hover sutil para tarjetas */
 .profile-card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .profile-card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-/* Gradient backgrounds */
-.profile-gradient {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  border-color: hsl(var(--primary) / 0.25);
+  background: hsl(var(--surface-muted));
 }
 
 /* Avatar hover effect */
 .avatar-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s ease;
 }
 
 .avatar-hover:hover {
-  transform: scale(1.05);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: scale(1.02);
 }

@@ -51,9 +51,6 @@ export default function CourseSelector({
     return shift === "morning" ? "Manana" : "Tarde";
   };
 
-  const getLevelLabel = (level: string) => {
-    return level === "primary" ? "Primaria" : "Secundaria";
-  };
 
   const isSecondary = (course: Course) => course.year >= 8;
 

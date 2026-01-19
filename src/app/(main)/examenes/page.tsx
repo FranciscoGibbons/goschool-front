@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { GraduationCap, ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft } from "lucide-react";
+
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
@@ -9,9 +10,14 @@ import ExamList from "./components/ExamList";
 import userInfoStore from "@/store/userInfoStore";
 import { Role, Exam } from "@/utils/types";
 import axios from "axios";
-import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Button } from "@/components/ui/button";
+import {
+  ErrorBoundary,
+  ErrorDisplay,
+  LoadingSpinner,
+  Button,
+  PageHeader,
+} from "@/components/sacred";
+
 import { toast } from "sonner";
 
 type ExamWithSubjectId = Exam & { subject_id: number };
@@ -95,9 +101,7 @@ function ExamsContent() {
   if (coursesError) {
     return (
       <div className="space-y-6">
-        <div className="page-header">
-          <h1 className="page-title">Evaluaciones</h1>
-        </div>
+        <PageHeader title="Evaluaciones" />
         <ErrorDisplay error={coursesError} retry={() => window.location.reload()} />
       </div>
     );
@@ -105,30 +109,30 @@ function ExamsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <div className="flex items-center gap-3">
-          {currentStep === "exams" &&
-            userInfo?.role !== "student" &&
-            userInfo?.role !== "father" && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBack}
-                className="h-8 w-8"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            )}
-          <div>
-            <h1 className="page-title">Evaluaciones</h1>
-            <p className="page-subtitle">
-              {currentStep === "course"
-                ? "Selecciona un curso"
-                : "Examenes y tareas programadas"}
-            </p>
-          </div>
-        </div>
-      </div>
+
+      <PageHeader
+        title="Evaluaciones"
+        subtitle={
+          currentStep === "course"
+            ? "Selecciona un curso"
+            : "Examenes y tareas programadas"
+        }
+        action={
+          currentStep === "exams" &&
+          userInfo?.role !== "student" &&
+          userInfo?.role !== "father" ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBack}
+              className="h-8 w-8"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          ) : null
+        }
+      />
+
 
       {currentStep === "course" && (
         <CourseSelector

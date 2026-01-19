@@ -22,7 +22,8 @@ export function MobileHeaderClient() {
   };
 
   return (
-    <header className="lg:hidden h-14 bg-white dark:bg-[#020817] border-b border-border flex items-center px-4 fixed top-0 left-0 right-0 z-30">
+    <header className="lg:hidden h-14 bg-white border-b border-border flex items-center px-4 fixed top-0 left-0 right-0 z-30">
+
       <Button
         variant="ghost"
         size="icon"

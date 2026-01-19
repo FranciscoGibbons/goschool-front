@@ -80,9 +80,10 @@ function AsistenciaContent() {
         <div className="page-header">
           <h1 className="page-title">Asistencia</h1>
         </div>
-        <div className="minimal-card text-center py-8">
+        <div className="sacred-card text-center py-8">
           <p className="text-destructive text-sm">{error}</p>
         </div>
+
       </div>
     );
   }

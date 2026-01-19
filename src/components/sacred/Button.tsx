@@ -57,14 +57,32 @@ const buttonVariants = cva(
           "bg-error text-text-inverse",
           "hover:bg-error/90",
         ],
+        default: [
+          "bg-primary text-primary-foreground",
+          "hover:bg-primary-hover",
+        ],
+        outline: [
+          "bg-surface text-text-primary border border-border",
+          "hover:bg-surface-muted hover:border-text-muted",
+        ],
+        destructive: [
+          "bg-error text-text-inverse",
+          "hover:bg-error/90",
+        ],
+        link: [
+          "bg-transparent text-primary",
+          "hover:text-primary-hover",
+        ],
       },
+
       size: {
         sm: "h-8 px-3 text-xs rounded-sm",
-        default: "h-10 px-4 text-sm rounded-md",
+        default: "h-11 px-4 text-sm rounded-md",
         lg: "h-12 px-6 text-base rounded-md",
-        icon: "h-10 w-10 rounded-md",
+        icon: "h-11 w-11 rounded-md",
         "icon-sm": "h-8 w-8 rounded-sm",
       },
+
     },
     defaultVariants: {
       variant: "primary",

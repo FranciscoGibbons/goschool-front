@@ -349,17 +349,19 @@ export default function GradesDisplay({ selectedStudentId }: GradesDisplayProps)
       ) : (
         <div className="space-y-4">
           {Object.entries(gradesByAssessment).map(([key, { assessment, grades }]) => (
-            <div key={key} className="minimal-card">
+            <div key={key} className="sacred-card">
+
               <div className="flex items-center gap-2 mb-3">
                 <GraduationCap className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium text-sm">
                   {assessment?.task || grades[0]?.description || "Sin descripcion"}
                 </span>
                 {assessment && (
-                  <span className="status-badge">
+                  <span className="sacred-badge sacred-badge-info">
                     {getTypeLabel(assessment.type)}
                   </span>
                 )}
+
                 {assessment?.due_date && (
                   <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
                     <Calendar className="h-3 w-3" />

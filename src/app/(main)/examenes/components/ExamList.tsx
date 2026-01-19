@@ -14,33 +14,32 @@ import {
   BookOpen,
   Pencil,
   Trash2,
-  Filter,
   FileText,
-  ChevronDown,
-  X,
 } from "lucide-react";
+
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+  Button,
+  Input,
+  Label,
+  Badge,
+} from "@/components/sacred";
+
 import { useInView } from "react-intersection-observer";
 import userInfoStore from "@/store/userInfoStore";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import axios from "axios";
-import { cn } from "@/lib/utils";
+
 
 interface Props {
   exams: Exam[];
@@ -48,14 +47,15 @@ interface Props {
   subjects: { id: number; name: string; course_name?: string }[];
 }
 
-const typeColors: Record<string, string> = {
-  exam: "status-badge-info",
-  homework: "status-badge-warning",
-  project: "status-badge-success",
-  oral: "status-badge-neutral",
-  remedial: "status-badge-error",
-  selfassessable: "status-badge-success",
+const typeVariants: Record<string, "info" | "warning" | "success" | "neutral" | "error"> = {
+  exam: "info",
+  homework: "warning",
+  project: "success",
+  oral: "neutral",
+  remedial: "error",
+  selfassessable: "success",
 };
+
 
 export default function ExamList({ exams, role, subjects }: Props) {
   const [filter, setFilter] = useState<string>("date_asc");
@@ -158,7 +158,7 @@ export default function ExamList({ exams, role, subjects }: Props) {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveEdit = async () => {
     if (!editingExam || !editData) return;
     setIsSaving(true);
     try {
@@ -186,17 +186,19 @@ export default function ExamList({ exams, role, subjects }: Props) {
     }
   };
 
+
   const canEdit =
     userInfo?.role &&
     ["admin", "teacher", "preceptor"].includes(userInfo.role);
 
   if (exams.length === 0) {
     return (
-      <div className="empty-state">
-        <FileText className="empty-state-icon" />
-        <p className="empty-state-title">Sin evaluaciones</p>
-        <p className="empty-state-text">No hay evaluaciones programadas</p>
+      <div className="sacred-card text-center py-8">
+        <FileText className="h-10 w-10 text-text-muted mx-auto mb-3" />
+        <p className="text-sm font-medium text-text-primary">Sin evaluaciones</p>
+        <p className="text-sm text-text-secondary mt-1">No hay evaluaciones programadas</p>
       </div>
+
     );
   }
 
@@ -246,17 +248,17 @@ export default function ExamList({ exams, role, subjects }: Props) {
               />
             </div>
           ) : (
-            <div
-              key={exam.id}
-              className="minimal-card flex items-start justify-between gap-4 animate-fade-in"
-            >
+              <div
+                key={exam.id}
+                className="sacred-card flex items-start justify-between gap-4 animate-fade-in"
+              >
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={cn("status-badge", typeColors[exam.type] || "")}
-                  >
-                    {translateExamType(exam.type)}
-                  </span>
+                    <Badge variant={typeVariants[exam.type] || "neutral"}>
+                      {translateExamType(exam.type)}
+                    </Badge>
+
                 </div>
                 <h3 className="text-sm font-medium truncate">{exam.task}</h3>
                 <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
@@ -308,96 +310,68 @@ export default function ExamList({ exams, role, subjects }: Props) {
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingExam} onOpenChange={() => setEditingExam(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar evaluacion</DialogTitle>
-          </DialogHeader>
+      <Modal open={!!editingExam} onOpenChange={() => setEditingExam(null)}>
+        <ModalContent className="max-w-md">
+          <ModalHeader>
+            <ModalTitle>Editar evaluacion</ModalTitle>
+          </ModalHeader>
+
           {editData && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Materia</Label>
-                <Select
-                  value={String(editData.subject_id)}
-                  onValueChange={(v) =>
-                    setEditData({ ...editData, subject_id: parseInt(v) })
-                  }
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjects.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
-                        {cleanSubjectName(s.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm">Titulo</Label>
+              <div>
+                <Label>Titulo</Label>
                 <Input
                   value={editData.task}
                   onChange={(e) =>
                     setEditData({ ...editData, task: e.target.value })
                   }
-                  className="h-10"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm">Fecha</Label>
+              <div>
+                <Label>Descripcion</Label>
+                <Input
+                  value={editData.description || ""}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      description: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>Fecha</Label>
                 <Input
                   type="date"
-                  value={editData.due_date}
+                  value={editData.due_date?.slice(0, 10)}
                   onChange={(e) =>
                     setEditData({ ...editData, due_date: e.target.value })
                   }
-                  className="h-10"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm">Tipo</Label>
-                <Select
-                  value={editData.type}
-                  onValueChange={(v) =>
-                    setEditData({ ...editData, type: v as Exam["type"] })
-                  }
-                  disabled={editData.type === "selfassessable"}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="exam">Examen</SelectItem>
-                    <SelectItem value="homework">Tarea</SelectItem>
-                    <SelectItem value="project">Proyecto</SelectItem>
-                    <SelectItem value="oral">Oral</SelectItem>
-                    <SelectItem value="remedial">Recuperatorio</SelectItem>
-                    <SelectItem value="selfassessable">Autoevaluable</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setEditingExam(null)}
-                  disabled={isSaving}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? "Guardando..." : "Guardar"}
-                </Button>
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setEditingExam(null)}
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={isSaving}
+            >
+              {isSaving ? "Guardando..." : "Guardar"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
     </div>
   );
 }

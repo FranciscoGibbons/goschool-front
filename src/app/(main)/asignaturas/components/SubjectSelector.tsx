@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, ChevronDown, GraduationCap } from "lucide-react";
+import { BookOpen, GraduationCap } from "lucide-react";
+
 import {
   Select,
   SelectContent,
@@ -82,7 +83,8 @@ export default function SubjectSelector({
       }
     };
     load();
-  }, [selectedCourseId, subjects.length, fetchSubjects, selectedSubject]);
+  }, [selectedCourseId, subjects, fetchSubjects, selectedSubject]);
+
 
   if (isLoadingSubjects) {
     return (
@@ -111,7 +113,8 @@ export default function SubjectSelector({
     <div className="space-y-4">
       {/* Course info */}
       {course && (
-        <div className="minimal-card flex items-center gap-3">
+        <div className="sacred-card flex items-center gap-3">
+
           <div className="icon-wrapper">
             <GraduationCap className="h-4 w-4" />
           </div>

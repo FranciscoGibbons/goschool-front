@@ -7,13 +7,16 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { EventInput, EventClickArg, DateSelectArg } from "@fullcalendar/core";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Button,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalFooter,
+} from "@/components/sacred";
+
 import { cn } from "@/lib/utils";
 
 interface CalendarEvent {
@@ -195,7 +198,8 @@ export default function FullCalendarAgenda({
       </div>
 
       {/* Calendar */}
-      <div className="minimal-card p-0 overflow-hidden">
+      <div className="sacred-card p-0 overflow-hidden">
+
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -248,36 +252,38 @@ export default function FullCalendarAgenda({
       </div>
 
       {/* Event detail dialog */}
-      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{selectedEvent?.title}</DialogTitle>
-          </DialogHeader>
-          {selectedEvent && (
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span>
-                  {new Date(selectedEvent.start).toLocaleDateString("es-AR", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                  })}
-                </span>
-              </div>
-              {selectedEvent.extendedProps?.description && (
-                <p className="text-muted-foreground">
-                  {selectedEvent.extendedProps.description as string}
-                </p>
-              )}
-              <div className="flex justify-end pt-2">
-                <Button variant="outline" onClick={() => setSelectedEvent(null)}>
-                  Cerrar
-                </Button>
-              </div>
+      <Modal open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+        <ModalContent className="max-w-md">
+          <ModalHeader>
+            <ModalTitle>{selectedEvent?.title}</ModalTitle>
+            <ModalDescription>Detalle del evento seleccionado.</ModalDescription>
+          </ModalHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-medium text-text-secondary">Inicio</p>
+              <p className="text-sm text-text-primary">
+                {selectedEvent?.start
+                  ? new Date(selectedEvent.start).toLocaleString("es-AR")
+                  : "-"}
+              </p>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            <div>
+              <p className="text-xs font-medium text-text-secondary">Fin</p>
+              <p className="text-sm text-text-primary">
+                {selectedEvent?.end
+                  ? new Date(selectedEvent.end).toLocaleString("es-AR")
+                  : "-"}
+              </p>
+            </div>
+          </div>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => setSelectedEvent(null)}>
+              Cerrar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
     </div>
   );
 }

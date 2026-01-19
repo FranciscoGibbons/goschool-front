@@ -76,26 +76,11 @@
   background: hsl(var(--secondary) / 0.8) !important;
 }
 
-/* Dark mode specific fixes */
-.dark .dashboard-modal-content {
-  background: hsl(var(--card)) !important;
-  border-color: hsl(var(--border)) !important;
-}
-
-.dark .dashboard-modal-content input,
-.dark .dashboard-modal-content textarea,
-.dark .dashboard-modal-content select {
-  background: hsl(var(--background)) !important;
-  color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--border)) !important;
-}
 
 /* Ensure no transparency classes can override */
 .dashboard-modal-content .bg-opacity-95,
 .dashboard-modal-content .bg-opacity-90,
-.dashboard-modal-content .bg-opacity-80,
-.dashboard-modal-content .backdrop-blur-sm,
-.dashboard-modal-content .backdrop-blur {
+.dashboard-modal-content .bg-opacity-80 {
   background: hsl(var(--background)) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;

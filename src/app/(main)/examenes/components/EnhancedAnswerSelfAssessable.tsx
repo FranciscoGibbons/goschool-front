@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Badge,
+  Progress,
+  RadioGroup,
+  RadioGroupItem,
+  Label,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+} from "@/components/sacred";
+
 import {
   ArrowLeft,
-  CheckCircle,
   Clock,
+
   AlertCircle,
   RotateCcw,
   Send,
@@ -442,43 +454,42 @@ export default function EnhancedAnswerSelfAssessable({
             </div>
 
             {/* Confirm Submit Dialog */}
-            {showConfirmSubmit && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <Card className="w-full max-w-md mx-4">
-                  <CardHeader>
-                    <CardTitle>Confirmar envío</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-text-secondary mb-4">
-                      ¿Estás seguro que quieres enviar tus respuestas? Una vez enviadas no podrás modificarlas.
-                    </p>
-                    <div className="text-sm space-y-1">
-                      <div>Total de preguntas: <strong>{totalQuestions}</strong></div>
-                      <div>Respondidas: <strong>{answeredQuestions}</strong></div>
-                    </div>
-                  </CardContent>
-                  <div className="flex gap-2 p-6 pt-0">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowConfirmSubmit(false)}
-                      className="flex-1"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowConfirmSubmit(false);
-                        handleSubmit();
-                      }}
-                      disabled={isSubmitting}
-                      className="flex-1"
-                    >
-                      Confirmar envío
-                    </Button>
+            <Modal open={showConfirmSubmit} onOpenChange={setShowConfirmSubmit}>
+              <ModalContent className="max-w-md">
+                <ModalHeader>
+                  <ModalTitle>Confirmar envío</ModalTitle>
+                </ModalHeader>
+                <div className="space-y-4 text-sm text-text-secondary">
+                  <p>
+                    ¿Estás seguro que quieres enviar tus respuestas? Una vez enviadas no podrás modificarlas.
+                  </p>
+                  <div className="space-y-1">
+                    <div>Total de preguntas: <span className="font-semibold text-text-primary">{totalQuestions}</span></div>
+                    <div>Respondidas: <span className="font-semibold text-text-primary">{answeredQuestions}</span></div>
                   </div>
-                </Card>
-              </div>
-            )}
+                </div>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowConfirmSubmit(false)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowConfirmSubmit(false);
+                      handleSubmit();
+                    }}
+                    disabled={isSubmitting}
+                    className="flex-1"
+                  >
+                    Confirmar envío
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
+
           </>
         )}
       </div>

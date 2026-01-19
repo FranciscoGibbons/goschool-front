@@ -6,7 +6,8 @@ import { useChatStore } from '@/store/chatStore';
 import type { NewChatRequest, SendMessageRequest } from '@/types/chat';
 
 export function useChat() {
-  const { setChats, setMessages, prependMessages, setLoading, addChat } = useChatStore();
+  const { setChats, setMessages, prependMessages, setLoading } = useChatStore();
+
 
   const fetchChats = useCallback(async () => {
     setLoading(true);

@@ -1,33 +1,35 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
+
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const geistSans = Geist({ 
-  variable: "--font-geist-sans", 
+const sourceSans = Source_Sans_3({
+  variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
-  preload: true
+  preload: true,
+  weight: ["400", "500", "600"]
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-serif",
   subsets: ["latin"],
   display: "swap",
-  preload: false
+  preload: false,
+  weight: ["400", "600"]
 });
+
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" }
-  ]
+  themeColor: "#f5f6f8"
 };
+
 
 export const metadata: Metadata = {
   title: {
@@ -133,24 +135,27 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
-        <meta name="msapplication-TileColor" content="#6366f1" />
+        <meta name="msapplication-TileColor" content="#1e3a8a" />
+
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
+        className={`${sourceSans.variable} ${sourceSerif.variable} antialiased min-h-screen bg-background text-foreground`}
         suppressHydrationWarning={true}
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
+          themes={["light"]}
         >
           <div className="min-h-screen flex flex-col">
             {children}
           </div>
         </ThemeProvider>
       </body>
+
     </html>
   );
 }

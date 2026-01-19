@@ -2,25 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CloudArrowUpIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Progress } from "@/components/ui/progress";
+import {
+  Button,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Modal,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  LoadingSpinner,
+  Progress,
+} from "@/components/sacred";
+
 import { cn } from "@/lib/utils";
 import type { NewSubmission } from "@/types/submission";
 import { 
@@ -166,15 +165,16 @@ export function SubmissionForm({
   const isFormValid = selectedStudentId && taskId && selectedFile && !fileError;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Modal open={isOpen} onOpenChange={handleClose}>
+      <ModalContent className="max-w-[520px]">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Subir Entrega</DialogTitle>
-            <DialogDescription>
+          <ModalHeader>
+            <ModalTitle>Subir Entrega</ModalTitle>
+            <ModalDescription>
               Selecciona la tarea y sube tu archivo de entrega.
-            </DialogDescription>
-          </DialogHeader>
+            </ModalDescription>
+          </ModalHeader>
+
 
           <div className="grid gap-6 py-4">
             {/* Selección de tarea */}
@@ -195,7 +195,8 @@ export function SubmissionForm({
                           <div>
                             <p className="font-medium">{task.task}</p>
                             {task.subject_name && (
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-sm text-text-secondary">
+
                                 {task.subject_name}
                                 {task.due_date && ` - Vence: ${new Date(task.due_date).toLocaleDateString('es-ES')}`}
                               </p>
@@ -204,31 +205,34 @@ export function SubmissionForm({
                         </SelectItem>
                       ))
                     ) : (
-                      <div className="text-center py-4 text-muted-foreground">
+                      <div className="text-center py-4 text-text-secondary">
                         No hay tareas disponibles
                       </div>
                     )}
+
                   </SelectContent>
                 </Select>
               </div>
             )}
 
             {/* Información de la tarea seleccionada */}
-            {selectedTaskId && availableTasks.length > 0 && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                {(() => {
+              {selectedTaskId && availableTasks.length > 0 && (
+                <div className="p-4 bg-surface-muted rounded-lg">
+                  {(() => {
+
                   const task = availableTasks.find(t => t.id === selectedTaskId);
                   return task ? (
                     <div>
                       <p className="font-medium">{task.task}</p>
                       {task.subject_name && (
-                        <p className="text-sm text-muted-foreground">{task.subject_name}</p>
+                        <p className="text-sm text-text-secondary">{task.subject_name}</p>
                       )}
                       {task.due_date && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-text-secondary">
                           Fecha límite: {new Date(task.due_date).toLocaleDateString('es-ES')}
                         </p>
                       )}
+
                     </div>
                   ) : null;
                 })()}
@@ -245,20 +249,24 @@ export function SubmissionForm({
                     "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
                     isDragOver 
                       ? "border-primary bg-primary/5" 
-                      : "border-muted-foreground/25 hover:border-primary/50"
+                      : "border-border hover:border-primary/50"
+
                   )}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                 >
-                  <CloudArrowUpIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <CloudArrowUpIcon className="mx-auto h-12 w-12 text-text-muted mb-4" />
+
                   <p className="text-lg font-medium mb-2">
                     Arrastra tu archivo aquí o haz clic para seleccionar
                   </p>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-text-secondary mb-4">
+
                     Formatos permitidos: {ALLOWED_FILE_EXTENSIONS.join(", ")}
                   </p>
-                  <p className="text-xs text-muted-foreground mb-4">
+                  <p className="text-xs text-text-secondary mb-4">
+
                     Tamaño máximo: 10MB
                   </p>
                   <input
@@ -300,8 +308,9 @@ export function SubmissionForm({
               )}
 
               {fileError && (
-                <p className="text-sm text-destructive">{fileError}</p>
+                <p className="text-sm text-error">{fileError}</p>
               )}
+
             </div>
 
             {/* Progreso de subida */}
@@ -316,29 +325,30 @@ export function SubmissionForm({
             )}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={!isFormValid || isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  Subiendo...
-                </>
-              ) : (
-                <>
-                  <CloudArrowUpIcon className="w-4 h-4 mr-2" />
-                  Subir Entrega
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+           <ModalFooter>
+             <Button type="button" variant="secondary" onClick={handleClose} disabled={isSubmitting}>
+               Cancelar
+             </Button>
+             <Button 
+               type="submit" 
+               disabled={!isFormValid || isSubmitting}
+             >
+               {isSubmitting ? (
+                 <>
+                   <LoadingSpinner size="sm" className="mr-2" />
+                   Subiendo...
+                 </>
+               ) : (
+                 <>
+                   <CloudArrowUpIcon className="w-4 h-4 mr-2" />
+                   Subir Entrega
+                 </>
+               )}
+             </Button>
+           </ModalFooter>
+         </form>
+       </ModalContent>
+     </Modal>
+
   );
 }

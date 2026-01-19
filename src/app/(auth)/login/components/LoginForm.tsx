@@ -154,7 +154,8 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 login-form">
       {errorLogin && (
-        <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md backdrop-blur-none">
+        <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md">
+
           <p className="text-destructive text-sm font-medium">{errorLogin}</p>
         </div>
       )}

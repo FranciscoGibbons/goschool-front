@@ -1,4 +1,5 @@
-import { LoadingPage } from "@/components/ui/loading-spinner";
+import { LoadingPage } from "@/components/sacred";
+
 
 export default function Loading() {
   return <LoadingPage message="Cargando evaluaciones..." />;

@@ -3,30 +3,32 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import userInfoStore from "@/store/userInfoStore";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+  Badge,
+} from "@/components/sacred";
+
 import {
   ChevronDownIcon,
   UserCircleIcon,
   ArrowLeftStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { RefreshCw } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Badge } from "@/components/sacred";
 import axios from "axios";
+
 
 
 export default function ProfileAccount() {
   const { userInfo, fetchUserInfo, refreshUserInfo, isLoading, error } = userInfoStore();
 
-  // Debug: mostrar la foto actual
-  console.log("🖼️ ProfileAccount - userInfo.photo:", userInfo?.photo);
+
 
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
@@ -34,11 +36,10 @@ export default function ProfileAccount() {
     }
   }, [userInfo, fetchUserInfo]);
 
-  // Función para forzar recarga de datos
   const forceRefresh = async () => {
-    console.log("🔄 Forzando recarga completa de datos de usuario...");
     await refreshUserInfo();
   };
+
 
   const handleLogout = async () => {
     try {
@@ -137,8 +138,7 @@ export default function ProfileAccount() {
                 ? `${userInfo.name} ${userInfo.last_name}`
                 : userInfo.full_name || "Usuario"
             }
-            onError={(e) => console.error("🖼️ Error cargando imagen:", userInfo.photo, e)}
-            onLoad={() => console.log("✅ Imagen cargada correctamente:", userInfo.photo)}
+
           />
           <AvatarFallback className="bg-primary/10 text-primary font-bold">
             {getInitials(
@@ -169,16 +169,8 @@ export default function ProfileAccount() {
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="p-0">
-          <div className="flex items-center justify-between w-full px-2 py-1.5">
-            <div className="flex items-center gap-2">
-              <span>Tema</span>
-            </div>
-            <ThemeToggle />
-          </div>
-        </DropdownMenuItem>
-
         <DropdownMenuSeparator />
+
 
         <DropdownMenuItem
           onClick={forceRefresh}
@@ -190,8 +182,9 @@ export default function ProfileAccount() {
 
         <DropdownMenuItem
           onClick={handleLogout}
-          className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+          className="flex items-center gap-2 cursor-pointer text-error focus:text-error focus:bg-error-muted"
         >
+
           <ArrowLeftStartOnRectangleIcon className="h-5 w-5" />
           <span>Cerrar Sesión</span>
         </DropdownMenuItem>

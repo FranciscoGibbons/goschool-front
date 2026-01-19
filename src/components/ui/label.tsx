@@ -11,9 +11,9 @@ const labelVariants = cva(
   {
     variants: {
       variant: {
-        default: "text-foreground",
-        required: "text-foreground after:content-['*'] after:text-destructive after:ml-1",
-        muted: "text-muted-foreground",
+        default: "text-text-primary",
+        required: "text-text-primary after:content-['*'] after:text-error after:ml-1",
+        muted: "text-text-secondary",
       },
     },
     defaultVariants: {
@@ -21,6 +21,7 @@ const labelVariants = cva(
     },
   }
 )
+
 
 interface LabelProps
   extends React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>,

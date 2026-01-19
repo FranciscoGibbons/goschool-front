@@ -1,7 +1,6 @@
 import { DisciplinarySanction, SANCTION_LABELS, SanctionType } from "@/types/disciplinarySanction";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@/components/sacred";
+
 import { PencilIcon, TrashIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";

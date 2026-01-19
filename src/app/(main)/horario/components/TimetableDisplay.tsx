@@ -4,26 +4,23 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import useSubjectsStore from "@/store/subjectsStore";
 import userInfoStore from "@/store/userInfoStore";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
+  Button,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+} from "@/components/sacred";
+
 import { ChevronLeft, Plus, Pencil, Trash2, Clock } from "lucide-react";
 import axios from "axios";
-import { cn } from "@/lib/utils";
-import { formatTime } from "@/utils/dateHelpers";
+
 
 interface Timetable {
   id: number;
@@ -34,11 +31,7 @@ interface Timetable {
   end_time: string;
 }
 
-interface Subject {
-  id: number;
-  name: string;
-  course_id?: number;
-}
+
 
 interface TimetableDisplayProps {
   courseId: number;
@@ -85,7 +78,8 @@ export default function TimetableDisplay({
     end_time: "",
   });
 
-  const { subjects, setSubjects, fetchSubjects } = useSubjectsStore();
+  const { subjects, setSubjects } = useSubjectsStore();
+
   const { userInfo } = userInfoStore();
 
   const canEdit =
@@ -268,7 +262,8 @@ export default function TimetableDisplay({
             ))}
 
             {/* Time slots */}
-            {TIME_SLOTS.map((slot, index) => (
+            {TIME_SLOTS.map((slot) => (
+
               <React.Fragment key={slot}>
                 <div className="timetable-time">
                   {slot.replace(":", "h")}
@@ -309,10 +304,11 @@ export default function TimetableDisplay({
                             });
                             setShowDialog(true);
                           }}
-                          className="w-full h-full flex items-center justify-center text-muted-foreground/30 hover:text-muted-foreground hover:bg-accent/50 rounded transition-colors"
+                          className="w-full h-full flex items-center justify-center text-text-muted/40 hover:text-text-secondary hover:bg-surface-muted rounded transition-colors"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
+
                       ) : null}
                     </div>
                   );
@@ -322,53 +318,52 @@ export default function TimetableDisplay({
           </div>
         </div>
       ) : (
-        <div className="empty-state">
-          <Clock className="empty-state-icon" />
-          <p className="empty-state-title">Sin horarios</p>
-          <p className="empty-state-text">
+        <div className="sacred-card text-center py-8">
+          <Clock className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Sin horarios</p>
+          <p className="text-sm text-text-secondary mt-1">
             No hay horarios configurados para este curso
           </p>
         </div>
+
       )}
 
       {/* Add/Edit Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
+      <Modal open={showDialog} onOpenChange={setShowDialog}>
+        <ModalContent className="max-w-md">
+          <ModalHeader>
+            <ModalTitle>
               {editingEntry ? "Editar horario" : "Agregar horario"}
-            </DialogTitle>
-          </DialogHeader>
+            </ModalTitle>
+          </ModalHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Materia</Label>
+            <div>
+              <Label>Materia</Label>
               <Select
                 value={formData.subject_id}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, subject_id: v })
-                }
+                onValueChange={(value) => handleInputChange("subject_id", value)}
               >
-                <SelectTrigger className="h-10">
+                <SelectTrigger>
                   <SelectValue placeholder="Selecciona materia" />
                 </SelectTrigger>
                 <SelectContent>
                   {subjects.map((s) => (
                     <SelectItem key={s.id} value={String(s.id)}>
-                      {s.name.replace(/\s*-\s*\d+°\d+\s*$/, "").trim()}
+                      {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Dia</Label>
+            <div>
+              <Label>Dia</Label>
               <Select
                 value={formData.day}
-                onValueChange={(v) => setFormData({ ...formData, day: v })}
+                onValueChange={(value) => handleInputChange("day", value)}
               >
-                <SelectTrigger className="h-10">
+                <SelectTrigger>
                   <SelectValue placeholder="Selecciona dia" />
                 </SelectTrigger>
                 <SelectContent>
@@ -381,16 +376,14 @@ export default function TimetableDisplay({
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label className="text-sm">Inicio</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Hora inicio</Label>
                 <Select
                   value={formData.start_time}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, start_time: v })
-                  }
+                  onValueChange={(value) => handleInputChange("start_time", value)}
                 >
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger>
                     <SelectValue placeholder="Hora" />
                   </SelectTrigger>
                   <SelectContent>
@@ -403,45 +396,42 @@ export default function TimetableDisplay({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm">Fin</Label>
+              <div>
+                <Label>Hora fin</Label>
                 <Select
                   value={formData.end_time}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, end_time: v })
-                  }
+                  onValueChange={(value) => handleInputChange("end_time", value)}
                 >
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger>
                     <SelectValue placeholder="Hora" />
                   </SelectTrigger>
                   <SelectContent>
-                    {["08:00", "08:40", "09:30", "10:10", "11:00", "11:40", "12:30", "13:00"].map(
-                      (t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      )
-                    )}
+                    {TIME_SLOTS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDialog(false)}
-                disabled={isSaving}
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? "Guardando..." : "Guardar"}
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDialog(false)}
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
+        </ModalContent>
+      </Modal>
+
     </div>
   );
 }

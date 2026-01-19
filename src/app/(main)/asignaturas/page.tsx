@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpen, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+
 import { useState, useEffect, Suspense } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";

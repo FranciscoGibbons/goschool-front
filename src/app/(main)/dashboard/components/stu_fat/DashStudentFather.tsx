@@ -11,7 +11,8 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { Exam, translateExamType } from "@/utils/types";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner, PageHeader, Card, CardContent, Badge } from "@/components/sacred";
+
 import { parseLocalDate } from "@/utils/dateHelpers";
 import axios from "axios";
 
@@ -62,63 +63,62 @@ export default function DashStudentFather() {
 
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Tu resumen academico</p>
-      </div>
+      <PageHeader title="Dashboard" subtitle="Tu resumen academico" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="minimal-card">
-          <div className="flex items-center justify-between">
+        <Card>
+          <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Evaluaciones</p>
-              <p className="text-2xl font-semibold mt-1">{exams.length}</p>
+              <p className="text-xs text-text-secondary">Evaluaciones</p>
+              <p className="text-2xl font-semibold mt-1 text-text-primary">{exams.length}</p>
             </div>
-            <FileText className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </div>
+            <FileText className="h-5 w-5 text-text-muted" />
+          </CardContent>
+        </Card>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Acciones rapidas</h3>
+          <h3 className="text-sm font-medium text-text-secondary">Acciones rapidas</h3>
           <div className="space-y-2">
             {quickActions.map((action, index) => (
               <button
                 key={index}
-                className="w-full minimal-card hover:border-foreground/20 transition-colors"
+                className="w-full sacred-card-interactive text-left"
                 onClick={() => router.push(action.href)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <action.icon className="h-4 w-4 text-muted-foreground" />
+                    <action.icon className="h-4 w-4 text-text-secondary" />
                     <div className="text-left">
-                      <p className="text-sm font-medium">{action.title}</p>
-                      <p className="text-xs text-muted-foreground">{action.description}</p>
+                      <p className="text-sm font-medium text-text-primary">{action.title}</p>
+                      <p className="text-xs text-text-secondary">{action.description}</p>
                     </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <ArrowRight className="h-4 w-4 text-text-secondary" />
                 </div>
               </button>
             ))}
           </div>
         </div>
 
+
         {/* Upcoming Exams */}
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Proximos examenes</h3>
+          <h3 className="text-sm font-medium text-text-secondary">Proximos examenes</h3>
           {upcomingExams.length > 0 ? (
             <div className="space-y-2">
               {upcomingExams.map((exam) => (
-                <div key={exam.id} className="minimal-card">
+                <div key={exam.id} className="sacred-card">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
-                      <span className="status-badge">{translateExamType(exam.type)}</span>
+                      <Badge variant="info">{translateExamType(exam.type)}</Badge>
                       <div>
-                        <p className="text-sm font-medium">{exam.task}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm font-medium text-text-primary">{exam.task}</p>
+                        <p className="text-xs text-text-secondary">
                           {parseLocalDate(exam.due_date).toLocaleDateString("es-AR", {
                             weekday: "short",
                             day: "numeric",
@@ -138,13 +138,14 @@ export default function DashStudentFather() {
               ))}
             </div>
           ) : (
-            <div className="empty-state py-8">
-              <GraduationCap className="empty-state-icon" />
-              <p className="empty-state-title">Sin examenes</p>
-              <p className="empty-state-text">No tienes evaluaciones pendientes</p>
+            <div className="sacred-card text-center py-8">
+              <GraduationCap className="h-10 w-10 text-text-muted mx-auto mb-3" />
+              <p className="text-sm font-medium text-text-primary">Sin examenes</p>
+              <p className="text-sm text-text-secondary">No tienes evaluaciones pendientes</p>
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

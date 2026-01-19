@@ -17,32 +17,33 @@
      ======================================================================= */
 
   /* Backgrounds */
-  --background: 0 0% 100%;
+  --background: 220 20% 97%;
   --surface: 0 0% 100%;
-  --surface-muted: 210 40% 98%;
+  --surface-muted: 220 22% 95%;
 
   /* Borders */
-  --border: 214 32% 91%;
-  --border-muted: 210 40% 96%;
+  --border: 220 16% 88%;
+  --border-muted: 220 18% 92%;
 
-  /* Primary - Blue for institutional trust (used sparingly) */
-  --primary: 221 83% 53%;
-  --primary-hover: 221 83% 47%;
+  /* Primary - Deep institutional navy */
+  --primary: 220 56% 28%;
+  --primary-hover: 220 56% 24%;
   --primary-foreground: 0 0% 100%;
 
   /* Status Colors - Functional only */
-  --success: 142 71% 35%;
-  --success-muted: 142 76% 96%;
-  --warning: 38 92% 45%;
-  --warning-muted: 45 93% 95%;
-  --error: 0 72% 51%;
-  --error-muted: 0 86% 97%;
+  --success: 152 40% 30%;
+  --success-muted: 152 40% 94%;
+  --warning: 36 65% 38%;
+  --warning-muted: 36 65% 94%;
+  --error: 0 58% 45%;
+  --error-muted: 0 58% 95%;
 
   /* Text Hierarchy */
-  --text-primary: 222 47% 11%;
-  --text-secondary: 215 16% 47%;
-  --text-muted: 215 14% 64%;
+  --text-primary: 222 33% 12%;
+  --text-secondary: 218 14% 38%;
+  --text-muted: 218 10% 52%;
   --text-inverse: 0 0% 100%;
+
 
   /* Legacy token mapping (for existing shadcn components) */
   --foreground: var(--text-primary);
@@ -50,11 +51,13 @@
   --card-foreground: var(--text-primary);
   --popover: var(--surface);
   --popover-foreground: var(--text-primary);
-  --secondary: 210 40% 96%;
+  --secondary: 220 16% 90%;
   --secondary-foreground: var(--text-primary);
-  --muted: 210 40% 96%;
+  --muted: 220 16% 90%;
+
   --muted-foreground: var(--text-secondary);
-  --accent: 210 40% 96%;
+  --accent: 220 22% 94%;
+
   --accent-foreground: var(--text-primary);
   --destructive: var(--error);
   --destructive-foreground: var(--text-inverse);
@@ -62,83 +65,26 @@
   --ring: var(--primary);
 
   /* Sidebar */
-  --sidebar: 0 0% 100%;
+  --sidebar: 220 24% 96%;
   --sidebar-foreground: var(--text-secondary);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent: 220 20% 92%;
   --sidebar-accent-foreground: var(--text-primary);
-  --sidebar-border: var(--border);
+  --sidebar-border: 220 16% 86%;
   --sidebar-ring: var(--primary);
+
 
   /* Chart colors */
-  --chart-1: 221 83% 53%;
-  --chart-2: 142 71% 45%;
-  --chart-3: 38 92% 50%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  --chart-1: 220 56% 32%;
+  --chart-2: 152 40% 38%;
+  --chart-3: 36 65% 44%;
+  --chart-4: 30 28% 52%;
+  --chart-5: 212 18% 45%;
+
 }
 
-.dark {
-  /* =======================================================================
-     DARK MODE - Calm, Low Fatigue, Professional
-     ======================================================================= */
 
-  /* Backgrounds */
-  --background: 222 47% 6%;
-  --surface: 222 47% 10%;
-  --surface-muted: 222 47% 14%;
-
-  /* Borders */
-  --border: 217 19% 27%;
-  --border-muted: 217 19% 20%;
-
-  /* Primary */
-  --primary: 217 91% 60%;
-  --primary-hover: 217 91% 65%;
-  --primary-foreground: 222 47% 6%;
-
-  /* Status Colors */
-  --success: 142 71% 50%;
-  --success-muted: 142 71% 15%;
-  --warning: 38 92% 55%;
-  --warning-muted: 38 92% 15%;
-  --error: 0 72% 60%;
-  --error-muted: 0 72% 15%;
-
-  /* Text Hierarchy */
-  --text-primary: 210 40% 98%;
-  --text-secondary: 215 20% 70%;
-  --text-muted: 215 16% 50%;
-  --text-inverse: 222 47% 6%;
-
-  /* Legacy token mapping */
-  --foreground: var(--text-primary);
-  --card: var(--surface);
-  --card-foreground: var(--text-primary);
-  --popover: var(--surface);
-  --popover-foreground: var(--text-primary);
-  --secondary: var(--surface-muted);
-  --secondary-foreground: var(--text-primary);
-  --muted: var(--surface-muted);
-  --muted-foreground: var(--text-secondary);
-  --accent: var(--surface-muted);
-  --accent-foreground: var(--text-primary);
-  --destructive: var(--error);
-  --destructive-foreground: var(--text-primary);
-  --input: var(--border);
-  --ring: var(--primary);
-
-  /* Sidebar */
-  --sidebar: var(--background);
-  --sidebar-foreground: var(--text-secondary);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--surface-muted);
-  --sidebar-accent-foreground: var(--text-primary);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--primary);
-}
 
 /* ==========================================================================
    BASE STYLES
@@ -152,11 +98,12 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--text-primary));
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-sans), "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
   }
+
 
   /* Focus styles - mandatory for accessibility */
   :focus-visible {
@@ -971,13 +918,19 @@
 
 [data-radix-dialog-overlay],
 [data-radix-alert-dialog-overlay] {
-  background: hsl(var(--text-primary) / 0.4) !important;
+  background: hsl(var(--text-primary) / 0.35) !important;
+  backdrop-filter: blur(2px);
 }
 
-.dark [data-radix-dialog-overlay],
-.dark [data-radix-alert-dialog-overlay] {
-  background: hsl(0 0% 0% / 0.6) !important;
+.minimal-card {
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
 }
+
+
+
 
 /* ==========================================================================
    MOBILE OPTIMIZATIONS

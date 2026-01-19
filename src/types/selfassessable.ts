@@ -81,15 +81,16 @@ export function getSelfAssessableStatus(
 export function getStatusColor(status: SelfAssessableStatus): string {
   switch (status) {
     case "not_started":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
+      return "sacred-badge sacred-badge-neutral";
     case "in_progress":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
+      return "sacred-badge sacred-badge-warning";
     case "completed":
-      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+      return "sacred-badge sacred-badge-success";
     case "expired":
-      return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+      return "sacred-badge sacred-badge-error";
     default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+      return "sacred-badge sacred-badge-neutral";
+
   }
 }
 

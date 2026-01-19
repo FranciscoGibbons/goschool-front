@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Button, Card, RadioGroup, RadioGroupItem, Label } from "@/components/sacred";
+
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -72,15 +70,21 @@ export function QuizResponseForm({
   return (
     <div className="space-y-6">
       {questions.map((question, index) => (
-        <Card key={index} className="p-6">
-          <h3 className="text-lg font-semibold mb-4">
-            Pregunta {index + 1}: {question}
-          </h3>
+        <Card key={index}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">Pregunta {index + 1}</h3>
+              <p className="text-sm text-text-secondary mt-1">{question}</p>
+            </div>
+            <span className="text-xs text-text-muted">Selecciona una respuesta</span>
+          </div>
+
           <RadioGroup
             value={answers[index]}
             onValueChange={(value) => handleAnswerChange(index, value)}
-            className="space-y-3"
+            className="space-y-3 mt-4"
           >
+
             <div className="flex items-center space-x-2">
               <RadioGroupItem value={correct[index]} id={`correct-${index}`} />
               <Label htmlFor={`correct-${index}`}>{correct[index]}</Label>

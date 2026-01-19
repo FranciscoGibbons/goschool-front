@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ShieldAlert, Plus, ChevronLeft } from "lucide-react";
+import { Plus, ChevronLeft } from "lucide-react";
+
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { useDisciplinarySanctions } from "@/hooks/useDisciplinarySanctions";
 import { ProtectedPage } from "@/components/ProtectedPage";
@@ -10,15 +11,9 @@ import StudentSelector from "@/components/StudentSelector";
 import { SanctionDisplay, SanctionForm } from "./components";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Button } from "@/components/ui/button";
-import { parseLocalDate } from "@/utils/dateHelpers";
 import {
-  DisciplinarySanction,
-  NewDisciplinarySanction,
-  UpdateDisciplinarySanction,
-} from "@/types/disciplinarySanction";
-import {
+  LoadingSpinner,
+  Button,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -27,7 +22,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/sacred";
+
 
 function ConductaContent() {
   const { userInfo } = userInfoStore();
@@ -245,12 +241,14 @@ function ConductaContent() {
         <>
           {/* Stats card */}
           {currentStudentName() && (
-            <div className="minimal-card">
+            <div className="sacred-card">
+
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">Estudiante:</span>
-                  <span className="status-badge">{currentStudentName()}</span>
+                  <span className="sacred-badge sacred-badge-info">{currentStudentName()}</span>
                 </div>
+
               </div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
@@ -296,9 +294,10 @@ function ConductaContent() {
 
           {/* Error */}
           {error && (
-            <div className="minimal-card text-center py-8">
+            <div className="sacred-card text-center py-8">
               <p className="text-destructive text-sm">{error}</p>
             </div>
+
           )}
 
           {/* Loading */}
