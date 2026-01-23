@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { cleanSubjectName } from "@/utils/subjectHelpers";
 import axios from "axios";
+import { fetchAllPages } from "@/utils/fetchAllPages";
 
 // Función simple para construir URLs con parámetros para rutas proxy
 const buildProxyUrl = (path: string, params?: Record<string, string | number | boolean>): string => {
@@ -220,20 +221,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       setIsLoadingSubjects(true);
       
       console.log("Iniciando carga de materias y cursos...");
-      
+
       // Solo necesitamos cargar subjects ya que incluye course_name
-      const subjectsData = await axios.get(`/api/proxy/subjects/`, {
-        withCredentials: true,
-      });
-
-      console.log("Respuesta de subjects:", subjectsData.data);
-
-      const subjectsProcessed: Array<{
+      const subjectsProcessed = await fetchAllPages<{
         id: number;
         name: string;
         course_id: number;
         course_name?: string;
-      }> = subjectsData.data;
+      }>('/api/proxy/subjects/');
 
       console.log("Subjects data procesado:", subjectsProcessed);
 
@@ -268,13 +263,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
     setIsLoadingAssessments(true);
     try {
-      const assessmentsData = await axios.get(
-        buildProxyUrl('/api/proxy/assessments/', { subject_id: subjectId }), {
-          withCredentials: true,
-        }
-      );
-      console.log("Respuesta de evaluaciones:", assessmentsData.data);
-      setAssessments(assessmentsData.data);
+      const assessments = await fetchAllPages<Assessment>('/api/proxy/assessments/', {
+        subject_id: subjectId
+      });
+
+      console.log("Respuesta de evaluaciones:", assessments);
+      setAssessments(assessments);
     } catch (error) {
       console.error("Error loading assessments:", error);
       toast.error("Error al cargar evaluaciones");
@@ -294,13 +288,11 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     setIsLoadingStudents(true);
     try {
       // Obtener estudiantes del backend (ahora incluye full_name)
-      const studentsResponse = await axios.get(
-        buildProxyUrl('/api/proxy/students/', { course_id: courseId, role: 'student' }), {
-          withCredentials: true,
-        }
-      );
+      const pubUsers = await fetchAllPages<PubUser>('/api/proxy/students/', {
+        course_id: courseId,
+        role: 'student'
+      });
 
-      const pubUsers: PubUser[] = studentsResponse.data;
       console.log("Students data from backend:", pubUsers);
 
       if (pubUsers.length === 0) {
@@ -334,14 +326,16 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   const loadCourses = async () => {
     setIsLoadingCourses(true);
     try {
+      const courses = await fetchAllPages<{
+        id: number;
+        name: string;
+        year: number;
+        division: string;
+        shift: string;
+      }>('/api/proxy/courses/');
 
-      const response = await axios.get(
-        `/api/proxy/courses/`, {
-          withCredentials: true,
-        }
-      );
-      setCourses(response.data);
-      console.log("Cursos recibidos:", response.data);
+      console.log("Cursos recibidos:", courses);
+      setCourses(courses);
     } catch (error) {
       console.error("Error loading courses:", error);
       toast.error("Error al cargar cursos");

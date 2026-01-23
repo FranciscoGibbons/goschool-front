@@ -20,7 +20,18 @@ export function useChat() {
         throw new Error('Failed to fetch chats');
       }
 
-      const chats = await response.json();
+      const data = await response.json();
+
+      // Handle paginated response
+      let chats;
+      if (data && typeof data === 'object' && 'data' in data) {
+        chats = data.data;
+      } else if (Array.isArray(data)) {
+        chats = data;
+      } else {
+        chats = [];
+      }
+
       setChats(chats);
     } catch (error) {
       console.error('Failed to fetch chats:', error);
@@ -41,7 +52,17 @@ export function useChat() {
         throw new Error('Failed to fetch messages');
       }
 
-      const messages = await response.json();
+      const data = await response.json();
+
+      // Handle paginated response
+      let messages;
+      if (data && typeof data === 'object' && 'data' in data) {
+        messages = data.data;
+      } else if (Array.isArray(data)) {
+        messages = data;
+      } else {
+        messages = [];
+      }
 
       if (offset === 0) {
         setMessages(chatId, messages);
@@ -71,7 +92,12 @@ export function useChat() {
         throw new Error(error.error || 'Failed to create chat');
       }
 
-      const result = await response.json();
+      const responseData = await response.json();
+
+      // Handle potentially wrapped response
+      const result = responseData && typeof responseData === 'object' && 'data' in responseData
+        ? responseData.data
+        : responseData;
 
       if (!result.existed) {
         toast.success('Chat created successfully');
@@ -153,7 +179,16 @@ export function useChat() {
         throw new Error('Failed to fetch available users');
       }
 
-      return await response.json();
+      const data = await response.json();
+
+      // Handle paginated response
+      if (data && typeof data === 'object' && 'data' in data) {
+        return data.data;
+      } else if (Array.isArray(data)) {
+        return data;
+      } else {
+        return [];
+      }
     } catch (error) {
       console.error('Failed to fetch available users:', error);
       toast.error('Failed to load users');

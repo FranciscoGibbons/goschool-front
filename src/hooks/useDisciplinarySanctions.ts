@@ -1,25 +1,40 @@
 import { useState, useCallback } from "react";
-import { 
-  DisciplinarySanction, 
-  NewDisciplinarySanction, 
+import {
+  DisciplinarySanction,
+  NewDisciplinarySanction,
   UpdateDisciplinarySanction,
-  DisciplinarySanctionFilter 
+  DisciplinarySanctionFilter
 } from "@/types/disciplinarySanction";
 import { toast } from "sonner";
+import type { PaginatedResponse, PaginationParams } from "@/types/pagination";
+import { DEFAULT_PAGE, DEFAULT_LIMIT } from "@/types/pagination";
 
 const API_BASE = "/api/proxy/disciplinary-sanction";
 
-export function useDisciplinarySanctions() {
+export function useDisciplinarySanctions(initialPagination?: PaginationParams) {
   const [sanctions, setSanctions] = useState<DisciplinarySanction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: initialPagination?.page ?? DEFAULT_PAGE,
+    limit: initialPagination?.limit ?? DEFAULT_LIMIT,
+    total: 0,
+    totalPages: 0,
+  });
 
-  const fetchSanctions = useCallback(async (filter?: DisciplinarySanctionFilter) => {
+  const fetchSanctions = useCallback(async (filter?: DisciplinarySanctionFilter, paginationParams?: PaginationParams) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const params = new URLSearchParams();
+
+      // Add pagination params
+      const page = paginationParams?.page ?? pagination.page;
+      const limit = paginationParams?.limit ?? pagination.limit;
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+
       if (filter?.disciplinary_sanction_id) {
         params.append('disciplinary_sanction_id', filter.disciplinary_sanction_id.toString());
       }
@@ -32,9 +47,9 @@ export function useDisciplinarySanctions() {
 
       const queryString = params.toString();
       const url = queryString ? `${API_BASE}/?${queryString}` : `${API_BASE}/`;
-      
+
       console.log('Fetching sanctions from URL:', url);
-      
+
       const response = await fetch(url, {
         method: 'GET',
         credentials: 'include',
@@ -44,13 +59,11 @@ export function useDisciplinarySanctions() {
       });
 
       console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (response.status === 404) {
-        // Si es 404, puede ser que no haya datos o que el endpoint no exista
-        // Tratamos como lista vacía si es un error de "no encontrado"
         console.warn('Endpoint returned 404, treating as empty list');
         setSanctions([]);
+        setPagination(prev => ({ ...prev, total: 0, totalPages: 0 }));
         return;
       }
 
@@ -62,7 +75,21 @@ export function useDisciplinarySanctions() {
 
       const data = await response.json();
       console.log('Sanctions data received:', data);
-      setSanctions(Array.isArray(data) ? data : []);
+
+      // Handle paginated response
+      if (data && typeof data === 'object' && 'data' in data && 'total' in data) {
+        const paginatedData = data as PaginatedResponse<DisciplinarySanction>;
+        setSanctions(paginatedData.data);
+        setPagination({
+          page: paginatedData.page,
+          limit: paginatedData.limit,
+          total: paginatedData.total,
+          totalPages: paginatedData.total_pages,
+        });
+      } else {
+        // Fallback for non-paginated response
+        setSanctions(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMessage);
@@ -71,7 +98,7 @@ export function useDisciplinarySanctions() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [pagination.page, pagination.limit]);
 
   const createSanction = useCallback(async (newSanction: NewDisciplinarySanction) => {
     try {
@@ -228,15 +255,43 @@ export function useDisciplinarySanctions() {
     }
   }, []);
 
+  // Pagination controls
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      fetchSanctions(undefined, { page, limit: pagination.limit });
+    }
+  }, [fetchSanctions, pagination.totalPages, pagination.limit]);
+
+  const nextPage = useCallback(() => {
+    if (pagination.page < pagination.totalPages) {
+      goToPage(pagination.page + 1);
+    }
+  }, [goToPage, pagination.page, pagination.totalPages]);
+
+  const prevPage = useCallback(() => {
+    if (pagination.page > 1) {
+      goToPage(pagination.page - 1);
+    }
+  }, [goToPage, pagination.page]);
+
+  const setPageSize = useCallback((limit: number) => {
+    fetchSanctions(undefined, { page: 1, limit });
+  }, [fetchSanctions]);
+
   return {
     sanctions,
     isLoading,
     error,
+    pagination,
     fetchSanctions,
     createSanction,
     updateSanction,
     deleteSanction,
     setSanctions,
-    setError
+    setError,
+    goToPage,
+    nextPage,
+    prevPage,
+    setPageSize,
   };
 }

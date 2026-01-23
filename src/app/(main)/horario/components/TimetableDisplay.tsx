@@ -102,12 +102,22 @@ export default function TimetableDisplay({
           axios.get(`/api/subjects?course_id=${courseId}`),
         ]);
 
-        setTimetables(
-          Array.isArray(timetablesRes.data) ? timetablesRes.data : []
-        );
-        setSubjects(
-          Array.isArray(subjectsRes.data) ? subjectsRes.data : []
-        );
+        // Handle paginated response for timetables
+        if (timetablesRes.data && typeof timetablesRes.data === 'object' && 'data' in timetablesRes.data) {
+          setTimetables(timetablesRes.data.data);
+        } else if (Array.isArray(timetablesRes.data)) {
+          setTimetables(timetablesRes.data);
+        } else {
+          setTimetables([]);
+        }
+        // Handle paginated response for subjects
+        if (subjectsRes.data && typeof subjectsRes.data === 'object' && 'data' in subjectsRes.data) {
+          setSubjects(subjectsRes.data.data);
+        } else if (Array.isArray(subjectsRes.data)) {
+          setSubjects(subjectsRes.data);
+        } else {
+          setSubjects([]);
+        }
       } catch (error) {
         console.error("Error loading timetable:", error);
         toast.error("Error al cargar horario");
@@ -134,6 +144,10 @@ export default function TimetableDisplay({
       const startTime = t.start_time.substring(0, 5);
       return startTime === timeSlot;
     });
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleOpenDialog = (entry?: Timetable) => {

@@ -84,7 +84,17 @@ export default function MessageList() {
         const fetchedMessages = await axios.get(`/api/proxy/messages/`, {
           withCredentials: true,
         });
-        const messagesData = fetchedMessages.data;
+
+        // Handle paginated response
+        let messagesData: Message[];
+        if (fetchedMessages.data && typeof fetchedMessages.data === 'object' && 'data' in fetchedMessages.data) {
+          messagesData = fetchedMessages.data.data;
+        } else if (Array.isArray(fetchedMessages.data)) {
+          messagesData = fetchedMessages.data;
+        } else {
+          messagesData = [];
+        }
+
         setMessages(messagesData);
 
         // Cargar datos de los remitentes
@@ -144,7 +154,16 @@ export default function MessageList() {
               withCredentials: true,
             }
           );
-          const senderDataResult = senderData.data;
+
+          // Handle paginated response
+          let senderDataResult;
+          if (senderData.data && typeof senderData.data === 'object' && 'data' in senderData.data) {
+            senderDataResult = senderData.data.data;
+          } else if (Array.isArray(senderData.data)) {
+            senderDataResult = senderData.data;
+          } else {
+            senderDataResult = [];
+          }
 
           if (senderDataResult && senderDataResult.length > 0) {
             const sender = senderDataResult[0];

@@ -105,16 +105,23 @@ function EntregasContent() {
     try {
       const queryParams = new URLSearchParams();
       if (courseId) queryParams.append("course", courseId.toString());
-      
+
       const response = await fetch(`/api/proxy/assessments?${queryParams.toString()}`, {
         credentials: "include",
       });
 
       if (response.ok) {
         const data = await response.json();
-        const tasks = Array.isArray(data) ? data.filter((assessment: { type: string }) => 
+        // Handle paginated response
+        let assessments: Task[] = [];
+        if (data && typeof data === 'object' && 'data' in data) {
+          assessments = data.data;
+        } else if (Array.isArray(data)) {
+          assessments = data;
+        }
+        const tasks = assessments.filter((assessment: { type?: string }) =>
           assessment.type === "homework" || assessment.type === "project"
-        ) : [];
+        );
         setAvailableTasks(tasks);
       }
     } catch (error) {

@@ -10,7 +10,11 @@ import { es } from 'date-fns/locale';
 export default function ChatList() {
   const { chats, currentChatId, setCurrentChat, onlineUsers } = useChatStore();
 
-  const getInitials = (name: string) => {
+  // Ensure onlineUsers is usable (might be corrupted from localStorage)
+  const safeOnlineUsers = onlineUsers instanceof Set ? onlineUsers : new Set<number>();
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -31,7 +35,10 @@ export default function ChatList() {
     }
   };
 
-  if (chats.length === 0) {
+  // Ensure chats is an array
+  const safeChats = Array.isArray(chats) ? chats : [];
+
+  if (safeChats.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center text-text-secondary">
@@ -44,10 +51,10 @@ export default function ChatList() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {chats.map((chat) => {
+      {safeChats.map((chat) => {
         const isActive = chat.id === currentChatId;
         const isOnline = chat.chat_type === 'direct' && chat.participants?.some(
-          (p) => onlineUsers.has(p.user_id)
+          (p) => safeOnlineUsers.has(p.user_id)
         );
 
         return (
@@ -94,9 +101,9 @@ export default function ChatList() {
                 <p className="text-sm text-text-secondary truncate flex-1">
                   {chat.last_message || 'No messages yet'}
                 </p>
-                {chat.unread_count > 0 && (
+                {(chat.unread_count || 0) > 0 && (
                   <Badge variant="info">
-                    {chat.unread_count > 99 ? '99+' : chat.unread_count}
+                    {(chat.unread_count || 0) > 99 ? '99+' : chat.unread_count}
                   </Badge>
                 )}
               </div>

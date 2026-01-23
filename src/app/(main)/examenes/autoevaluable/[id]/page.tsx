@@ -54,10 +54,13 @@ export default function SelfAssessablePage() {
       }
 
       const data = await response.json();
-      
-      // El backend puede devolver un array o un objeto
+
+      // Handle paginated response or direct array/object
       let assessmentData;
-      if (Array.isArray(data)) {
+      if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
+        // Paginated response
+        assessmentData = data.data.find((a: Assessment) => a.id === id);
+      } else if (Array.isArray(data)) {
         assessmentData = data.find((a: Assessment) => a.id === id);
       } else {
         assessmentData = data;

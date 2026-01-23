@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BookOpen, GraduationCap } from "lucide-react";
 
 import {
@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SubjectMessages from "./SubjectMessages";
-import axios from "axios";
 import useSubjectsStore from "@/store/subjectsStore";
+import { fetchAllPages } from "@/utils/fetchAllPages";
 
 interface Subject {
   id: number;
@@ -51,17 +51,15 @@ export default function SubjectSelector({
     return name.replace(/\s*-\s*\d+°\d+\s*$/, "").trim();
   };
 
+  const hasFetchedRef = useRef(false);
+
+  // Fetch course info
   useEffect(() => {
     if (selectedCourseId) {
       const fetchCourse = async () => {
         try {
-          const response = await axios.get(`/api/proxy/courses/`, {
-            withCredentials: true,
-          });
-          const allCourses: Course[] = response.data || [];
-          const found =
-            allCourses.find((c) => Number(c.id) === Number(selectedCourseId)) ||
-            null;
+          const allCourses = await fetchAllPages<Course>('/api/proxy/courses/');
+          const found = allCourses.find((c) => Number(c.id) === Number(selectedCourseId)) || null;
           setCourse(found);
         } catch (error) {
           console.error("Error loading course:", error);
@@ -71,19 +69,32 @@ export default function SubjectSelector({
     }
   }, [selectedCourseId]);
 
+  // Fetch subjects - only once per course change
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+
     const load = async () => {
+      hasFetchedRef.current = true;
       if (selectedCourseId) {
         await fetchSubjects(selectedCourseId);
-      } else if (subjects.length === 0) {
+      } else {
         await fetchSubjects();
-      }
-      if (!selectedSubject && subjects.length > 0) {
-        setSelectedSubject(subjects[0]);
       }
     };
     load();
-  }, [selectedCourseId, subjects, fetchSubjects, selectedSubject]);
+  }, [selectedCourseId, fetchSubjects]);
+
+  // Reset fetch flag when course changes
+  useEffect(() => {
+    hasFetchedRef.current = false;
+  }, [selectedCourseId]);
+
+  // Auto-select first subject when subjects load
+  useEffect(() => {
+    if (!selectedSubject && subjects.length > 0) {
+      setSelectedSubject(subjects[0]);
+    }
+  }, [subjects, selectedSubject]);
 
 
   if (isLoadingSubjects) {

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { Role } from "@/utils/types";
 import childSelectionStore from "@/store/childSelectionStore";
+import { fetchAllPages } from "@/utils/fetchAllPages";
 
 // Estructura que devuelve el backend en /api/proxy/students/ (ahora incluye full_name)
 interface PubUser {
@@ -77,15 +78,12 @@ export function useCourseStudentSelection(
         return;
       }
 
-      const coursesData = await axios.get(`/api/proxy/courses/`, {
-        withCredentials: true,
-      });
-      const coursesResult = coursesData.data;
+      const coursesResult = await fetchAllPages<Course>('/api/proxy/courses/');
 
       console.log("Courses loaded:", coursesResult);
 
       let dedupedCourses: Course[];
-      const incoming: Course[] = coursesResult as Course[];
+      const incoming: Course[] = coursesResult;
 
       if (userRole === "admin") {
         // Deduplicar por clave compuesta (mismo año/división/nivel/turno) y quedarse con el id más bajo
@@ -161,19 +159,10 @@ export function useCourseStudentSelection(
       console.log("Course ID solicitado:", courseId);
 
       // Obtener estudiantes del backend (ahora incluye full_name)
-      const studentsResponse = await axios.get(
-        `/api/proxy/students/?course_id=${courseId}`, {
-          withCredentials: true,
-        }
-      );
-      
-      console.log("URL:", `/api/proxy/students/?course_id=${courseId}`);
-      console.log("Status:", studentsResponse.status);
-      console.log("Data (estudiantes):", studentsResponse.data);
-      console.log("Cantidad de estudiantes:", studentsResponse.data.length);
+      const pubUsers = await fetchAllPages<PubUser>('/api/proxy/students/', { course_id: courseId });
+
+      console.log("Cantidad de estudiantes:", pubUsers.length);
       console.log("=============================");
-      
-      const pubUsers: PubUser[] = studentsResponse.data;
 
       console.log("Estudiantes RAW del backend:", pubUsers.length);
       console.log("Course IDs de los estudiantes:", pubUsers.map(u => u.course_id));

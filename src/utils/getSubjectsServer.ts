@@ -1,7 +1,20 @@
 import axios from "axios";
 import https from "https";
 
-const getSubjectsServer = async (token: string): Promise<{ id: number; name: string }[]> => {
+interface Subject {
+  id: number;
+  name: string;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+const getSubjectsServer = async (token: string, page?: number, limit?: number): Promise<Subject[]> => {
   try {
     if (!token) {
       console.log("No token provided to getSubjectsServer");
@@ -13,13 +26,23 @@ const getSubjectsServer = async (token: string): Promise<{ id: number; name: str
       rejectUnauthorized: false,
     });
 
-    const res = await axios.get(`${apiUrl}/api/v1/subjects/`, {
+    const params = new URLSearchParams();
+    if (page) params.append("page", page.toString());
+    if (limit) params.append("limit", limit.toString());
+    const queryString = params.toString();
+
+    const res = await axios.get(`${apiUrl}/api/v1/subjects/${queryString ? `?${queryString}` : ""}`, {
       headers: {
         Cookie: `jwt=${token}`,
       },
       withCredentials: true,
       httpsAgent: httpsAgent,
     });
+
+    // Handle paginated response
+    if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+      return (res.data as PaginatedResponse<Subject>).data;
+    }
     return res.data;
   } catch (error) {
     console.error("Server subjects fetch error:", error);

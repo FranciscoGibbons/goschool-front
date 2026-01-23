@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Role } from "@/utils/types";
+import { fetchAllPages } from "@/utils/fetchAllPages";
 
 interface Course {
   id: number;
@@ -54,8 +55,8 @@ export const useUserCourses = (): UseUserCoursesReturn => {
       setUserRole(role);
 
       // Get courses based on role
-      const coursesData = await fetchWithAuth('/api/proxy/courses');
-      setCourses(Array.isArray(coursesData) ? coursesData : []);
+      const courses = await fetchAllPages<Course>('/api/proxy/courses/');
+      setCourses(courses);
     } catch (error) {
       console.error("Error fetching user courses:", error);
       setError("Error al cargar los cursos del usuario");

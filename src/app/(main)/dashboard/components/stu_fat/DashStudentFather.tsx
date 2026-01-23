@@ -25,7 +25,18 @@ export default function DashStudentFather() {
     const fetchExams = async () => {
       try {
         const res = await axios.get(`/api/proxy/assessments/`, { withCredentials: true });
-        setExams(res.data);
+
+        // Handle paginated response
+        let data: Exam[];
+        if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+          data = res.data.data;
+        } else if (Array.isArray(res.data)) {
+          data = res.data;
+        } else {
+          data = [];
+        }
+
+        setExams(data);
       } catch (error) {
         console.error("Error fetching exams:", error);
         setExams([]);

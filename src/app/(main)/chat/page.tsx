@@ -17,9 +17,11 @@ export default function ChatPage() {
   const { isConnected: wsConnected } = useWebSocket();
   const { fetchChats } = useChat();
 
+  // Fetch chats on mount only
   useEffect(() => {
     fetchChats();
-  }, [fetchChats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -55,7 +57,7 @@ export default function ChatPage() {
             </div>
           </div>
           <p className="text-sm text-text-secondary">
-            {chats.length} {chats.length === 1 ? 'conversation' : 'conversations'}
+            {Array.isArray(chats) ? chats.length : 0} {(Array.isArray(chats) ? chats.length : 0) === 1 ? 'conversation' : 'conversations'}
           </p>
         </div>
 

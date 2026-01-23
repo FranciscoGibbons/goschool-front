@@ -19,20 +19,27 @@ export default function ChatWindow({ chatId }: ChatWindowProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const initialLoadRef = useRef<number | null>(null);
 
-  const chat = useChatStore((state) =>
-    state.chats.find((c) => c.id === chatId)
-  );
+  const chat = useChatStore((state) => {
+    const chats = Array.isArray(state.chats) ? state.chats : [];
+    return chats.find((c) => c.id === chatId);
+  });
   const messages = useCurrentMessages();
   const typingUsers = useCurrentTypingUsers();
   const { setCurrentChat } = useChatStore();
   const { fetchMessages, markAsRead } = useChat();
 
-  // Initial message load
+  // Initial message load - only run once per chatId
   useEffect(() => {
+    if (initialLoadRef.current === chatId) return;
+    initialLoadRef.current = chatId;
+    setHasMore(true); // Reset hasMore when switching chats
+
     fetchMessages(chatId, 0, 50);
     markAsRead(chatId);
-  }, [chatId, fetchMessages, markAsRead]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -57,7 +64,8 @@ export default function ChatWindow({ chatId }: ChatWindowProps) {
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map((n) => n[0])

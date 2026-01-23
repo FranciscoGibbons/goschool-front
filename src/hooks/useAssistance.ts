@@ -1,25 +1,39 @@
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
-import type { 
-  Assistance, 
-  NewAssistance, 
-  UpdateAssistance, 
-  AssistanceFilter 
+import type {
+  Assistance,
+  NewAssistance,
+  UpdateAssistance,
+  AssistanceFilter
 } from "../types/assistance";
+import type { PaginatedResponse, PaginationParams } from "../types/pagination";
+import { DEFAULT_PAGE, DEFAULT_LIMIT } from "../types/pagination";
 
-export function useAssistance(filters?: AssistanceFilter) {
+export function useAssistance(filters?: AssistanceFilter, initialPagination?: PaginationParams) {
   const [assistances, setAssistances] = useState<Assistance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: initialPagination?.page ?? DEFAULT_PAGE,
+    limit: initialPagination?.limit ?? DEFAULT_LIMIT,
+    total: 0,
+    totalPages: 0,
+  });
 
   // Función interna para fetch que no se recrea
-  const doFetch = useCallback(async (filtersToUse?: AssistanceFilter) => {
+  const doFetch = useCallback(async (filtersToUse?: AssistanceFilter, paginationParams?: PaginationParams) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const queryParams = new URLSearchParams();
-      
+
+      // Add pagination params
+      const page = paginationParams?.page ?? pagination.page;
+      const limit = paginationParams?.limit ?? pagination.limit;
+      queryParams.append("page", page.toString());
+      queryParams.append("limit", limit.toString());
+
       if (filtersToUse) {
         if (filtersToUse.assistance_id) {
           queryParams.append("assistance_id", filtersToUse.assistance_id.toString());
@@ -34,12 +48,12 @@ export function useAssistance(filters?: AssistanceFilter) {
           queryParams.append("date", filtersToUse.date);
         }
       }
-      
+
       const queryString = queryParams.toString();
       const url = `/api/proxy/assistance${queryString ? `?${queryString}` : ""}`;
-      
+
       console.log("Fetching assistances from:", url); // Debug log
-      
+
       const response = await fetch(url, {
         method: "GET",
         credentials: "include",
@@ -57,7 +71,21 @@ export function useAssistance(filters?: AssistanceFilter) {
 
       const data = await response.json();
       console.log("Assistances data received:", data); // Debug log
-      setAssistances(Array.isArray(data) ? data : []);
+
+      // Handle paginated response
+      if (data && typeof data === 'object' && 'data' in data && 'total' in data) {
+        const paginatedData = data as PaginatedResponse<Assistance>;
+        setAssistances(paginatedData.data);
+        setPagination({
+          page: paginatedData.page,
+          limit: paginatedData.limit,
+          total: paginatedData.total,
+          totalPages: paginatedData.total_pages,
+        });
+      } else {
+        // Fallback for non-paginated response (backwards compatibility)
+        setAssistances(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Error al cargar asistencias";
       setError(errorMessage);
@@ -66,7 +94,7 @@ export function useAssistance(filters?: AssistanceFilter) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [pagination.page, pagination.limit]);
 
   // Función pública para refetch
   const fetchAssistances = useCallback(async (customFilters?: AssistanceFilter) => {
@@ -119,12 +147,19 @@ export function useAssistance(filters?: AssistanceFilter) {
 
       const data = await response.json();
       console.log('🔍 Existing assistances found:', data);
-      const existingAssistances = Array.isArray(data) ? data : [];
-      
+
+      // Handle paginated response
+      let existingAssistances: Assistance[] = [];
+      if (data && typeof data === 'object' && 'data' in data) {
+        existingAssistances = (data as PaginatedResponse<Assistance>).data;
+      } else {
+        existingAssistances = Array.isArray(data) ? data : [];
+      }
+
       // Retornar la primera asistencia encontrada para esa fecha y estudiante
       const found = existingAssistances.length > 0 ? existingAssistances[0] : null;
       console.log('🔍 Final result:', found ? 'FOUND EXISTING' : 'NO EXISTING');
-      
+
       return found;
     } catch (err) {
       console.error("❌ Error checking existing assistance:", err);
@@ -289,14 +324,42 @@ export function useAssistance(filters?: AssistanceFilter) {
     }
   }, [doFetch, filters]);
 
+  // Pagination controls
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      doFetch(filters, { page, limit: pagination.limit });
+    }
+  }, [doFetch, filters, pagination.totalPages, pagination.limit]);
+
+  const nextPage = useCallback(() => {
+    if (pagination.page < pagination.totalPages) {
+      goToPage(pagination.page + 1);
+    }
+  }, [goToPage, pagination.page, pagination.totalPages]);
+
+  const prevPage = useCallback(() => {
+    if (pagination.page > 1) {
+      goToPage(pagination.page - 1);
+    }
+  }, [goToPage, pagination.page]);
+
+  const setPageSize = useCallback((limit: number) => {
+    doFetch(filters, { page: 1, limit });
+  }, [doFetch, filters]);
+
   return {
     assistances,
     isLoading,
     error,
+    pagination,
     fetchAssistances,
     createAssistance,
     updateAssistance,
     deleteAssistance,
     checkExistingAssistance,
+    goToPage,
+    nextPage,
+    prevPage,
+    setPageSize,
   };
 }

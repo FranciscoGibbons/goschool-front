@@ -68,8 +68,29 @@ function ExamsContent() {
             axios.get("/api/proxy/assessments/", { withCredentials: true }),
             axios.get("/api/proxy/subjects/", { withCredentials: true }),
           ]);
-          setExams(examsRes.data);
-          setSubjects(subjectsRes.data);
+
+          // Handle paginated response for exams
+          let examsData: ExamWithSubjectId[];
+          if (examsRes.data && typeof examsRes.data === 'object' && 'data' in examsRes.data) {
+            examsData = examsRes.data.data;
+          } else if (Array.isArray(examsRes.data)) {
+            examsData = examsRes.data;
+          } else {
+            examsData = [];
+          }
+
+          // Handle paginated response for subjects
+          let subjectsData: Subject[];
+          if (subjectsRes.data && typeof subjectsRes.data === 'object' && 'data' in subjectsRes.data) {
+            subjectsData = subjectsRes.data.data;
+          } else if (Array.isArray(subjectsRes.data)) {
+            subjectsData = subjectsRes.data;
+          } else {
+            subjectsData = [];
+          }
+
+          setExams(examsData);
+          setSubjects(subjectsData);
         } catch (err) {
           console.error("Error loading data:", err);
           toast.error("Error al cargar evaluaciones");

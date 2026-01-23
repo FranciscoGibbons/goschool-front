@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { devtools } from "zustand/middleware";
 import { subscribeWithSelector } from "zustand/middleware";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
+import { fetchAllPages } from "@/utils/fetchAllPages";
 
 interface Course {
   id: number;
@@ -75,21 +76,16 @@ const useSubjectsStore = create<SubjectsStore>()(
 
             try {
               set({ isLoading: true, error: null });
-              
-              const response = await axios.get('/api/proxy/courses/', {
-                withCredentials: true,
-                timeout: 10000
-              });
-              
-              const courses: Course[] = response.data;
-              
-              set({ 
-                courses, 
-                isLoading: false, 
+
+              const courses = await fetchAllPages<Course>('/api/proxy/courses/');
+
+              set({
+                courses,
+                isLoading: false,
                 lastFetch: Date.now(),
-                error: null 
+                error: null
               });
-              
+
               return courses;
             } catch (error) {
               const errorMessage = error instanceof AxiosError 
@@ -108,16 +104,9 @@ const useSubjectsStore = create<SubjectsStore>()(
           fetchSubjects: async (courseId?: number): Promise<void> => {
             set({ isLoading: true, error: null });
             try {
-              const url = courseId 
-                ? `/api/proxy/subjects/?course_id=${courseId}`
-                : `/api/proxy/subjects/`;
-              
-              const response = await axios.get(url, {
-                withCredentials: true,
-                timeout: 10000
-              });
-              
-              const subjects = response.data;
+              const params = courseId ? { course_id: courseId } : {};
+              const subjects = await fetchAllPages<Subject>('/api/proxy/subjects/', params);
+
               set({ subjects, isLoading: false, error: null });
             } catch (error: unknown) {
               let errorMessage = "Error al cargar materias";

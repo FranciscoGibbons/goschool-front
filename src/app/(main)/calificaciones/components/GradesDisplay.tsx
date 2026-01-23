@@ -79,7 +79,14 @@ export default function GradesDisplay({ selectedStudentId }: GradesDisplayProps)
   const fetchSubjects = useCallback(async () => {
     try {
       const response = await axios.get(API_ENDPOINTS.SUBJECTS);
-      setSubjects(Array.isArray(response.data) ? response.data : []);
+      // Handle paginated response
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        setSubjects(response.data.data);
+      } else if (Array.isArray(response.data)) {
+        setSubjects(response.data);
+      } else {
+        setSubjects([]);
+      }
     } catch {
       setSubjects([]);
     }
@@ -116,14 +123,30 @@ export default function GradesDisplay({ selectedStudentId }: GradesDisplayProps)
 
           if (currentStudentIdRef.current !== requestStudentId) return;
 
-          const validGrades = Array.isArray(gradesRes.data)
-            ? gradesRes.data.filter((g: Grade) =>
-                userInfo?.role === "student" || g.student_id === selectedStudentId
-              )
-            : [];
+          // Handle paginated response for grades
+          let gradesData: Grade[];
+          if (gradesRes.data && typeof gradesRes.data === 'object' && 'data' in gradesRes.data) {
+            gradesData = gradesRes.data.data;
+          } else if (Array.isArray(gradesRes.data)) {
+            gradesData = gradesRes.data;
+          } else {
+            gradesData = [];
+          }
+
+          const validGrades = gradesData.filter((g: Grade) =>
+            userInfo?.role === "student" || g.student_id === selectedStudentId
+          );
 
           setGrades(validGrades);
-          setAssessments(Array.isArray(assessmentsRes.data) ? assessmentsRes.data : []);
+
+          // Handle paginated response for assessments
+          if (assessmentsRes.data && typeof assessmentsRes.data === 'object' && 'data' in assessmentsRes.data) {
+            setAssessments(assessmentsRes.data.data);
+          } else if (Array.isArray(assessmentsRes.data)) {
+            setAssessments(assessmentsRes.data);
+          } else {
+            setAssessments([]);
+          }
         } catch {
           if (currentStudentIdRef.current === requestStudentId) {
             toast.error("Error al cargar datos");

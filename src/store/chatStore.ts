@@ -203,32 +203,36 @@ export const useChatStore = create<ChatState>()(
     }),
     {
       name: 'chat-storage',
+      version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         chats: state.chats,
         messages: state.messages,
         currentChatId: state.currentChatId,
       }),
-      // Custom serializer to handle Set
-      serialize: (state) => {
-        const onlineUsersArray = Array.from(state.state.onlineUsers || []);
-        return JSON.stringify({
-          ...state,
-          state: {
-            ...state.state,
-            onlineUsers: onlineUsersArray,
-          },
-        });
-      },
-      // Custom deserializer to recreate Set
-      deserialize: (str) => {
-        const parsed = JSON.parse(str);
-        if (parsed.state.onlineUsers && Array.isArray(parsed.state.onlineUsers)) {
-          parsed.state.onlineUsers = new Set(parsed.state.onlineUsers);
-        } else {
-          parsed.state.onlineUsers = new Set();
+      onRehydrateStorage: () => (state) => {
+        // Sanitize data after rehydration
+        if (state) {
+          // Ensure chats is an array
+          if (!Array.isArray(state.chats)) {
+            state.chats = [];
+          }
+          // Ensure messages is an object
+          if (!state.messages || typeof state.messages !== 'object') {
+            state.messages = {};
+          }
+          // Validate currentChatId exists in chats
+          if (state.currentChatId !== null) {
+            const chatExists = state.chats.some((c: Chat) => c && c.id === state.currentChatId);
+            if (!chatExists) {
+              state.currentChatId = null;
+            }
+          }
+          // Filter out any invalid chats
+          state.chats = state.chats.filter((chat: Chat) =>
+            chat && typeof chat === 'object' && typeof chat.id === 'number'
+          );
         }
-        return parsed;
       },
     }
   )
@@ -238,7 +242,8 @@ export const useChatStore = create<ChatState>()(
 export const useCurrentChat = () =>
   useChatStore((state) => {
     if (!state.currentChatId) return null;
-    return state.chats.find((chat) => chat.id === state.currentChatId);
+    const chats = Array.isArray(state.chats) ? state.chats : [];
+    return chats.find((chat) => chat.id === state.currentChatId);
   });
 
 export const useCurrentMessages = () =>
@@ -256,10 +261,12 @@ export const useCurrentTypingUsers = () =>
 export const useChatById = (chatId: number | null) =>
   useChatStore((state) => {
     if (!chatId) return null;
-    return state.chats.find((chat) => chat.id === chatId);
+    const chats = Array.isArray(state.chats) ? state.chats : [];
+    return chats.find((chat) => chat.id === chatId);
   });
 
 export const useUnreadCount = () =>
-  useChatStore((state) =>
-    state.chats.reduce((total, chat) => total + chat.unread_count, 0)
-  );
+  useChatStore((state) => {
+    const chats = Array.isArray(state.chats) ? state.chats : [];
+    return chats.reduce((total, chat) => total + (chat.unread_count || 0), 0);
+  });

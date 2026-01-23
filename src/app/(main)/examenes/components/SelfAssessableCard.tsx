@@ -128,7 +128,15 @@ export default function SelfAssessableCard({
       const res = await axios.get(`/api/proxy/selfassessables/?assessment_id=${exam.id}`, {
         withCredentials: true,
       });
-      const arr = Array.isArray(res.data) ? res.data : [];
+      // Handle paginated response
+      let arr: Question[];
+      if (res.data && typeof res.data === 'object' && 'data' in res.data) {
+        arr = res.data.data;
+      } else if (Array.isArray(res.data)) {
+        arr = res.data;
+      } else {
+        arr = [];
+      }
       if (arr.length) setQuestions(arr);
       else throw new Error("Sin preguntas");
     } catch {

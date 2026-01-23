@@ -116,7 +116,18 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
           `/api/proxy/subject-messages/?subject_id=${subjectId}`,
           { withCredentials: true }
         );
-        setMessages(messagesData.data);
+
+        // Handle paginated response
+        let data: SubjectMessage[];
+        if (messagesData.data && typeof messagesData.data === 'object' && 'data' in messagesData.data) {
+          data = messagesData.data.data;
+        } else if (Array.isArray(messagesData.data)) {
+          data = messagesData.data;
+        } else {
+          data = [];
+        }
+
+        setMessages(data);
       } catch {
         setMessages([]);
       } finally {
