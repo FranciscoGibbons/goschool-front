@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Search,
   Users,
-  X,
   Wifi,
   WifiOff,
   RefreshCw,
@@ -433,7 +432,7 @@ export default function ChatPage() {
   } = useChatStore();
 
   const { fetchChats, fetchMessages, sendMessage, markAsRead } = useChat();
-  const { sendMessage: wsSendMessage, startTyping, stopTyping, joinChat, reconnect } = useWebSocket();
+  const { sendMessage: wsSendMessage, joinChat, reconnect } = useWebSocket();
 
   // Hydration
   useEffect(() => {

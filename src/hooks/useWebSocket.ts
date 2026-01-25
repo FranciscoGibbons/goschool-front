@@ -14,178 +14,194 @@ function getWsUrl(): string {
   return `${protocol}//${window.location.host}/api/v1/ws/chat/`;
 }
 
+// Singleton WebSocket manager to avoid multiple connections
+let wsInstance: WebSocket | null = null;
+let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let wsPingTimer: ReturnType<typeof setInterval> | null = null;
+let wsAttempts = 0;
+const wsListeners: Set<(event: MessageEvent) => void> = new Set();
+
+function connectWs() {
+  if (wsInstance?.readyState === WebSocket.OPEN) return;
+  if (wsInstance?.readyState === WebSocket.CONNECTING) return;
+
+  const url = getWsUrl();
+  if (!url) return;
+
+  console.log('[WS] Connecting to:', url);
+
+  try {
+    const ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      console.log('[WS] Connected');
+      useChatStore.getState().setConnected(true);
+      wsAttempts = 0;
+
+      // Ping every 25s
+      if (wsPingTimer) clearInterval(wsPingTimer);
+      wsPingTimer = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'Ping' }));
+        }
+      }, 25000);
+    };
+
+    ws.onmessage = (event) => {
+      wsListeners.forEach(listener => listener(event));
+    };
+
+    ws.onerror = () => {
+      console.error('[WS] Error');
+    };
+
+    ws.onclose = (e) => {
+      console.log('[WS] Closed:', e.code);
+      useChatStore.getState().setConnected(false);
+      wsInstance = null;
+
+      if (wsPingTimer) {
+        clearInterval(wsPingTimer);
+        wsPingTimer = null;
+      }
+
+      // Reconnect with backoff
+      if (wsAttempts < 10) {
+        const delay = Math.min(3000 * Math.pow(1.5, wsAttempts), 30000);
+        console.log(`[WS] Reconnecting in ${delay}ms (attempt ${wsAttempts + 1})`);
+        wsReconnectTimer = setTimeout(() => {
+          wsAttempts++;
+          connectWs();
+        }, delay);
+      }
+    };
+
+    wsInstance = ws;
+  } catch (err) {
+    console.error('[WS] Connect error:', err);
+  }
+}
+
+function disconnectWs() {
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = null;
+  }
+  if (wsPingTimer) {
+    clearInterval(wsPingTimer);
+    wsPingTimer = null;
+  }
+  if (wsInstance) {
+    wsInstance.close(1000);
+    wsInstance = null;
+  }
+  useChatStore.getState().setConnected(false);
+}
+
+function sendWs(msg: WSClientMessage): boolean {
+  if (wsInstance?.readyState === WebSocket.OPEN) {
+    wsInstance.send(JSON.stringify(msg));
+    return true;
+  }
+  return false;
+}
+
+function reconnectWs() {
+  wsAttempts = 0;
+  disconnectWs();
+  setTimeout(connectWs, 100);
+}
+
 export function useWebSocket() {
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const attemptsRef = useRef(0);
+  const currentChatIdRef = useRef<number | null>(null);
 
-  const {
-    setConnected,
-    addMessage,
-    updateChat,
-    addTypingUser,
-    removeTypingUser,
-    setUserOnline,
-    setUserOffline,
-    incrementUnread,
-    currentChatId,
-  } = useChatStore();
-
-  const currentChatIdRef = useRef(currentChatId);
+  // Subscribe to currentChatId changes
   useEffect(() => {
-    currentChatIdRef.current = currentChatId;
-  }, [currentChatId]);
-
-  const send = useCallback((msg: WSClientMessage): boolean => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(msg));
-      return true;
-    }
-    return false;
+    return useChatStore.subscribe((state) => {
+      currentChatIdRef.current = state.currentChatId;
+    });
   }, []);
 
+  // Message handler
   const handleMessage = useCallback((event: MessageEvent) => {
+    const store = useChatStore.getState();
     try {
       const msg: WSServerMessage = JSON.parse(event.data);
 
       switch (msg.type) {
         case 'NewMessage': {
           const fullMessage: ChatMessage = { ...msg.message, sender: msg.sender };
-          addMessage(msg.chat_id, fullMessage);
-          updateChat(msg.chat_id, {
+          store.addMessage(msg.chat_id, fullMessage);
+          store.updateChat(msg.chat_id, {
             last_message: msg.message.message || '[Archivo]',
             last_message_time: msg.message.created_at,
           });
           if (msg.chat_id !== currentChatIdRef.current) {
-            incrementUnread(msg.chat_id);
+            store.incrementUnread(msg.chat_id);
           }
           break;
         }
         case 'UserTyping':
-          addTypingUser(msg.chat_id, { user_id: msg.user_id, user_name: msg.user_name });
-          setTimeout(() => removeTypingUser(msg.chat_id, msg.user_id), 5000);
+          store.addTypingUser(msg.chat_id, { user_id: msg.user_id, user_name: msg.user_name });
+          setTimeout(() => store.removeTypingUser(msg.chat_id, msg.user_id), 5000);
           break;
         case 'UserStoppedTyping':
-          removeTypingUser(msg.chat_id, msg.user_id);
+          store.removeTypingUser(msg.chat_id, msg.user_id);
           break;
         case 'UserOnline':
-          setUserOnline(msg.user_id);
+          store.setUserOnline(msg.user_id);
           break;
         case 'UserOffline':
-          setUserOffline(msg.user_id);
+          store.setUserOffline(msg.user_id);
           break;
         case 'Error':
-          console.error('WS Error:', msg.message);
+          console.error('[WS] Server error:', msg.message);
           break;
         case 'Pong':
-          break;
         case 'MessageRead':
           break;
       }
     } catch (err) {
-      console.error('WS parse error:', err);
+      console.error('[WS] Parse error:', err);
     }
-  }, [addMessage, updateChat, addTypingUser, removeTypingUser, setUserOnline, setUserOffline, incrementUnread]);
+  }, []);
 
-  const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
-    if (wsRef.current?.readyState === WebSocket.CONNECTING) return;
-
-    const url = getWsUrl();
-    if (!url) return;
-
-    try {
-      const ws = new WebSocket(url);
-
-      ws.onopen = () => {
-        console.log('WS connected');
-        setConnected(true);
-        attemptsRef.current = 0;
-
-        // Ping every 25s
-        pingTimer.current = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'Ping' }));
-          }
-        }, 25000);
-      };
-
-      ws.onmessage = handleMessage;
-
-      ws.onerror = () => {
-        console.error('WS error');
-      };
-
-      ws.onclose = () => {
-        console.log('WS closed');
-        setConnected(false);
-        wsRef.current = null;
-
-        if (pingTimer.current) {
-          clearInterval(pingTimer.current);
-          pingTimer.current = null;
-        }
-
-        // Reconnect
-        if (attemptsRef.current < 10) {
-          const delay = Math.min(3000 * Math.pow(1.5, attemptsRef.current), 30000);
-          reconnectTimer.current = setTimeout(() => {
-            attemptsRef.current++;
-            connect();
-          }, delay);
-        }
-      };
-
-      wsRef.current = ws;
-    } catch (err) {
-      console.error('WS connect error:', err);
-    }
-  }, [setConnected, handleMessage]);
-
-  const disconnect = useCallback(() => {
-    if (reconnectTimer.current) {
-      clearTimeout(reconnectTimer.current);
-      reconnectTimer.current = null;
-    }
-    if (pingTimer.current) {
-      clearInterval(pingTimer.current);
-      pingTimer.current = null;
-    }
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    setConnected(false);
-  }, [setConnected]);
-
+  // Setup connection and listener
   useEffect(() => {
-    connect();
-    return () => disconnect();
-  }, [connect, disconnect]);
+    wsListeners.add(handleMessage);
+    connectWs();
+
+    return () => {
+      wsListeners.delete(handleMessage);
+      // Only disconnect if no more listeners
+      if (wsListeners.size === 0) {
+        disconnectWs();
+      }
+    };
+  }, [handleMessage]);
 
   const sendMessage = useCallback((chatId: number, message: string) => {
-    return send({ type: 'SendMessage', chat_id: chatId, message });
-  }, [send]);
+    return sendWs({ type: 'SendMessage', chat_id: chatId, message });
+  }, []);
 
   const startTyping = useCallback((chatId: number) => {
-    return send({ type: 'TypingStart', chat_id: chatId });
-  }, [send]);
+    return sendWs({ type: 'TypingStart', chat_id: chatId });
+  }, []);
 
   const stopTyping = useCallback((chatId: number) => {
-    return send({ type: 'TypingStop', chat_id: chatId });
-  }, [send]);
+    return sendWs({ type: 'TypingStop', chat_id: chatId });
+  }, []);
 
   const joinChat = useCallback((chatId: number) => {
-    return send({ type: 'JoinChat', chat_id: chatId });
-  }, [send]);
+    return sendWs({ type: 'JoinChat', chat_id: chatId });
+  }, []);
 
   return {
-    send,
+    send: sendWs,
     sendMessage,
     startTyping,
     stopTyping,
     joinChat,
-    reconnect: connect,
+    reconnect: reconnectWs,
   };
 }

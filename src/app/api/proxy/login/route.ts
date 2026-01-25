@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const response = await backendFetch('/api/v1/login/', {
+    const response = await backendFetch('/api/login/', {
       method: 'POST',
       body,
     });
