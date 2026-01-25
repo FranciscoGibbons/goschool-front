@@ -81,7 +81,8 @@ export function ProtectedPage({ children, requiredRole, allowedRoles }: Protecte
     };
 
     verifyAuth();
-  }, [userInfo?.role, requiredRole, allowedRoles, checkAuth, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userInfo?.role, requiredRole, allowedRoles]); // checkAuth and router are stable refs
 
   // Si está cargando la verificación o el store, mostrar loading
   if (isLoading || isChecking) {

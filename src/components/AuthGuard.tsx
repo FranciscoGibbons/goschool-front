@@ -55,7 +55,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     };
 
     checkAuthStatus();
-  }, [router, userInfo?.role, checkAuth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userInfo?.role]); // checkAuth and router are stable refs
 
   // Mientras se verifica, mostrar solo el loader sin ningún contenido
   if (isChecking || !shouldRender) {

@@ -1,21 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { toast } from 'sonner';
 import { useChatStore } from '@/store/chatStore';
-import type { WSClientMessage, WSServerMessage } from '@/types/chat';
+import type { WSClientMessage, WSServerMessage, ChatMessage } from '@/types/chat';
 
-const WS_URL = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('https', 'wss').replace('http', 'ws') + '/api/v1/ws/chat/' || 'ws://localhost/api/v1/ws/chat/';
-const RECONNECT_INTERVAL = 3000;
-const MAX_RECONNECT_ATTEMPTS = 10;
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+function getWsUrl(): string {
+  if (typeof window === 'undefined') return '';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (backendUrl) {
+    return backendUrl.replace('https', 'wss').replace('http', 'ws') + '/api/v1/ws/chat/';
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/api/v1/ws/chat/`;
+}
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const reconnectAttemptsRef = useRef(0);
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
-  const isIntentionalCloseRef = useRef(false);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const attemptsRef = useRef(0);
 
   const {
     setConnected,
@@ -25,288 +28,164 @@ export function useWebSocket() {
     removeTypingUser,
     setUserOnline,
     setUserOffline,
+    incrementUnread,
     currentChatId,
-    incrementUnreadCount,
   } = useChatStore();
 
-  // Send heartbeat to keep connection alive
-  const startHeartbeat = useCallback(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-    }
+  const currentChatIdRef = useRef(currentChatId);
+  useEffect(() => {
+    currentChatIdRef.current = currentChatId;
+  }, [currentChatId]);
 
-    heartbeatIntervalRef.current = setInterval(() => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        const ping: WSClientMessage = { type: 'Ping' };
-        wsRef.current.send(JSON.stringify(ping));
+  const send = useCallback((msg: WSClientMessage): boolean => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(msg));
+      return true;
+    }
+    return false;
+  }, []);
+
+  const handleMessage = useCallback((event: MessageEvent) => {
+    try {
+      const msg: WSServerMessage = JSON.parse(event.data);
+
+      switch (msg.type) {
+        case 'NewMessage': {
+          const fullMessage: ChatMessage = { ...msg.message, sender: msg.sender };
+          addMessage(msg.chat_id, fullMessage);
+          updateChat(msg.chat_id, {
+            last_message: msg.message.message || '[Archivo]',
+            last_message_time: msg.message.created_at,
+          });
+          if (msg.chat_id !== currentChatIdRef.current) {
+            incrementUnread(msg.chat_id);
+          }
+          break;
+        }
+        case 'UserTyping':
+          addTypingUser(msg.chat_id, { user_id: msg.user_id, user_name: msg.user_name });
+          setTimeout(() => removeTypingUser(msg.chat_id, msg.user_id), 5000);
+          break;
+        case 'UserStoppedTyping':
+          removeTypingUser(msg.chat_id, msg.user_id);
+          break;
+        case 'UserOnline':
+          setUserOnline(msg.user_id);
+          break;
+        case 'UserOffline':
+          setUserOffline(msg.user_id);
+          break;
+        case 'Error':
+          console.error('WS Error:', msg.message);
+          break;
+        case 'Pong':
+          break;
+        case 'MessageRead':
+          break;
       }
-    }, HEARTBEAT_INTERVAL);
-  }, []);
-
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = undefined;
+    } catch (err) {
+      console.error('WS parse error:', err);
     }
-  }, []);
+  }, [addMessage, updateChat, addTypingUser, removeTypingUser, setUserOnline, setUserOffline, incrementUnread]);
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return;
-    }
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
-    if (wsRef.current?.readyState === WebSocket.CONNECTING) {
-      return;
-    }
-
-    console.log('🔌 [WS DEBUG] Connecting to WebSocket:', WS_URL);
-    console.log('📍 [WS DEBUG] Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
-    console.log('🔄 [WS DEBUG] Attempt:', reconnectAttemptsRef.current + 1);
+    const url = getWsUrl();
+    if (!url) return;
 
     try {
-      const ws = new WebSocket(WS_URL);
-      console.log('🔌 [WS DEBUG] WebSocket object created, waiting for connection...');
+      const ws = new WebSocket(url);
 
       ws.onopen = () => {
-        console.log('✅ [WS DEBUG] WebSocket connected successfully');
-        console.log('📊 [WS DEBUG] ReadyState:', ws.readyState, '(1 = OPEN)');
+        console.log('WS connected');
         setConnected(true);
-        reconnectAttemptsRef.current = 0;
-        startHeartbeat();
+        attemptsRef.current = 0;
 
-        // Rejoin current chat if any
-        if (currentChatId) {
-          const joinMsg: WSClientMessage = {
-            type: 'JoinChat',
-            chat_id: currentChatId,
-          };
-          ws.send(JSON.stringify(joinMsg));
-        }
-      };
-
-      ws.onmessage = (event) => {
-        console.log('📩 [WS DEBUG] Raw message received:', event.data);
-        try {
-          const message: WSServerMessage = JSON.parse(event.data);
-          console.log('📩 [WS DEBUG] Parsed message type:', message.type);
-
-          switch (message.type) {
-            case 'NewMessage':
-              console.log('📨 New message received:', message);
-              addMessage(message.chat_id, message.message);
-
-              // Update last message in chat list
-              updateChat(message.chat_id, {
-                last_message: message.message.message,
-                last_message_time: message.message.created_at,
-              });
-
-              // Increment unread count if not current chat
-              if (message.chat_id !== currentChatId) {
-                incrementUnreadCount(message.chat_id);
-              }
-
-              // Show notification if not current chat
-              if (message.chat_id !== currentChatId && 'Notification' in window && Notification.permission === 'granted') {
-                new Notification(message.sender.full_name || 'New Message', {
-                  body: message.message.message,
-                  icon: message.sender.photo || '/default-avatar.png',
-                });
-              }
-              break;
-
-            case 'MessageRead':
-              console.log('✓✓ Message read:', message);
-              // Could update UI to show read receipts
-              break;
-
-            case 'UserTyping':
-              addTypingUser(message.chat_id, {
-                user_id: message.user_id,
-                user_name: message.user_name,
-                timestamp: Date.now(),
-              });
-
-              // Auto-remove after 5 seconds
-              setTimeout(() => {
-                removeTypingUser(message.chat_id, message.user_id);
-              }, 5000);
-              break;
-
-            case 'UserStoppedTyping':
-              removeTypingUser(message.chat_id, message.user_id);
-              break;
-
-            case 'UserOnline':
-              setUserOnline(message.user_id);
-              break;
-
-            case 'UserOffline':
-              setUserOffline(message.user_id);
-              break;
-
-            case 'Error':
-              console.error('❌ WebSocket error:', message.message);
-              toast.error(message.message);
-              break;
-
-            case 'Pong':
-              // Heartbeat response
-              break;
-
-            default:
-              console.log('Unknown message type:', message);
+        // Ping every 25s
+        pingTimer.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'Ping' }));
           }
-        } catch (err) {
-          console.error('Failed to parse WebSocket message:', err);
-        }
+        }, 25000);
       };
 
-      ws.onerror = (error) => {
-        console.error('❌ [WS DEBUG] WebSocket error event fired');
-        console.error('❌ [WS DEBUG] Error details:', {
-          url: WS_URL,
-          readyState: ws.readyState,
-          readyStateLabel: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][ws.readyState],
-          error: error,
-          type: (error as Event).type,
-        });
+      ws.onmessage = handleMessage;
 
-        // Common error messages
-        console.error('💡 [WS DEBUG] Troubleshooting:');
-        console.error('   1. Check if backend is running: docker-compose logs backend');
-        console.error('   2. Check JWT cookie exists in browser DevTools > Application > Cookies');
-        console.error('   3. For self-signed certs, visit backend URL first and accept certificate');
-        console.error('   4. Check browser console Network tab for WS connection details');
-        console.error('   5. Verify NEXT_PUBLIC_BACKEND_URL is correct:', process.env.NEXT_PUBLIC_BACKEND_URL);
+      ws.onerror = () => {
+        console.error('WS error');
       };
 
-      ws.onclose = (event) => {
-        console.log('🔌 WebSocket disconnected:', {
-          code: event.code,
-          reason: event.reason || 'No reason provided',
-          wasClean: event.wasClean,
-        });
-
-        // Decode common WebSocket close codes
-        const closeReasons: Record<number, string> = {
-          1000: 'Normal Closure',
-          1001: 'Going Away',
-          1002: 'Protocol Error',
-          1003: 'Unsupported Data',
-          1006: 'Abnormal Closure (no close frame)',
-          1007: 'Invalid Data',
-          1008: 'Policy Violation',
-          1009: 'Message Too Big',
-          1010: 'Missing Extension',
-          1011: 'Internal Server Error',
-          1015: 'TLS Handshake Failed',
-        };
-
-        if (closeReasons[event.code]) {
-          console.log(`   → ${closeReasons[event.code]}`);
-        }
-
+      ws.onclose = () => {
+        console.log('WS closed');
         setConnected(false);
-        stopHeartbeat();
         wsRef.current = null;
 
-        // Don't reconnect if intentional close
-        if (isIntentionalCloseRef.current) {
-          isIntentionalCloseRef.current = false;
-          return;
+        if (pingTimer.current) {
+          clearInterval(pingTimer.current);
+          pingTimer.current = null;
         }
 
-        // Attempt to reconnect with exponential backoff
-        if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
-          const delay = Math.min(RECONNECT_INTERVAL * Math.pow(1.5, reconnectAttemptsRef.current), 30000);
-          console.log(`🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${MAX_RECONNECT_ATTEMPTS})`);
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttemptsRef.current++;
+        // Reconnect
+        if (attemptsRef.current < 10) {
+          const delay = Math.min(3000 * Math.pow(1.5, attemptsRef.current), 30000);
+          reconnectTimer.current = setTimeout(() => {
+            attemptsRef.current++;
             connect();
           }, delay);
-        } else {
-          console.error('❌ Max reconnection attempts reached');
-          toast.error('Connection lost. Please refresh the page.');
         }
       };
 
       wsRef.current = ws;
     } catch (err) {
-      console.error('Failed to create WebSocket:', err);
-      setConnected(false);
+      console.error('WS connect error:', err);
     }
-  }, [
-    setConnected,
-    addMessage,
-    updateChat,
-    addTypingUser,
-    removeTypingUser,
-    setUserOnline,
-    setUserOffline,
-    currentChatId,
-    incrementUnreadCount,
-    startHeartbeat,
-    stopHeartbeat,
-  ]);
+  }, [setConnected, handleMessage]);
 
   const disconnect = useCallback(() => {
-    isIntentionalCloseRef.current = true;
-
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
     }
-
-    stopHeartbeat();
-
+    if (pingTimer.current) {
+      clearInterval(pingTimer.current);
+      pingTimer.current = null;
+    }
     if (wsRef.current) {
-      wsRef.current.close(1000, 'Client disconnect');
+      wsRef.current.close();
       wsRef.current = null;
     }
-
     setConnected(false);
-  }, [setConnected, stopHeartbeat]);
+  }, [setConnected]);
 
-  const sendMessage = useCallback((message: WSClientMessage) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
-      return true;
-    } else {
-      console.warn('WebSocket not connected, cannot send message');
-      toast.error('Connection lost. Reconnecting...');
-      return false;
-    }
-  }, []);
-
-  // Connect on mount
   useEffect(() => {
     connect();
-
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
-    return () => {
-      disconnect();
-    };
+    return () => disconnect();
   }, [connect, disconnect]);
 
-  // Reconnect when currentChatId changes
-  useEffect(() => {
-    if (currentChatId && wsRef.current?.readyState === WebSocket.OPEN) {
-      const joinMsg: WSClientMessage = {
-        type: 'JoinChat',
-        chat_id: currentChatId,
-      };
-      sendMessage(joinMsg);
-    }
-  }, [currentChatId, sendMessage]);
+  const sendMessage = useCallback((chatId: number, message: string) => {
+    return send({ type: 'SendMessage', chat_id: chatId, message });
+  }, [send]);
+
+  const startTyping = useCallback((chatId: number) => {
+    return send({ type: 'TypingStart', chat_id: chatId });
+  }, [send]);
+
+  const stopTyping = useCallback((chatId: number) => {
+    return send({ type: 'TypingStop', chat_id: chatId });
+  }, [send]);
+
+  const joinChat = useCallback((chatId: number) => {
+    return send({ type: 'JoinChat', chat_id: chatId });
+  }, [send]);
 
   return {
+    send,
     sendMessage,
-    isConnected: wsRef.current?.readyState === WebSocket.OPEN,
+    startTyping,
+    stopTyping,
+    joinChat,
     reconnect: connect,
   };
 }

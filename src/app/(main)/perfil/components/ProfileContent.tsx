@@ -25,7 +25,8 @@ export function ProfileContent() {
     if (!userInfo || !userInfo.role) {
       fetchUserInfo();
     }
-  }, [userInfo, fetchUserInfo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   const getInitials = (name: string): string => {
     if (!name) return "";

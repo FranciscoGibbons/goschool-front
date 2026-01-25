@@ -34,7 +34,8 @@ export default function ProfileAccount() {
     if (!userInfo || !userInfo.role) {
       fetchUserInfo();
     }
-  }, [userInfo, fetchUserInfo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   const forceRefresh = async () => {
     await refreshUserInfo();

@@ -106,11 +106,13 @@ interface TooltipProps {
 function ProfileDropdown({ onMouseEnter, onMouseLeave }: ProfileDropdownProps) {
   const { userInfo, fetchUserInfo } = userInfoStore();
 
+  // Only fetch user info once on mount if not available
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
       fetchUserInfo();
     }
-  }, [userInfo, fetchUserInfo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty array - only run on mount
 
   const handleLogout = async () => {
     try {
