@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import https from 'https';
-import { safeJson } from '@/lib/api/safe-json';
-
-const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost:3001';
-
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-});
+import { backendFetch } from '@/lib/api/backend-fetch';
 
 export async function GET(
   request: NextRequest,
@@ -14,27 +7,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const cookieHeader = request.headers.get('cookie') || '';
+    const cookie = request.headers.get('cookie') || '';
     const searchParams = request.nextUrl.searchParams;
     const offset = searchParams.get('offset') || '0';
     const limit = searchParams.get('limit') || '50';
 
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/chats/${id}/messages?offset=${offset}&limit=${limit}`,
+    const response = await backendFetch(
+      `/api/v1/chats/${id}/messages?offset=${offset}&limit=${limit}`,
       {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Cookie: cookieHeader,
-        },
-        credentials: 'include',
-        // @ts-expect-error - httpsAgent is valid for node-fetch
-        agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
+        cookie,
       }
     );
 
-    const data = await safeJson(response);
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(response.data, { status: response.status });
   } catch (error) {
     console.error('Error fetching messages:', error);
     return NextResponse.json(
@@ -50,26 +36,19 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const cookieHeader = request.headers.get('cookie') || '';
+    const cookie = request.headers.get('cookie') || '';
     const body = await request.json();
 
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/chats/${id}/messages`,
+    const response = await backendFetch(
+      `/api/v1/chats/${id}/messages`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Cookie: cookieHeader,
-        },
-        credentials: 'include',
-        body: JSON.stringify(body),
-        // @ts-expect-error - httpsAgent is valid for node-fetch
-        agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
+        cookie,
+        body,
       }
     );
 
-    const data = await safeJson(response);
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(response.data, { status: response.status });
   } catch (error) {
     console.error('Error sending message:', error);
     return NextResponse.json(

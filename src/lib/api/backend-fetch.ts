@@ -10,7 +10,7 @@ const httpsAgent = new https.Agent({
 interface BackendFetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
-  body?: unknown;
+  body?: unknown | FormData;
   cookie?: string;
 }
 
@@ -20,16 +20,31 @@ interface BackendFetchResult<T = unknown> {
   headers: Record<string, string>;
 }
 
+/**
+ * Extrae el token JWT de un string de cookies
+ */
+function extractJwtFromCookie(cookieString: string): string | null {
+  const cookies = cookieString.split(';').map(c => c.trim());
+  const jwtCookie = cookies.find(c => c.startsWith('jwt='));
+  if (jwtCookie) {
+    return jwtCookie.substring(4); // Remover "jwt="
+  }
+  return null;
+}
+
 export async function backendFetch<T = unknown>(
   endpoint: string,
   options: BackendFetchOptions = {}
 ): Promise<BackendFetchResult<T>> {
   const { method = 'GET', headers = {}, body, cookie } = options;
 
-  // Build headers with cookie always included
+  // Extraer JWT de la cookie y enviarlo como Bearer token
+  const token = cookie ? extractJwtFromCookie(cookie) : null;
+
   const requestHeaders: Record<string, string> = {
     ...headers,
-    ...(cookie ? { Cookie: cookie } : {}),
+    // Enviar como Authorization: Bearer en lugar de Cookie
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
   // Add Content-Type for JSON body (not FormData)
@@ -43,7 +58,6 @@ export async function backendFetch<T = unknown>(
     headers: requestHeaders,
     httpsAgent,
     validateStatus: () => true, // Don't throw on any status code
-    withCredentials: true,
   };
 
   if (body !== undefined) {
@@ -52,8 +66,10 @@ export async function backendFetch<T = unknown>(
 
   const response: AxiosResponse<T> = await axios(config);
 
-  // Extract headers we care about
+  // Extraer headers de respuesta que nos interesan
   const responseHeaders: Record<string, string> = {};
+
+  // Ya no necesitamos propagar Set-Cookie, pero mantenemos por compatibilidad
   if (response.headers['set-cookie']) {
     const setCookie = response.headers['set-cookie'];
     responseHeaders['Set-Cookie'] = Array.isArray(setCookie) ? setCookie.join(', ') : setCookie;

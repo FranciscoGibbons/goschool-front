@@ -8,6 +8,18 @@ const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 });
 
+/**
+ * Extrae el token JWT de un string de cookies
+ */
+function extractJwtFromCookie(cookieString: string): string | null {
+  const cookies = cookieString.split(';').map(c => c.trim());
+  const jwtCookie = cookies.find(c => c.startsWith('jwt='));
+  if (jwtCookie) {
+    return jwtCookie.substring(4);
+  }
+  return null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,13 +27,13 @@ export async function GET(
   try {
     const { id } = await params;
     const cookie = request.headers.get('cookie') || '';
+    const token = extractJwtFromCookie(cookie);
 
-    const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}/`, {
+    const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}`, {
       method: 'GET',
       headers: {
-        'Cookie': cookie,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      credentials: 'include',
       // @ts-expect-error - httpsAgent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
@@ -44,18 +56,18 @@ export async function PUT(
   try {
     const { id } = await params;
     const cookie = request.headers.get('cookie') || '';
+    const token = extractJwtFromCookie(cookie);
     const contentType = request.headers.get('content-type') || '';
 
     // Handle multipart form data (file uploads)
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
 
-      const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}/`, {
+      const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}`, {
         method: 'PUT',
         headers: {
-          'Cookie': cookie,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        credentials: 'include',
         body: formData,
         // @ts-expect-error - httpsAgent is valid for node-fetch
         agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
@@ -67,13 +79,12 @@ export async function PUT(
 
     const body = await request.json();
 
-    const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}/`, {
+    const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}`, {
       method: 'PUT',
       headers: {
-        'Cookie': cookie,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
       body: JSON.stringify(body),
       // @ts-expect-error - httpsAgent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
@@ -97,13 +108,13 @@ export async function DELETE(
   try {
     const { id } = await params;
     const cookie = request.headers.get('cookie') || '';
+    const token = extractJwtFromCookie(cookie);
 
-    const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}/`, {
+    const response = await fetch(`${BACKEND_URL}/api/v1/homework_submission/${id}`, {
       method: 'DELETE',
       headers: {
-        'Cookie': cookie,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      credentials: 'include',
       // @ts-expect-error - httpsAgent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });

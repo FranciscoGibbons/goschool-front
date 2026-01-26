@@ -72,17 +72,20 @@ class ServerFetchError extends Error {
 /**
  * Server-side fetch utility with authentication and caching
  * Uses React.cache for automatic request deduplication
+ *
+ * PATRÓN HÍBRIDO: Lee la cookie HTTP-only JWT del frontend y la envía
+ * como header Authorization: Bearer al backend
  */
 export const serverFetch = cache(async <T = unknown>(
-  endpoint: string, 
+  endpoint: string,
   options: FetchOptions = {}
 ): Promise<T> => {
   const { timeout = 10000, ...fetchOptions } = options;
-  
+
   try {
     const cookieStore = await cookies();
     const jwtCookie = cookieStore.get('jwt');
-    
+
     if (!jwtCookie) {
       throw new ServerFetchError('No authentication token found', 401);
     }
@@ -97,7 +100,8 @@ export const serverFetch = cache(async <T = unknown>(
       ...fetchOptions,
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `jwt=${jwtCookie.value}`,
+        // Enviar como Authorization: Bearer en lugar de Cookie
+        'Authorization': `Bearer ${jwtCookie.value}`,
         ...fetchOptions.headers,
       },
       signal: controller.signal,
@@ -119,16 +123,16 @@ export const serverFetch = cache(async <T = unknown>(
     const data = await response.json();
     console.log(`✅ Server fetch successful: ${endpoint}`);
     return data as T;
-    
+
   } catch (error) {
     if (error instanceof ServerFetchError) {
       throw error;
     }
-    
+
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new ServerFetchError(`Request timeout after ${timeout}ms`, 408);
     }
-    
+
     console.error(`❌ Server fetch error for ${endpoint}:`, error);
     throw new ServerFetchError(
       error instanceof Error ? error.message : 'Unknown fetch error',
