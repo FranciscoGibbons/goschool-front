@@ -22,6 +22,8 @@ function extractTokenFromSetCookie(setCookieHeader: string | string[]): string |
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const userAgent = request.headers.get('user-agent') || '';
+    const forwardedFor = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '';
 
     // Llamada directa al backend (sin usar backendFetch porque el login no necesita auth)
     const response = await axios.post(`${BACKEND_URL}/api/login/`, body, {
@@ -29,6 +31,8 @@ export async function POST(request: NextRequest) {
       validateStatus: () => true,
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': userAgent,
+        'X-Forwarded-For': forwardedFor,
       },
     });
 
