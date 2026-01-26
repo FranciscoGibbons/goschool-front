@@ -6,10 +6,7 @@ import type { WSClientMessage, WSServerMessage, ChatMessage } from '@/types/chat
 
 function getWsUrl(): string {
   if (typeof window === 'undefined') return '';
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  if (backendUrl) {
-    return backendUrl.replace('https', 'wss').replace('http', 'ws') + '/api/v1/ws/chat/';
-  }
+  // Always use the same origin as the page to ensure cookies are sent
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${window.location.host}/api/v1/ws/chat/`;
 }
