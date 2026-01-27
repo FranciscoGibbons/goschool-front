@@ -322,7 +322,9 @@ function NewChatModal({
 }) {
   const [users, setUsers] = useState<PubUser[]>([]);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [chatType, setChatType] = useState<'direct' | 'group'>('direct');
+  const [groupName, setGroupName] = useState('');
   const [loading, setLoading] = useState(false);
   const { fetchAvailableUsers, createChat, fetchChats } = useChat();
 
@@ -333,8 +335,10 @@ function NewChatModal({
         setUsers(u);
         setLoading(false);
       });
-      setSelected(null);
+      setSelected([]);
       setSearch('');
+      setChatType('direct');
+      setGroupName('');
     }
   }, [open, fetchAvailableUsers]);
 
@@ -344,10 +348,25 @@ function NewChatModal({
       u.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const toggleUser = (userId: number) => {
+    if (chatType === 'direct') {
+      setSelected([userId]);
+    } else {
+      setSelected(prev =>
+        prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+      );
+    }
+  };
+
   const handleCreate = async () => {
-    if (!selected) return;
+    if (selected.length === 0) return;
+    if (chatType === 'group' && !groupName.trim()) return;
     setLoading(true);
-    const chatId = await createChat([selected], 'direct');
+    const chatId = await createChat(
+      selected,
+      chatType,
+      chatType === 'group' ? groupName.trim() : undefined
+    );
     if (chatId) {
       await fetchChats();
       onCreated(chatId);
@@ -356,6 +375,10 @@ function NewChatModal({
     setLoading(false);
   };
 
+  const canCreate = chatType === 'direct'
+    ? selected.length === 1
+    : selected.length >= 1 && groupName.trim().length > 0;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -363,6 +386,37 @@ function NewChatModal({
           <DialogTitle>Nueva Conversacion</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="flex gap-2">
+            <Button
+              variant={chatType === 'direct' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setChatType('direct');
+                if (selected.length > 1) setSelected([]);
+              }}
+              className="flex-1"
+            >
+              Chat directo
+            </Button>
+            <Button
+              variant={chatType === 'group' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setChatType('group')}
+              className="flex-1"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Grupo
+            </Button>
+          </div>
+
+          {chatType === 'group' && (
+            <Input
+              placeholder="Nombre del grupo..."
+              value={groupName}
+              onChange={e => setGroupName(e.target.value)}
+            />
+          )}
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -372,6 +426,29 @@ function NewChatModal({
               className="pl-9"
             />
           </div>
+
+          {chatType === 'group' && selected.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selected.map(id => {
+                const user = users.find(u => u.id === id);
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+                  >
+                    {user?.full_name || 'Usuario'}
+                    <button
+                      onClick={() => setSelected(prev => prev.filter(x => x !== id))}
+                      className="hover:text-primary/70"
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           <div className="max-h-64 overflow-y-auto space-y-1">
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">Cargando...</div>
@@ -381,9 +458,9 @@ function NewChatModal({
               filtered.map(user => (
                 <button
                   key={user.id}
-                  onClick={() => setSelected(user.id)}
+                  onClick={() => toggleUser(user.id)}
                   className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent ${
-                    selected === user.id ? 'bg-primary/10 ring-2 ring-primary' : ''
+                    selected.includes(user.id) ? 'bg-primary/10 ring-2 ring-primary' : ''
                   }`}
                 >
                   <Avatar className="h-9 w-9">
@@ -396,6 +473,9 @@ function NewChatModal({
                     <div className="font-medium text-sm truncate">{user.full_name}</div>
                     <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                   </div>
+                  {chatType === 'group' && selected.includes(user.id) && (
+                    <span className="ml-auto text-primary text-sm">✓</span>
+                  )}
                 </button>
               ))
             )}
@@ -404,7 +484,7 @@ function NewChatModal({
             <Button variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button onClick={handleCreate} disabled={!selected || loading}>
+            <Button onClick={handleCreate} disabled={!canCreate || loading}>
               {loading ? 'Creando...' : 'Crear'}
             </Button>
           </div>

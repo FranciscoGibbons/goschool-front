@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLoginForm } from "@/hooks/useLoginForm";
+import Link from "next/link";
 
 export default function LoginForm() {
   const {
@@ -68,21 +69,29 @@ export default function LoginForm() {
         />
       </div>
 
-      <div className="flex items-center">
-        <input
-          id="remember-me"
-          type="checkbox"
-          checked={rememberMe}
-          onChange={(e) => handleRememberMeChange(e.target.checked)}
-          className="h-4 w-4 text-primary border-input rounded focus:ring-primary bg-background"
-          disabled={isLoading}
-        />
-        <label
-          htmlFor="remember-me"
-          className="ml-2 block text-sm text-foreground"
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <input
+            id="remember-me"
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => handleRememberMeChange(e.target.checked)}
+            className="h-4 w-4 text-primary border-input rounded focus:ring-primary bg-background"
+            disabled={isLoading}
+          />
+          <label
+            htmlFor="remember-me"
+            className="ml-2 block text-sm text-foreground"
+          >
+            Recordarme
+          </label>
+        </div>
+        <Link
+          href="/forgot-password"
+          className="text-sm text-primary hover:underline"
         >
-          Recordarme
-        </label>
+          ¿Olvidaste tu contraseña?
+        </Link>
       </div>
 
       <button
