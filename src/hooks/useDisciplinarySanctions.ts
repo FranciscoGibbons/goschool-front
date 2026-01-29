@@ -44,6 +44,9 @@ export function useDisciplinarySanctions(initialPagination?: PaginationParams) {
       if (filter?.sanction_type) {
         params.append('sanction_type', filter.sanction_type);
       }
+      if (filter?.academic_year_id) {
+        params.append('academic_year_id', filter.academic_year_id.toString());
+      }
 
       const queryString = params.toString();
       const url = queryString ? `${API_BASE}/?${queryString}` : `${API_BASE}/`;

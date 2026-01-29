@@ -22,6 +22,7 @@ export interface AssistanceFilter {
   student_id?: number;
   presence?: string;
   date?: string;
+  academic_year_id?: number;
 }
 
 // Valores posibles para el campo presence

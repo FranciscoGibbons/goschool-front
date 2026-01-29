@@ -35,6 +35,9 @@ export function useSubmissions(filters?: SubmissionFilter) {
         if (currentFilters.course_id) {
           queryParams.append("course_id", currentFilters.course_id.toString());
         }
+        if (currentFilters.academic_year_id) {
+          queryParams.append("academic_year_id", currentFilters.academic_year_id.toString());
+        }
       }
       
       const queryString = queryParams.toString();

@@ -32,6 +32,7 @@ export interface SubmissionFilter {
   task_id?: number;
   subject_id?: number;
   course_id?: number;
+  academic_year_id?: number;
 }
 
 // Tipos de archivos permitidos (solo PDF y DOCX como el backend)

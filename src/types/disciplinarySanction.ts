@@ -26,6 +26,7 @@ export interface DisciplinarySanctionFilter {
   disciplinary_sanction_id?: number;
   student_id?: number;
   sanction_type?: string;
+  academic_year_id?: number;
 }
 
 // Tipos de sanciones disponibles (deben coincidir con el ENUM del backend)

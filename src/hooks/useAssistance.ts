@@ -47,6 +47,9 @@ export function useAssistance(filters?: AssistanceFilter, initialPagination?: Pa
         if (filtersToUse.date) {
           queryParams.append("date", filtersToUse.date);
         }
+        if (filtersToUse.academic_year_id) {
+          queryParams.append("academic_year_id", filtersToUse.academic_year_id.toString());
+        }
       }
 
       const queryString = queryParams.toString();
@@ -106,7 +109,7 @@ export function useAssistance(filters?: AssistanceFilter, initialPagination?: Pa
     console.log("useAssistance effect triggered with filters:", filters); // Debug log
     doFetch(filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doFetch, filters?.student_id, filters?.assistance_id, filters?.presence, filters?.date]);
+  }, [doFetch, filters?.student_id, filters?.assistance_id, filters?.presence, filters?.date, filters?.academic_year_id]);
 
   // Función para validar si ya existe asistencia para la misma fecha y estudiante
   const checkExistingAssistance = useCallback(async (studentId: number, date: string): Promise<Assistance | null> => {
