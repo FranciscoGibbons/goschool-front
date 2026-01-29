@@ -19,6 +19,23 @@ function extractTokenFromSetCookie(setCookieHeader: string | string[]): string |
   return match ? match[1] : null;
 }
 
+/**
+ * Decodifica un JWT sin verificar la firma (solo para extraer el payload)
+ * Esto es seguro porque el backend ya verificó el token
+ */
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const payload = parts[1];
+    const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -26,6 +43,7 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '';
 
     // Llamada directa al backend (sin usar backendFetch porque el login no necesita auth)
+    // Note: login is at /api/login/ (not /api/v1/login/)
     const response = await axios.post(`${BACKEND_URL}/api/login/`, body, {
       httpsAgent,
       validateStatus: () => true,
@@ -60,9 +78,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear respuesta exitosa y setear cookie HTTP-only en el frontend
+    // Check if this is a "Select a Role" response (multiple roles)
+    const backendMessage = response.data;
+    const needsRoleSelection = backendMessage === "Select a Role";
+
+    // Crear respuesta
     const res = NextResponse.json(
-      { success: true, message: 'Login successful' },
+      needsRoleSelection
+        ? {
+            success: true,
+            selectRole: true,
+            roles: decodeJwtPayload(token)?.roles || [],
+            message: 'Please select a role'
+          }
+        : { success: true, message: 'Login successful' },
       { status: 200 }
     );
 

@@ -36,11 +36,13 @@ import {
 interface AssistanceDisplayProps {
   selectedStudentId?: number;
   refreshTrigger?: number;
+  academicYearId?: number | null;
 }
 
 export default function AssistanceDisplay({
   selectedStudentId,
   refreshTrigger,
+  academicYearId,
 }: AssistanceDisplayProps) {
   const { userInfo } = userInfoStore();
   const [orderBy, setOrderBy] = useState<string>("date_desc");
@@ -53,8 +55,15 @@ export default function AssistanceDisplay({
   const canEdit = userInfo?.role === "admin" || userInfo?.role === "preceptor";
 
   const assistanceFilters = useMemo(() => {
-    return selectedStudentId ? { student_id: selectedStudentId } : undefined;
-  }, [selectedStudentId]);
+    const filters: { student_id?: number; academic_year_id?: number } = {};
+    if (selectedStudentId) {
+      filters.student_id = selectedStudentId;
+    }
+    if (academicYearId) {
+      filters.academic_year_id = academicYearId;
+    }
+    return Object.keys(filters).length > 0 ? filters : undefined;
+  }, [selectedStudentId, academicYearId]);
 
   const {
     assistances,

@@ -3,11 +3,16 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import userInfoStore from "@/store/userInfoStore";
 
-
-
 interface LoginCredentials {
   email: string;
   password: string;
+}
+
+interface LoginResponse {
+  success: boolean;
+  message?: string;
+  selectRole?: boolean;
+  roles?: string[];
 }
 
 interface UseLoginFormReturn {
@@ -47,36 +52,39 @@ export const useLoginForm = (): UseLoginFormReturn => {
     return emailValid && passwordValid;
   }, [formData.email, formData.password]);
 
-  // Funciones de API memoizadas
-  const fetchRoles = useCallback(
-    async (credentials: LoginCredentials): Promise<string[]> => {
+  // Perform login with credentials only
+  const performLogin = useCallback(
+    async (credentials: LoginCredentials): Promise<LoginResponse> => {
       try {
-        const res = await axios.post(`/api/proxy/roles`, credentials, {
+        const res = await axios.post<LoginResponse>(`/api/proxy/login`, credentials, {
           withCredentials: true,
         });
-        // The proxy route returns { roles: res.data }, so we need to extract the roles array
-        return res.data?.roles || [];
+        return res.data;
       } catch (error) {
-        console.error("Error fetching roles:", error);
-        throw new Error("Error al obtener roles");
+        console.error("Login error:", error);
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          throw new Error("Credenciales inválidas");
+        }
+        throw new Error("Error al iniciar sesión");
       }
     },
     []
   );
 
-  const performLogin = useCallback(
-    async (
-      credentials: LoginCredentials,
-      selectedRole: string
-    ): Promise<boolean> => {
+  // Select role (uses temp JWT from cookie)
+  const selectRole = useCallback(
+    async (selectedRole: string): Promise<boolean> => {
       try {
-        await axios.post(`/api/proxy/login`, { ...credentials, role: selectedRole }, {
+        await axios.post(`/api/proxy/roles`, selectedRole, {
           withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
         return true;
       } catch (error) {
-        console.error("Login error:", error);
-        throw new Error("Error al iniciar sesión");
+        console.error("Role selection error:", error);
+        throw new Error("Error al seleccionar rol");
       }
     },
     []
@@ -132,72 +140,68 @@ export const useLoginForm = (): UseLoginFormReturn => {
 
       try {
         if (roles.length === 0) {
-          // Paso 1: Obtener roles
-          const userRoles = await fetchRoles(formData);
+          // Step 1: Login with credentials
+          const loginResult = await performLogin(formData);
 
-          if (userRoles.length === 0) {
-            setErrorLogin("No tienes roles asignados.");
+          if (!loginResult.success) {
+            setErrorLogin(loginResult.message || "Error al iniciar sesión");
             return;
           }
 
-          if (userRoles.length === 1) {
-            // Login directo si solo hay un rol
-            const loginSuccess = await performLogin(formData, userRoles[0]);
-
-            if (loginSuccess) {
-              try {
-                // Agregar un pequeño delay para asegurar que la cookie se haya establecido
-                console.log("⏳ Esperando que se establezca la cookie JWT...");
-                await new Promise(resolve => setTimeout(resolve, 500));
-                await fetchUserInfo();
-                router.push("/dashboard");
-              } catch (userInfoError) {
-                console.error("Error fetching user info:", userInfoError);
-                // Even if user info fails, we can still redirect
-                router.push("/dashboard");
-              }
-            }
+          if (loginResult.selectRole && loginResult.roles && loginResult.roles.length > 0) {
+            // Multiple roles - show role selector
+            setRoles(loginResult.roles);
           } else {
-            // Mostrar selector de roles
-            setRoles(userRoles);
+            // Single role - login successful, redirect
+            try {
+              console.log("⏳ Esperando que se establezca la cookie JWT...");
+              await new Promise(resolve => setTimeout(resolve, 300));
+              await fetchUserInfo();
+              router.push("/dashboard");
+            } catch (userInfoError) {
+              console.error("Error fetching user info:", userInfoError);
+              router.push("/dashboard");
+            }
           }
         } else {
-          // Login con rol seleccionado
+          // Step 2: Select role (we already have temp JWT in cookie)
           if (!role) {
             setErrorLogin("Por favor, selecciona un rol.");
             return;
           }
 
-          const loginSuccess = await performLogin(formData, role);
+          const success = await selectRole(role);
 
-          if (loginSuccess) {
+          if (success) {
             try {
-              // Agregar un pequeño delay para asegurar que la cookie se haya establecido
               console.log("⏳ Esperando que se establezca la cookie JWT...");
-              await new Promise(resolve => setTimeout(resolve, 500));
+              await new Promise(resolve => setTimeout(resolve, 300));
               await fetchUserInfo();
               router.push("/dashboard");
             } catch (userInfoError) {
               console.error("Error fetching user info:", userInfoError);
-              // Even if user info fails, we can still redirect
               router.push("/dashboard");
             }
           }
         }
-              } catch (error) {
-          console.error("Login error:", error);
+      } catch (error) {
+        console.error("Login error:", error);
+        if (error instanceof Error) {
+          setErrorLogin(error.message);
+        } else {
           setErrorLogin("Error de conexión. Verifica tu conexión a internet.");
-        } finally {
-          setIsLoading(false);
         }
+      } finally {
+        setIsLoading(false);
+      }
     },
     [
       formData,
       roles,
       role,
       isFormValid,
-      fetchRoles,
       performLogin,
+      selectRole,
       fetchUserInfo,
       router,
     ]

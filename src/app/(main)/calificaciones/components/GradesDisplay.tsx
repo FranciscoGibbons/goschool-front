@@ -58,9 +58,10 @@ interface Subject {
 
 interface GradesDisplayProps {
   selectedStudentId?: number;
+  academicYearId?: number | null;
 }
 
-export default function GradesDisplay({ selectedStudentId }: GradesDisplayProps) {
+export default function GradesDisplay({ selectedStudentId, academicYearId }: GradesDisplayProps) {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -108,13 +109,22 @@ export default function GradesDisplay({ selectedStudentId }: GradesDisplayProps)
         try {
           await fetchSubjects();
 
-          const gradesUrl = userInfo?.role === "student"
-            ? API_ENDPOINTS.GRADES
-            : `${API_ENDPOINTS.GRADES}?student_id=${selectedStudentId}`;
+          const params = new URLSearchParams();
+          if (selectedStudentId && userInfo?.role !== "student") {
+            params.append("student_id", String(selectedStudentId));
+          }
+          if (academicYearId) {
+            params.append("academic_year_id", String(academicYearId));
+          }
+          const queryString = params.toString();
 
-          const assessmentsUrl = userInfo?.role === "student"
-            ? API_ENDPOINTS.ASSESSMENTS
-            : `${API_ENDPOINTS.ASSESSMENTS}?student_id=${selectedStudentId}`;
+          const gradesUrl = queryString
+            ? `${API_ENDPOINTS.GRADES}?${queryString}`
+            : API_ENDPOINTS.GRADES;
+
+          const assessmentsUrl = queryString
+            ? `${API_ENDPOINTS.ASSESSMENTS}?${queryString}`
+            : API_ENDPOINTS.ASSESSMENTS;
 
           const [gradesRes, assessmentsRes] = await Promise.all([
             axios.get(gradesUrl),
@@ -160,7 +170,7 @@ export default function GradesDisplay({ selectedStudentId }: GradesDisplayProps)
 
       fetchAll();
     }
-  }, [selectedStudentId, userInfo?.role, fetchSubjects]);
+  }, [selectedStudentId, userInfo?.role, fetchSubjects, academicYearId]);
 
   useEffect(() => {
     if (selectedSubject === null && subjects.length > 0) {

@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
+import { AcademicYearSelector } from "@/components/AcademicYearSelector";
 import ExamList from "./components/ExamList";
 import userInfoStore from "@/store/userInfoStore";
 import { Role, Exam } from "@/utils/types";
@@ -39,6 +41,12 @@ function ExamsContent() {
     setSelectedCourseId,
   } = useCourseStudentSelection(userInfo?.role || null);
 
+  const {
+    academicYears,
+    selectedYearId,
+    setSelectedYearId,
+  } = useAcademicYears();
+
   const [currentStep, setCurrentStep] = useState<"course" | "exams">("course");
   const [exams, setExams] = useState<ExamWithSubjectId[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -64,9 +72,10 @@ function ExamsContent() {
       if (currentStep === "exams") {
         setDataLoading(true);
         try {
+          const params = selectedYearId ? `?academic_year_id=${selectedYearId}` : "";
           const [examsRes, subjectsRes] = await Promise.all([
-            axios.get("/api/proxy/assessments/", { withCredentials: true }),
-            axios.get("/api/proxy/subjects/", { withCredentials: true }),
+            axios.get(`/api/proxy/assessments/${params}`, { withCredentials: true }),
+            axios.get(`/api/proxy/subjects/${params}`, { withCredentials: true }),
           ]);
 
           // Handle paginated response for exams
@@ -100,7 +109,7 @@ function ExamsContent() {
       }
     };
     loadData();
-  }, [currentStep]);
+  }, [currentStep, selectedYearId]);
 
   const filteredSubjects = selectedCourseId
     ? subjects.filter((s) => Number(s.course_id) === Number(selectedCourseId))
@@ -139,18 +148,27 @@ function ExamsContent() {
             : "Examenes y tareas programadas"
         }
         action={
-          currentStep === "exams" &&
-          userInfo?.role !== "student" &&
-          userInfo?.role !== "father" ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBack}
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          ) : null
+          <div className="flex items-center gap-2">
+            {academicYears.length > 1 && (
+              <AcademicYearSelector
+                academicYears={academicYears}
+                selectedYearId={selectedYearId}
+                onYearChange={setSelectedYearId}
+              />
+            )}
+            {currentStep === "exams" &&
+            userInfo?.role !== "student" &&
+            userInfo?.role !== "father" ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            ) : null}
+          </div>
         }
       />
 

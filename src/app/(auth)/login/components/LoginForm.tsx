@@ -10,6 +10,15 @@ import {
 import { useLoginForm } from "@/hooks/useLoginForm";
 import Link from "next/link";
 
+// Role labels for display
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  teacher: "Docente",
+  student: "Estudiante",
+  preceptor: "Preceptor",
+  father: "Padre/Tutor",
+};
+
 export default function LoginForm() {
   const {
     formData,
@@ -127,7 +136,7 @@ export default function LoginForm() {
         <SelectContent>
           {roles.map((r) => (
             <SelectItem key={r} value={r}>
-              {r}
+              {ROLE_LABELS[r] || r}
             </SelectItem>
           ))}
         </SelectContent>

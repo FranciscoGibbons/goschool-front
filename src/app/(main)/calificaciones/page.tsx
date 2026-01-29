@@ -3,9 +3,11 @@
 import { FileText, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
+import { AcademicYearSelector } from "@/components/AcademicYearSelector";
 import GradesDisplay from "./components/GradesDisplay";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
@@ -29,6 +31,12 @@ function CalificacionesContent() {
     loadStudents,
     resetSelection,
   } = useCourseStudentSelection(userInfo?.role || null);
+
+  const {
+    academicYears,
+    selectedYearId,
+    setSelectedYearId,
+  } = useAcademicYears();
 
   useEffect(() => {
     if (!userInfo?.role) return;
@@ -93,7 +101,14 @@ function CalificacionesContent() {
               : "Rendimiento de tu hijo"}
           </p>
         </div>
-        <GradesDisplay selectedStudentId={selectedChild?.id} />
+        {academicYears.length > 1 && (
+          <AcademicYearSelector
+            academicYears={academicYears}
+            selectedYearId={selectedYearId}
+            onYearChange={setSelectedYearId}
+          />
+        )}
+        <GradesDisplay selectedStudentId={selectedChild?.id} academicYearId={selectedYearId} />
       </div>
     );
   }
@@ -141,6 +156,13 @@ function CalificacionesContent() {
             </p>
           </div>
         </div>
+        {academicYears.length > 1 && (
+          <AcademicYearSelector
+            academicYears={academicYears}
+            selectedYearId={selectedYearId}
+            onYearChange={setSelectedYearId}
+          />
+        )}
       </div>
 
       {currentStep === "course" && (
@@ -161,7 +183,7 @@ function CalificacionesContent() {
       )}
 
       {currentStep === "grades" && selectedStudentId && (
-        <GradesDisplay selectedStudentId={selectedStudentId} />
+        <GradesDisplay selectedStudentId={selectedStudentId} academicYearId={selectedYearId} />
       )}
     </div>
   );

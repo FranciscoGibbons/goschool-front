@@ -3,9 +3,11 @@
 import { CalendarDays, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
+import { AcademicYearSelector } from "@/components/AcademicYearSelector";
 import { AssistanceDisplay, AssistanceForm } from "./components";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
@@ -30,6 +32,12 @@ function AsistenciaContent() {
     loadStudents,
     resetSelection,
   } = useCourseStudentSelection(userInfo?.role || null);
+
+  const {
+    academicYears,
+    selectedYearId,
+    setSelectedYearId,
+  } = useAcademicYears();
 
   useEffect(() => {
     if (!userInfo?.role) return;
@@ -100,7 +108,14 @@ function AsistenciaContent() {
               : "Asistencia de tu hijo"}
           </p>
         </div>
-        <AssistanceDisplay selectedStudentId={selectedChild?.id} refreshTrigger={refreshTrigger} />
+        {academicYears.length > 1 && (
+          <AcademicYearSelector
+            academicYears={academicYears}
+            selectedYearId={selectedYearId}
+            onYearChange={setSelectedYearId}
+          />
+        )}
+        <AssistanceDisplay selectedStudentId={selectedChild?.id} refreshTrigger={refreshTrigger} academicYearId={selectedYearId} />
       </div>
     );
   }
@@ -148,6 +163,13 @@ function AsistenciaContent() {
             </p>
           </div>
         </div>
+        {academicYears.length > 1 && (
+          <AcademicYearSelector
+            academicYears={academicYears}
+            selectedYearId={selectedYearId}
+            onYearChange={setSelectedYearId}
+          />
+        )}
       </div>
 
       {currentStep === "course" && (
@@ -179,7 +201,7 @@ function AsistenciaContent() {
             </div>
           )}
           <div className={canManage ? "lg:col-span-3" : "lg:col-span-4"}>
-            <AssistanceDisplay selectedStudentId={selectedStudentId} refreshTrigger={refreshTrigger} />
+            <AssistanceDisplay selectedStudentId={selectedStudentId} refreshTrigger={refreshTrigger} academicYearId={selectedYearId} />
           </div>
         </div>
       )}

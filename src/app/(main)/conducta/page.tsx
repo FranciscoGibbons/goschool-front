@@ -5,10 +5,14 @@ import { Plus, ChevronLeft } from "lucide-react";
 
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { useDisciplinarySanctions } from "@/hooks/useDisciplinarySanctions";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
 import StudentSelector from "@/components/StudentSelector";
+import { AcademicYearSelector } from "@/components/AcademicYearSelector";
 import { SanctionDisplay, SanctionForm } from "./components";
+import { DisciplinarySanction, NewDisciplinarySanction, UpdateDisciplinarySanction } from "@/types/disciplinarySanction";
+import { parseLocalDate } from "@/utils/dateHelpers";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 import {
@@ -48,6 +52,12 @@ function ConductaContent() {
     updateSanction,
     deleteSanction,
   } = useDisciplinarySanctions();
+
+  const {
+    academicYears,
+    selectedYearId,
+    setSelectedYearId,
+  } = useAcademicYears();
 
   const [showForm, setShowForm] = useState(false);
   const [editingSanction, setEditingSanction] = useState<DisciplinarySanction | null>(null);
@@ -94,18 +104,23 @@ function ConductaContent() {
   }, [userInfo?.role, shouldShowSelectors]);
 
   useEffect(() => {
+    const filters: { student_id?: number; academic_year_id?: number } = {};
+    if (selectedYearId) {
+      filters.academic_year_id = selectedYearId;
+    }
+
     if (userInfo?.role === "student") {
-      fetchSanctions();
+      fetchSanctions(filters);
     } else if (userInfo?.role === "father") {
       if (selectedChild) {
-        fetchSanctions({ student_id: selectedChild.id });
+        fetchSanctions({ ...filters, student_id: selectedChild.id });
       } else {
-        fetchSanctions();
+        fetchSanctions(filters);
       }
     } else if (selectedStudent) {
-      fetchSanctions({ student_id: selectedStudent.id });
+      fetchSanctions({ ...filters, student_id: selectedStudent.id });
     }
-  }, [selectedStudent, selectedChild, userInfo, fetchSanctions]);
+  }, [selectedStudent, selectedChild, userInfo, fetchSanctions, selectedYearId]);
 
   const handleCreateSanction = async (data: NewDisciplinarySanction) => {
     const success = await createSanction(data);
@@ -208,12 +223,21 @@ function ConductaContent() {
               </p>
             </div>
           </div>
-          {currentStep === "content" && canCreate && !showForm && !editingSanction && selectedStudent && (
-            <Button size="sm" onClick={() => setShowForm(true)} className="gap-1">
-              <Plus className="h-3.5 w-3.5" />
-              Nueva sancion
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {academicYears.length > 1 && (
+              <AcademicYearSelector
+                academicYears={academicYears}
+                selectedYearId={selectedYearId}
+                onYearChange={setSelectedYearId}
+              />
+            )}
+            {currentStep === "content" && canCreate && !showForm && !editingSanction && selectedStudent && (
+              <Button size="sm" onClick={() => setShowForm(true)} className="gap-1">
+                <Plus className="h-3.5 w-3.5" />
+                Nueva sancion
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

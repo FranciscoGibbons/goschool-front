@@ -159,7 +159,8 @@ export function useCourseStudentSelection(
       console.log("Course ID solicitado:", courseId);
 
       // Obtener estudiantes del backend (ahora incluye full_name)
-      const pubUsers = await fetchAllPages<PubUser>('/api/proxy/students/', { course_id: courseId });
+      // Backend filter expects 'course' not 'course_id'
+      const pubUsers = await fetchAllPages<PubUser>('/api/proxy/students/', { course: courseId });
 
       console.log("Cantidad de estudiantes:", pubUsers.length);
       console.log("=============================");
