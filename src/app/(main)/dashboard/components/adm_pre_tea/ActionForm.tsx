@@ -54,6 +54,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import React from "react";
 import { SANCTION_TYPES, SANCTION_LABELS } from "@/types/disciplinarySanction";
 import { PRESENCE_STATUS } from "@/types/assistance";
+import { useAcademicYears } from "@/hooks/useAcademicYears";
+import { AcademicYearSelector } from "@/components/AcademicYearSelector";
 
 // Tipos para los datos dinámicos
 interface Assessment {
@@ -148,7 +150,10 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  
+
+  // Hook para años académicos
+  const { academicYears, selectedYearId, setSelectedYearId, isLoading: isLoadingYears } = useAcademicYears();
+
   // Estado local para materias con información de cursos
   const [subjects, setSubjects] = useState<SubjectWithCourseName[]>([]);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
@@ -216,19 +221,24 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   };
 
   // Función para cargar materias con información de cursos
-  const loadSubjectsWithCourses = useCallback(async () => {
+  const loadSubjectsWithCourses = useCallback(async (academicYearId?: number | null) => {
     try {
       setIsLoadingSubjects(true);
-      
-      console.log("Iniciando carga de materias y cursos...");
+
+      console.log("Iniciando carga de materias y cursos...", { academicYearId });
 
       // Solo necesitamos cargar subjects ya que incluye course_name
+      const params: Record<string, number> = {};
+      if (academicYearId) {
+        params.academic_year_id = academicYearId;
+      }
+
       const subjectsProcessed = await fetchAllPages<{
         id: number;
         name: string;
         course_id: number;
         course_name?: string;
-      }>('/api/proxy/subjects/');
+      }>('/api/proxy/subjects/', params);
 
       console.log("Subjects data procesado:", subjectsProcessed);
 
@@ -255,7 +265,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   }, [setIsLoadingSubjects, setSubjects]);
 
   // Función para cargar evaluaciones de una materia
-  const loadAssessments = async (subjectId: string) => {
+  const loadAssessments = async (subjectId: string, academicYearId?: number | null) => {
     if (!subjectId) {
       setAssessments([]);
       return;
@@ -263,9 +273,14 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
     setIsLoadingAssessments(true);
     try {
-      const assessments = await fetchAllPages<Assessment>('/api/proxy/assessments/', {
+      const params: Record<string, string | number> = {
         subject_id: subjectId
-      });
+      };
+      if (academicYearId) {
+        params.academic_year_id = academicYearId;
+      }
+
+      const assessments = await fetchAllPages<Assessment>('/api/proxy/assessments/', params);
 
       console.log("Respuesta de evaluaciones:", assessments);
       setAssessments(assessments);
@@ -279,7 +294,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
   };
 
   // Función para cargar estudiantes de un curso
-  const loadStudents = async (courseId: number) => {
+  const loadStudents = async (courseId: number, academicYearId?: number | null) => {
     if (!courseId) {
       setStudents([]);
       return;
@@ -288,10 +303,15 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     setIsLoadingStudents(true);
     try {
       // Obtener estudiantes del backend (ahora incluye full_name)
-      const pubUsers = await fetchAllPages<PubUser>('/api/proxy/students/', {
-        course_id: courseId,
+      const params: Record<string, number | string> = {
+        course: courseId,
         role: 'student'
-      });
+      };
+      if (academicYearId) {
+        params.academic_year_id = academicYearId;
+      }
+
+      const pubUsers = await fetchAllPages<PubUser>('/api/proxy/students/', params);
 
       console.log("Students data from backend:", pubUsers);
 
@@ -344,17 +364,20 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     }
   };
 
-  // Cargar materias cuando se necesite
+  // Cargar materias cuando se necesite o cuando cambie el año académico
   useEffect(() => {
     if (
       action === "Cargar calificación" ||
       action === "Crear mensaje de materia" ||
       action === "Crear examen"
     ) {
-      console.log("Cargando materias para action:", action);
-      loadSubjectsWithCourses();
+      console.log("Cargando materias para action:", action, "año académico:", selectedYearId);
+      loadSubjectsWithCourses(selectedYearId);
+      // Reset subject selection when academic year changes
+      setFormData(getInitialState());
     }
-  }, [action, loadSubjectsWithCourses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [action, selectedYearId]);
 
   // Cargar cursos cuando se necesite
   useEffect(() => {
@@ -372,7 +395,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
     if (action === "Cargar calificación" && isGradeForm(formData)) {
       const subject = formData.subject;
       if (subject && subject !== prevSubjectAssessmentsRef.current) {
-        loadAssessments(subject);
+        loadAssessments(subject, selectedYearId);
         setFormData((prev) =>
           isGradeForm(prev) ? { ...prev, assessment_id: "" } : prev
         );
@@ -380,7 +403,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, action]);
+  }, [formData, action, selectedYearId]);
 
   // Effect to load students only when subject changes
   useEffect(() => {
@@ -391,7 +414,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           (s) => s.id.toString() === subject
         );
         if (selectedSubject) {
-          loadStudents(selectedSubject.course_id);
+          loadStudents(selectedSubject.course_id, selectedYearId);
           setFormData((prev) =>
             isGradeForm(prev) ? { ...prev, student_id: "" } : prev
           );
@@ -400,12 +423,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, subjects, action]);
+  }, [formData, subjects, action, selectedYearId]);
 
   // Effect to load students for conducta form when course changes
   useEffect(() => {
     if (action === "Crear conducta" && selectedCourseIdConducta) {
-      loadStudents(parseInt(selectedCourseIdConducta));
+      loadStudents(parseInt(selectedCourseIdConducta), selectedYearId);
       // Reset student selection when course changes
       if (isDisciplinarySanctionForm(formData)) {
         setFormData((prev) =>
@@ -414,12 +437,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCourseIdConducta, action]);
+  }, [selectedCourseIdConducta, action, selectedYearId]);
 
   // Effect to load students for assistance form when course changes
   useEffect(() => {
     if (action === "Crear asistencia" && selectedCourseIdAsistencia) {
-      loadStudents(parseInt(selectedCourseIdAsistencia));
+      loadStudents(parseInt(selectedCourseIdAsistencia), selectedYearId);
       // Reset students array when course changes
       if (isAssistanceForm(formData)) {
         setFormData((prev) =>
@@ -428,7 +451,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCourseIdAsistencia, action]);
+  }, [selectedCourseIdAsistencia, action, selectedYearId]);
 
   // Manejo de cambios para campos individuales
   const handleChange = <T extends FormsObj[typeof action]>(
@@ -1030,6 +1053,19 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
         <h2 className="text-xl font-semibold">{action}</h2>
         {/* <ThemeToggle /> */}
       </div>
+
+      {/* Selector de año académico */}
+      {academicYears.length > 1 && (
+        <div className="pb-2 border-b">
+          <Label className="text-sm text-muted-foreground mb-2 block">Ciclo lectivo</Label>
+          <AcademicYearSelector
+            academicYears={academicYears}
+            selectedYearId={selectedYearId}
+            onYearChange={setSelectedYearId}
+            disabled={isLoadingYears || isLoading}
+          />
+        </div>
+      )}
 
       {/* Formulario para mensajes */}
       {action === "Crear mensaje" && isMessageForm(formData) && (

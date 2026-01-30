@@ -13,11 +13,13 @@ import {
   Clock,
   ClipboardCheck,
   X,
+  Settings,
 } from "lucide-react";
 import ProfileAccount from "./ProfileAccount";
 import ChildSelector from "./ChildSelector";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/sacred";
+import userInfoStore from "@/store/userInfoStore";
 
 
 const menuItems = [
@@ -31,8 +33,14 @@ const menuItems = [
   { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia" },
 ];
 
+const adminMenuItems = [
+  { name: "Administración", icon: Settings, href: "/admin" },
+];
+
 export default function Sidebar({ className = "" }: { className?: string }) {
   const pathname = usePathname();
+  const { userInfo } = userInfoStore();
+  const isAdmin = userInfo?.role === "admin";
 
   const closeSidebar = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -129,6 +137,46 @@ export default function Sidebar({ className = "" }: { className?: string }) {
                 </li>
               );
             })}
+
+            {/* Admin Section */}
+            {isAdmin && (
+              <>
+                <li className="pt-4 pb-1">
+                  <span className="px-3 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+                    Administración
+                  </span>
+                </li>
+                {adminMenuItems.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`);
+                  return (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        onClick={closeSidebar}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        )}
+                      >
+                        <item.icon
+                          className={cn(
+                            "h-4 w-4 flex-shrink-0",
+                            isActive
+                              ? "text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground/70"
+                          )}
+                        />
+                        <span>{item.name}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </>
+            )}
           </ul>
         </nav>
       </div>

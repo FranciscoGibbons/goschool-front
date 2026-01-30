@@ -14,6 +14,7 @@ import {
   ArrowRight,
   School,
   FileText,
+  Settings,
 } from "lucide-react";
 import { LoadingSpinner, PageHeader, Card, CardContent } from "@/components/sacred";
 
@@ -124,6 +125,7 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
     switch (role) {
       case "admin":
         return [
+          { icon: Settings, title: "Administración", description: "Panel de administración del sistema", href: "/admin" },
           { icon: BookOpen, title: "Asignaturas", description: "Gestionar materias", href: "/asignaturas" },
           { icon: MessageSquare, title: "Mensajes", description: "Ver comunicaciones", href: "/mensajes" },
           { icon: MessageCircle, title: "Chat", description: "Conversaciones en tiempo real", href: "/chat" },
@@ -171,6 +173,27 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
             : "Panel del docente"
         }
       />
+
+      {/* Admin Panel Button */}
+      {role === "admin" && (
+        <button
+          onClick={() => router.push("/admin")}
+          className="w-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 hover:from-primary/15 hover:to-primary/10 transition-all"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Settings className="h-6 w-6 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-lg font-semibold text-text-primary">Panel de Administración</p>
+                <p className="text-sm text-text-secondary">Gestionar usuarios, cursos, materias y ciclos lectivos</p>
+              </div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-primary" />
+          </div>
+        </button>
+      )}
 
       {/* Stats */}
       {statsCards.length > 0 && (
