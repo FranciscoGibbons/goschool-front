@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from "next";
 import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/providers/AuthProvider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -150,9 +152,12 @@ export default function RootLayout({
           disableTransitionOnChange
           themes={["light"]}
         >
-          <div className="min-h-screen flex flex-col">
-            {children}
-          </div>
+          <AuthProvider>
+            <div className="min-h-screen flex flex-col">
+              {children}
+            </div>
+            <Toaster position="top-center" richColors />
+          </AuthProvider>
         </ThemeProvider>
       </body>
 

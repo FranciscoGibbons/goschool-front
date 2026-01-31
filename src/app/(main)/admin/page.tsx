@@ -20,16 +20,11 @@ import {
   BookOpen,
   Calendar,
   Shield,
-  Activity,
   Settings,
   ArrowRight,
-  UserCheck,
-  Clock,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
@@ -44,21 +39,6 @@ interface DashboardStats {
   active_courses: number;
   active_subjects: number;
   active_academic_year: string | null;
-}
-
-interface SystemStats {
-  total_assessments: number;
-  total_grades: number;
-  total_messages: number;
-  total_sessions: number;
-  logins_today: number;
-}
-
-interface SecurityOverview {
-  active_sessions: number;
-  logins_today: number;
-  failed_logins_today: number;
-  total_failed_logins: number;
 }
 
 interface CourseGradeStats {
@@ -104,8 +84,6 @@ interface AcademicStats {
 export default function AdminPage() {
   const router = useRouter();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-  const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
-  const [securityOverview, setSecurityOverview] = useState<SecurityOverview | null>(null);
   const [academicStats, setAcademicStats] = useState<AcademicStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,10 +91,8 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dashboardRes, systemRes, securityRes, academicRes] = await Promise.all([
+        const [dashboardRes, academicRes] = await Promise.all([
           fetch("/api/proxy/admin/dashboard", { credentials: "include" }),
-          fetch("/api/proxy/admin/system/stats", { credentials: "include" }),
-          fetch("/api/proxy/admin/security/overview", { credentials: "include" }),
           fetch("/api/proxy/admin/stats/academic", { credentials: "include" }),
         ]);
 
@@ -128,16 +104,12 @@ export default function AdminPage() {
           throw new Error("Error al cargar estadísticas");
         }
 
-        const [dashboard, system, security, academic] = await Promise.all([
+        const [dashboard, academic] = await Promise.all([
           dashboardRes.json(),
-          systemRes.ok ? systemRes.json() : null,
-          securityRes.ok ? securityRes.json() : null,
           academicRes.ok ? academicRes.json() : null,
         ]);
 
         setDashboardStats(dashboard);
-        setSystemStats(system);
-        setSecurityOverview(security);
         setAcademicStats(academic);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido");
@@ -203,6 +175,13 @@ export default function AdminPage() {
       href: "/admin/subjects",
       icon: BookOpen,
       color: "text-orange-500",
+    },
+    {
+      title: "Seguridad y Sistema",
+      description: "Monitoreo y estadísticas técnicas",
+      href: "/admin/security",
+      icon: Shield,
+      color: "text-red-500",
     },
   ];
 
@@ -323,25 +302,79 @@ export default function AdminPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
-              Sesiones Hoy
+              <Users className="h-4 w-4" />
+              Total Docentes
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{systemStats?.logins_today || 0}</div>
+            <div className="text-3xl font-bold">{dashboardStats?.teachers || 0}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Grades by Course */}
+      {/* Per-Course Summary Cards */}
+      {academicStats && academicStats.grades_by_course.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Resumen por Curso
+            </CardTitle>
+            <CardDescription>Promedio de calificaciones y asistencia por curso</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {academicStats.grades_by_course.map((course) => {
+                const attendanceData = academicStats.attendance_by_course.find(
+                  (a) => a.course_id === course.course_id
+                );
+                return (
+                  <Card key={course.course_id} className="bg-muted/30">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">{course.course_name}</CardTitle>
+                      <CardDescription className="text-xs">
+                        {course.total_students} estudiantes
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Promedio Notas:</span>
+                        <span className={`text-lg font-bold ${getGradeColor(course.average_grade)}`}>
+                          {course.average_grade?.toFixed(2) || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Asistencia:</span>
+                        <span className={`text-lg font-bold ${getAttendanceColor(attendanceData?.attendance_rate ?? null)}`}>
+                          {attendanceData?.attendance_rate?.toFixed(1) || "N/A"}%
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          {course.passing_count} aprob.
+                        </Badge>
+                        <Badge variant="outline" className="text-red-600 border-red-600">
+                          {course.failing_count} desaprob.
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Grades by Course - Detailed Table */}
       {academicStats && academicStats.grades_by_course.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Calificaciones por Curso
+              Detalle de Calificaciones por Curso
             </CardTitle>
-            <CardDescription>Promedio de calificaciones y estadísticas por curso</CardDescription>
+            <CardDescription>Estadísticas detalladas de calificaciones</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -388,15 +421,15 @@ export default function AdminPage() {
         </Card>
       )}
 
-      {/* Attendance by Course */}
+      {/* Attendance by Course - Detailed Table */}
       {academicStats && academicStats.attendance_by_course.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
-              Asistencia por Curso
+              Detalle de Asistencia por Curso
             </CardTitle>
-            <CardDescription>Estadísticas de asistencia por curso</CardDescription>
+            <CardDescription>Estadísticas detalladas de asistencia</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -574,81 +607,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* System Stats */}
-      {systemStats && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Estadísticas del Sistema
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <p className="text-3xl font-bold">{systemStats.total_assessments}</p>
-                <p className="text-sm text-muted-foreground">Evaluaciones</p>
-              </div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <p className="text-3xl font-bold">{systemStats.total_grades}</p>
-                <p className="text-sm text-muted-foreground">Calificaciones</p>
-              </div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <p className="text-3xl font-bold">{systemStats.total_messages}</p>
-                <p className="text-sm text-muted-foreground">Mensajes</p>
-              </div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <p className="text-3xl font-bold">{systemStats.total_sessions}</p>
-                <p className="text-sm text-muted-foreground">Sesiones Activas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Security Overview */}
-      {securityOverview && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Seguridad
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{securityOverview.active_sessions}</p>
-                  <p className="text-xs text-muted-foreground">Sesiones activas</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <UserCheck className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="font-medium">{securityOverview.logins_today}</p>
-                  <p className="text-xs text-muted-foreground">Inicios de sesión hoy</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-yellow-500" />
-                <div>
-                  <p className="font-medium">{securityOverview.failed_logins_today}</p>
-                  <p className="text-xs text-muted-foreground">Intentos fallidos hoy</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="font-medium">{securityOverview.total_failed_logins}</p>
-                  <p className="text-xs text-muted-foreground">Total intentos fallidos</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

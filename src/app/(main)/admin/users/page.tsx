@@ -58,7 +58,7 @@ import Link from "next/link";
 interface AdminUser {
   id: number;
   email: string;
-  role: string;
+  roles: string[];
   full_name: string | null;
   is_active: boolean;
   last_login: string | null;
@@ -70,6 +70,7 @@ interface UsersResponse {
   total: number;
   page: number;
   limit: number;
+  total_pages: number;
 }
 
 const ROLES = [
@@ -148,7 +149,7 @@ export default function UsersPage() {
     setEditingUser(user);
     setEditForm({
       email: user.email,
-      role: user.role,
+      role: user.roles[0] || "student",
       is_active: user.is_active,
     });
   };
@@ -277,9 +278,13 @@ export default function UsersPage() {
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.full_name || "-"}</TableCell>
                       <TableCell>
-                        <Badge className={getRoleBadgeColor(user.role)}>
-                          {ROLES.find((r) => r.value === user.role)?.label || user.role}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {user.roles.map((role) => (
+                            <Badge key={role} className={getRoleBadgeColor(role)}>
+                              {ROLES.find((r) => r.value === role)?.label || role}
+                            </Badge>
+                          ))}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {user.is_active ? (

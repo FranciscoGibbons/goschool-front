@@ -6,6 +6,7 @@ import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import CourseSelector from "@/components/CourseSelector";
 import TimetableClient from "./components/TimetableClient";
+import TimetableDisplay from "./components/TimetableDisplay";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 import { LoadingSpinner, Button, PageHeader } from "@/components/sacred";
@@ -61,14 +62,31 @@ function HorarioContent() {
     );
   }
 
-  // Student view - direct timetable
+  // Student view - direct timetable (use their enrolled course)
   if (userInfo?.role === "student") {
+    const studentCourseId = courses.length > 0 ? courses[0].id : null;
+
+    if (!studentCourseId) {
+      return (
+        <div className="space-y-6">
+          <PageHeader title="Horario" subtitle="Tu cronograma de clases" />
+          <div className="sacred-card text-center py-8">
+            <Clock className="h-10 w-10 text-text-muted mx-auto mb-3" />
+            <p className="text-sm font-medium text-text-primary">Sin curso asignado</p>
+            <p className="text-sm text-text-secondary mt-1">
+              No estas inscripto en ningun curso
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
         <PageHeader title="Horario" subtitle="Tu cronograma de clases" />
-        <TimetableClient
-          courses={courses}
-          initialCourseId={undefined}
+        <TimetableDisplay
+          courseId={studentCourseId}
+          onBack={() => {}}
           initialTimetables={[]}
         />
       </div>
@@ -79,21 +97,34 @@ function HorarioContent() {
   // Father without child selected
   if (userInfo?.role === "father" && !selectedChild) {
     return (
-        <div className="space-y-6">
-          <PageHeader title="Horario" subtitle="Cronograma de clases" />
-          <div className="sacred-card text-center py-8">
-            <Clock className="h-10 w-10 text-text-muted mx-auto mb-3" />
-            <p className="text-sm font-medium text-text-primary">Selecciona un hijo</p>
-            <p className="text-sm text-text-secondary mt-1">
-              Usa el selector en la barra lateral
-            </p>
-          </div>
+      <div className="space-y-6">
+        <PageHeader title="Horario" subtitle="Cronograma de clases" />
+        <div className="sacred-card text-center py-8">
+          <Clock className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Selecciona un hijo</p>
+          <p className="text-sm text-text-secondary mt-1">
+            Usa el selector en la barra lateral
+          </p>
         </div>
-
-
+      </div>
     );
   }
 
+  // Father with child selected - direct timetable
+  if (userInfo?.role === "father" && selectedChild) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Horario" subtitle={`Cronograma de ${selectedChild.name}`} />
+        <TimetableDisplay
+          courseId={selectedChild.course_id}
+          onBack={() => {}}
+          initialTimetables={[]}
+        />
+      </div>
+    );
+  }
+
+  // Admin/Teacher/Preceptor - show course selector
   return (
     <div className="space-y-6">
       <PageHeader

@@ -504,14 +504,14 @@ export default function CoursesPage() {
             <div className="space-y-2">
               <Label htmlFor="preceptor">Preceptor</Label>
               <Select
-                value={form.preceptor_id}
-                onValueChange={(value) => setForm({ ...form, preceptor_id: value })}
+                value={form.preceptor_id || "none"}
+                onValueChange={(value) => setForm({ ...form, preceptor_id: value === "none" ? "" : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sin preceptor asignado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin preceptor</SelectItem>
+                  <SelectItem value="none">Sin preceptor</SelectItem>
                   {teachers.map((teacher) => (
                     <SelectItem key={teacher.id} value={teacher.id.toString()}>
                       {teacher.full_name || teacher.email}

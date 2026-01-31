@@ -9,6 +9,7 @@ import {
   AlertCircle,
   FileText,
   GraduationCap,
+  MessageCircle,
 } from "lucide-react";
 import { Exam, translateExamType } from "@/utils/types";
 import { LoadingSpinner, PageHeader, Card, CardContent, Badge } from "@/components/sacred";
@@ -48,12 +49,25 @@ export default function DashStudentFather() {
     fetchExams();
   }, []);
 
-  const isExamSoon = (dateString: string) => {
+  const getExamUrgency = (dateString: string): { label: string; variant: "error" | "warning" | "info" } | null => {
     const examDate = parseLocalDate(dateString);
     const today = new Date();
-    const diffTime = examDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 3 && diffDays >= 0;
+
+    // Reset time parts to compare dates only
+    const examDateOnly = new Date(examDate.getFullYear(), examDate.getMonth(), examDate.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    const diffTime = examDateOnly.getTime() - todayOnly.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return { label: "Hoy", variant: "error" };
+    } else if (diffDays === 1) {
+      return { label: "Manana", variant: "warning" };
+    } else if (diffDays > 1 && diffDays <= 3) {
+      return { label: "Proximo", variant: "info" };
+    }
+    return null;
   };
 
   if (loading) {
@@ -70,6 +84,7 @@ export default function DashStudentFather() {
     { icon: FileText, title: "Calificaciones", description: "Ver mis notas", href: "/calificaciones" },
     { icon: BookOpen, title: "Examenes", description: "Proximas evaluaciones", href: "/examenes" },
     { icon: Calendar, title: "Horarios", description: "Ver cronograma", href: "/horario" },
+    { icon: MessageCircle, title: "Chat", description: "Conversaciones en tiempo real", href: "/chat" },
   ];
 
   return (
@@ -138,12 +153,21 @@ export default function DashStudentFather() {
                         </p>
                       </div>
                     </div>
-                    {isExamSoon(exam.due_date) && (
-                      <div className="flex items-center gap-1 text-xs text-warning">
-                        <AlertCircle className="h-3 w-3" />
-                        <span>Proximo</span>
-                      </div>
-                    )}
+                    {(() => {
+                      const urgency = getExamUrgency(exam.due_date);
+                      if (!urgency) return null;
+                      const colorClass = urgency.variant === "error"
+                        ? "text-red-500"
+                        : urgency.variant === "warning"
+                          ? "text-warning"
+                          : "text-blue-500";
+                      return (
+                        <div className={`flex items-center gap-1 text-xs ${colorClass}`}>
+                          <AlertCircle className="h-3 w-3" />
+                          <span>{urgency.label}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}

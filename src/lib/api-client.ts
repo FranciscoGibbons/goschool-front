@@ -32,19 +32,10 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // Add response interceptor to handle errors
+// Note: 401 handling is done globally by AuthProvider
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response) {
-      // Handle specific status codes
-      const { status } = error.response;
-      if (status === 401) {
-        // Handle unauthorized
-        console.error('Unauthorized access - redirecting to login');
-        window.location.href = '/login';
-      }
-      // You can add more specific error handling here
-    }
     return Promise.reject(error);
   }
 );

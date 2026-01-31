@@ -125,7 +125,6 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
     switch (role) {
       case "admin":
         return [
-          { icon: Settings, title: "Administración", description: "Panel de administración del sistema", href: "/admin" },
           { icon: BookOpen, title: "Asignaturas", description: "Gestionar materias", href: "/asignaturas" },
           { icon: MessageSquare, title: "Mensajes", description: "Ver comunicaciones", href: "/mensajes" },
           { icon: MessageCircle, title: "Chat", description: "Conversaciones en tiempo real", href: "/chat" },
