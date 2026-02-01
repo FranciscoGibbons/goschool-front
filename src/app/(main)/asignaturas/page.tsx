@@ -1,18 +1,14 @@
 "use client";
 
-import { ChevronLeft } from "lucide-react";
-
-import { useState, useEffect, Suspense } from "react";
+import { Suspense } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
-import CourseSelector from "@/components/CourseSelector";
-import StudentSelector from "@/components/StudentSelector";
+import InlineCourseSelector from "@/components/InlineCourseSelector";
 import SubjectSelector from "./components/SubjectSelector";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Button } from "@/components/ui/button";
 
 function SubjectSelectorWrapper({
   selectedCourseId,
@@ -46,55 +42,11 @@ function AsignaturasContent() {
   const { selectedChild } = childSelectionStore();
   const {
     courses,
-    students,
     selectedCourseId,
-    selectedStudentId,
     isLoading,
     error,
     setSelectedCourseId,
-    setSelectedStudentId,
-    loadStudents,
-    resetSelection,
   } = useCourseStudentSelection(userInfo?.role || null);
-
-  const [currentStep, setCurrentStep] = useState<
-    "course" | "student" | "subjects"
-  >("course");
-
-  useEffect(() => {
-    if (userInfo?.role === "father" || userInfo?.role === "student") {
-      setCurrentStep("subjects");
-    }
-  }, [userInfo?.role, selectedChild]);
-
-  const handleCourseSelect = async (courseId: number) => {
-    setSelectedCourseId(courseId);
-    if (
-      userInfo?.role === "teacher" ||
-      userInfo?.role === "admin" ||
-      userInfo?.role === "preceptor"
-    ) {
-      setCurrentStep("subjects");
-      return;
-    }
-    await loadStudents(courseId);
-    setCurrentStep("student");
-  };
-
-  const handleStudentSelect = (studentId: number) => {
-    setSelectedStudentId(studentId);
-    setCurrentStep("subjects");
-  };
-
-  const handleBack = () => {
-    if (currentStep === "subjects" && selectedStudentId) {
-      setCurrentStep("student");
-      setSelectedStudentId(null);
-    } else {
-      setCurrentStep("course");
-      resetSelection();
-    }
-  };
 
   if (isLoading) {
     return (
@@ -116,6 +68,7 @@ function AsignaturasContent() {
     );
   }
 
+  // Student/Father view - direct subjects
   if (userInfo?.role === "student" || userInfo?.role === "father") {
     return (
       <div className="space-y-6">
@@ -128,50 +81,31 @@ function AsignaturasContent() {
     );
   }
 
+  // Staff view with inline course selector
   return (
     <div className="space-y-6">
       <div className="page-header">
-        <div className="flex items-center gap-3">
-          {currentStep !== "course" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBack}
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          )}
-          <div>
-            <h1 className="page-title">Asignaturas</h1>
-            <p className="page-subtitle">
-              {currentStep === "course" && "Selecciona un curso"}
-              {currentStep === "student" && "Selecciona un estudiante"}
-              {currentStep === "subjects" && "Materias del curso"}
-            </p>
-          </div>
-        </div>
+        <h1 className="page-title">Asignaturas</h1>
+        <p className="page-subtitle">Materias del curso</p>
       </div>
 
-      {currentStep === "course" && (
-        <CourseSelector
+      <div className="flex flex-wrap items-center gap-3 p-3 sacred-card">
+        <InlineCourseSelector
           courses={courses}
-          onCourseSelect={handleCourseSelect}
           selectedCourseId={selectedCourseId}
+          onCourseChange={setSelectedCourseId}
         />
-      )}
+      </div>
 
-      {currentStep === "student" && (
-        <StudentSelector
-          students={students}
-          onStudentSelect={handleStudentSelect}
-          onBack={handleBack}
-          selectedStudentId={selectedStudentId}
-        />
-      )}
-
-      {currentStep === "subjects" && (
+      {selectedCourseId ? (
         <SubjectSelectorWrapper selectedCourseId={selectedCourseId} />
+      ) : (
+        <div className="sacred-card text-center py-8">
+          <p className="text-sm font-medium text-text-primary">Selecciona un curso</p>
+          <p className="text-sm text-text-secondary mt-1">
+            Elige un curso del selector para ver las asignaturas
+          </p>
+        </div>
       )}
     </div>
   );

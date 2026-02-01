@@ -1,19 +1,15 @@
 /**
- * Tailwind CSS Configuration
+ * Tailwind CSS 4 Configuration
  * ==========================================================================
  * DESIGN CONTRACT COMPLIANT
  * See DESIGN_CONTRACT.md for usage rules
  *
- * RULES:
- * - No colors outside the token system
- * - No border-radius outside the scale
- * - No shadows heavier than shadow-sm
- * - No decorative animations
+ * NOTE: Colors are defined in globals.css using @theme directive
+ * This file only contains content paths and non-color extensions
  * ==========================================================================
  */
 
 const config = {
-  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -36,7 +32,6 @@ const config = {
       },
 
       fontWeight: {
-        // Only allowed weights per DESIGN_CONTRACT.md
         normal: "400",
         medium: "500",
         semibold: "600",
@@ -52,125 +47,20 @@ const config = {
       },
 
       // =======================================================================
-      // COLORS - Semantic tokens per DESIGN_CONTRACT.md
-      // =======================================================================
-      colors: {
-        // Core backgrounds
-        background: "hsl(var(--background))",
-        surface: "hsl(var(--surface))",
-        "surface-muted": "hsl(var(--surface-muted))",
-
-        // Borders
-        border: "hsl(var(--border))",
-        "border-muted": "hsl(var(--border-muted))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-
-        // Text hierarchy
-        foreground: "hsl(var(--foreground))",
-        "text-primary": "hsl(var(--text-primary))",
-        "text-secondary": "hsl(var(--text-secondary))",
-        "text-muted": "hsl(var(--text-muted))",
-        "text-inverse": "hsl(var(--text-inverse))",
-
-        // Primary (use sparingly)
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          hover: "hsl(var(--primary-hover))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-
-        // Status colors (functional only)
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          muted: "hsl(var(--success-muted))",
-        },
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          muted: "hsl(var(--warning-muted))",
-        },
-        error: {
-          DEFAULT: "hsl(var(--error))",
-          muted: "hsl(var(--error-muted))",
-        },
-
-        // Legacy shadcn/ui compatibility
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-
-        // Sidebar
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
-
-        // Charts
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
-        },
-      },
-
-      // =======================================================================
-      // BORDER RADIUS - Per DESIGN_CONTRACT.md (max: radius-lg)
-      // =======================================================================
-      borderRadius: {
-        none: "0",
-        sm: "var(--radius-sm)",
-        md: "var(--radius-md)",
-        lg: "var(--radius-lg)",
-        // Aliases for shadcn compatibility
-        DEFAULT: "var(--radius)",
-      },
-
-      // =======================================================================
       // SHADOWS - Only shadow-sm allowed per DESIGN_CONTRACT.md
       // =======================================================================
       boxShadow: {
-        // The ONLY shadow allowed in the design system
         sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        // Explicitly mark others as deprecated
-        DEFAULT: "0 1px 2px 0 rgb(0 0 0 / 0.05)", // Alias to sm
-        xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)", // Alias to sm
+        DEFAULT: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
       },
 
       // =======================================================================
       // ANIMATIONS - Functional only per DESIGN_CONTRACT.md
       // =======================================================================
       transitionDuration: {
-        "150": "150ms", // Standard transitions
-        "200": "200ms", // Slightly slower
+        "150": "150ms",
+        "200": "200ms",
       },
 
       keyframes: {
@@ -211,7 +101,7 @@ const config = {
         center: true,
         padding: "1rem",
         screens: {
-          "2xl": "1280px", // Max-width per DESIGN_CONTRACT.md
+          "2xl": "1280px",
         },
       },
     },

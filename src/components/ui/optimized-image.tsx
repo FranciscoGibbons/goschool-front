@@ -1,6 +1,7 @@
 import Image, { ImageProps } from 'next/image';
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { branding, brandingMeta } from '@/config/branding';
 
 interface OptimizedImageProps extends Omit<ImageProps, 'onLoad' | 'onError'> {
   fallbackSrc?: string;
@@ -50,7 +51,7 @@ export function OptimizedImage({
             loaderClassName
           )}
         >
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       )}
       
@@ -103,7 +104,7 @@ export function AvatarImage({
     return (
         <div 
           className={cn(
-            'rounded-full bg-gradient-to-br from-blue-500 via-sky-500 to-emerald-500 flex items-center justify-center text-white font-semibold',
+            'rounded-full bg-gradient-to-br from-gradient-start via-gradient-mid to-gradient-end flex items-center justify-center text-white font-semibold',
             sizeClasses[size],
             className
           )}
@@ -138,9 +139,9 @@ interface LogoImageProps {
 
 export function LogoImage({ variant = 'primary', size = 'md', className }: LogoImageProps) {
   const logoSources = {
-    primary: '/images/logo.webp',
-    secondary: '/images/logo-secondary.webp',
-    light: '/images/logo-light.webp'
+    primary: branding.logoPath,
+    secondary: branding.logoSecondaryPath,
+    light: branding.logoLightPath
   };
 
 
@@ -153,7 +154,7 @@ export function LogoImage({ variant = 'primary', size = 'md', className }: LogoI
   return (
     <OptimizedImage
       src={logoSources[variant]}
-      alt="Colegio Stella Maris Rosario"
+      alt={brandingMeta.logoAlt}
       width={200}
       height={80}
       className={cn(sizeClasses[size], className)}

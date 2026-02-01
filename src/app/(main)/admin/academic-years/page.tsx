@@ -276,7 +276,7 @@ export default function AcademicYearsPage() {
                     <TableCell>{year.subjects_count || 0}</TableCell>
                     <TableCell>
                       {year.is_active ? (
-                        <Badge className="bg-green-100 text-green-800">
+                        <Badge className="bg-success-muted text-success">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Activo
                         </Badge>
@@ -292,7 +292,7 @@ export default function AcademicYearsPage() {
                           onClick={() => handleActivate(year)}
                           title="Activar ciclo"
                         >
-                          <Power className="h-4 w-4 text-green-600" />
+                          <Power className="h-4 w-4 text-success" />
                         </Button>
                       )}
                       <Button

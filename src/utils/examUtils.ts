@@ -64,7 +64,7 @@ export function getExamTypeColor(type: string): string {
 }
 
 export function getExamTypeIndicatorColor(type: string): string {
-  return EXAM_TYPE_INDICATOR_COLORS[type as ExamType] || "bg-gray-500";
+  return EXAM_TYPE_INDICATOR_COLORS[type as ExamType] || "bg-muted-foreground";
 }
 
 export function isValidExamType(type: string): type is ExamType {

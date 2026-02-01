@@ -21,10 +21,8 @@ import {
   LoadingPage,
   PageHeader,
 } from "@/components/sacred";
-import { toast } from "sonner";
 import { CheckCircle, Clock, FileText, Filter, Search, XCircle } from "lucide-react";
-import CourseSelector from "@/components/CourseSelector";
-import StudentSelector from "@/components/StudentSelector";
+import InlineSelectionBar from "@/components/InlineSelectionBar";
 import { SubmissionForm } from "./components/SubmissionForm";
 import { SubmissionTable } from "./components/SubmissionTable";
 import userInfoStore from "@/store/userInfoStore";
@@ -43,8 +41,7 @@ interface Task {
 
 function EntregasContent() {
   const { userInfo } = userInfoStore();
-  const [currentStep, setCurrentStep] = useState<"course" | "student" | "submissions">("course");
-  
+
   // Form and filters state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
@@ -62,11 +59,8 @@ function EntregasContent() {
     error: selectionError,
     setSelectedCourseId,
     setSelectedStudentId,
-    loadStudents,
-    resetSelection,
   } = useCourseStudentSelection(userInfo?.role || null);
 
-  // Filtros para la consulta de submissions
   const submissionFilters = {
     ...(selectedStudentId && { student_id: selectedStudentId }),
     ...(selectedCourseId && { course_id: selectedCourseId }),
@@ -86,21 +80,20 @@ function EntregasContent() {
 
   const canCreateSubmission = userInfo?.role === "student" || userInfo?.role === "admin";
 
-  // Determinar el paso inicial según el rol
   useEffect(() => {
     if (!userInfo?.role) return;
-    
     if (userInfo.role === "student") {
-      // Los estudiantes van directo a ver sus entregas
-      setCurrentStep("submissions");
       loadAvailableTasks();
-    } else if (userInfo.role === "admin" || userInfo.role === "preceptor" || userInfo.role === "teacher") {
-      // Otros roles empiezan seleccionando curso
-      setCurrentStep("course");
     }
   }, [userInfo?.role]);
 
-  // Cargar tareas disponibles para estudiantes
+  // Load tasks when course selected
+  useEffect(() => {
+    if (selectedCourseId) {
+      loadAvailableTasks(selectedCourseId);
+    }
+  }, [selectedCourseId]);
+
   const loadAvailableTasks = async (courseId?: number) => {
     try {
       const queryParams = new URLSearchParams();
@@ -112,7 +105,6 @@ function EntregasContent() {
 
       if (response.ok) {
         const data = await response.json();
-        // Handle paginated response
         let assessments: Task[] = [];
         if (data && typeof data === 'object' && 'data' in data) {
           assessments = data.data;
@@ -131,7 +123,8 @@ function EntregasContent() {
 
   // Refetch submissions when filters change
   useEffect(() => {
-    if (currentStep === "submissions") {
+    const shouldFetch = userInfo?.role === "student" || selectedCourseId;
+    if (shouldFetch) {
       const filters = {
         ...(selectedStudentId && { student_id: selectedStudentId }),
         ...(selectedCourseId && { course_id: selectedCourseId }),
@@ -139,41 +132,7 @@ function EntregasContent() {
       };
       fetchSubmissions(filters);
     }
-  }, [selectedStudentId, selectedCourseId, filterTask, currentStep, fetchSubmissions]);
-
-  const handleCourseSelect = async (courseId: number) => {
-    try {
-      setSelectedCourseId(courseId);
-      await loadStudents(courseId);
-      await loadAvailableTasks(courseId);
-      
-      if (userInfo?.role === "teacher") {
-        // Los profesores van directo a ver las entregas del curso
-        setCurrentStep("submissions");
-      } else {
-        setCurrentStep("student");
-      }
-    } catch (error) {
-      console.error("Error al seleccionar curso:", error);
-      toast.error("Error al cargar información del curso");
-    }
-  };
-
-  const handleStudentSelect = (studentId: number) => {
-    setSelectedStudentId(studentId);
-    setCurrentStep("submissions");
-  };
-
-  const handleBackToCourse = () => {
-    setCurrentStep("course");
-    resetSelection();
-    setAvailableTasks([]);
-  };
-
-  const handleBackToStudent = () => {
-    setCurrentStep("student");
-    setSelectedStudentId(null);
-  };
+  }, [selectedStudentId, selectedCourseId, filterTask, fetchSubmissions, userInfo?.role]);
 
   const handleCreateSubmission = () => {
     setEditingSubmission(null);
@@ -214,15 +173,14 @@ function EntregasContent() {
     }
   };
 
-  // Filter submissions based on search and status criteria
   const filteredSubmissions = submissions.filter((submission) => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       (submission.student_full_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (submission.student_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (submission.student_last_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (submission.task_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (submission.path?.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     let matchesStatus = true;
     if (filterStatus !== "all") {
       if (filterStatus === "on_time" && submission.due_date) {
@@ -235,11 +193,10 @@ function EntregasContent() {
         matchesStatus = submittedDate > dueDate;
       }
     }
-    
+
     return matchesSearch && matchesStatus;
   });
 
-  // Calculate stats
   const stats = {
     total: filteredSubmissions.length,
     onTime: filteredSubmissions.filter(s => {
@@ -257,26 +214,23 @@ function EntregasContent() {
     pending: availableTasks.length - filteredSubmissions.length,
   };
 
-  // Loading states
   if (isSelectionLoading) {
-    return <LoadingPage message="Cargando información de entregas..." />;
+    return <LoadingPage message="Cargando informacion de entregas..." />;
   }
 
-  // Error state
   if (selectionError) {
     return (
       <div className="space-y-6">
         <PageHeader title="Entregas" />
-        <ErrorDisplay 
+        <ErrorDisplay
           error={selectionError}
           retry={() => window.location.reload()}
         />
-
       </div>
     );
   }
 
-  // Para estudiantes, mostrar directamente las entregas
+  // Student view - direct submissions
   if (userInfo?.role === "student") {
     return (
       <div className="space-y-6">
@@ -292,25 +246,23 @@ function EntregasContent() {
           }
         />
 
-
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <FileText className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-sm text-text-secondary">Total entregas</p>
+                  <p className="text-sm text-text-secondary">Total</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-success-muted rounded-lg">
                   <CheckCircle className="h-5 w-5 text-success" />
@@ -322,23 +274,21 @@ function EntregasContent() {
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-error-muted rounded-lg">
                   <XCircle className="h-5 w-5 text-error" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.late}</p>
-                  <p className="text-sm text-text-secondary">Tardías</p>
+                  <p className="text-sm text-text-secondary">Tardias</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-warning-muted rounded-lg">
                   <Clock className="h-5 w-5 text-warning" />
@@ -352,7 +302,7 @@ function EntregasContent() {
           </Card>
         </div>
 
-        {/* Filtros para estudiantes */}
+        {/* Filters */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -371,7 +321,6 @@ function EntregasContent() {
                   className="pl-10"
                 />
               </div>
-              
               <Select value={filterTask} onValueChange={setFilterTask}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filtrar por tarea" />
@@ -385,7 +334,6 @@ function EntregasContent() {
                   ))}
                 </SelectContent>
               </Select>
-
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filtrar por estado" />
@@ -393,7 +341,7 @@ function EntregasContent() {
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="on_time">A tiempo</SelectItem>
-                  <SelectItem value="late">Tardías</SelectItem>
+                  <SelectItem value="late">Tardias</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -401,10 +349,7 @@ function EntregasContent() {
         </Card>
 
         {submissionError && (
-          <ErrorDisplay 
-            error={submissionError}
-            retry={() => fetchSubmissions()}
-          />
+          <ErrorDisplay error={submissionError} retry={() => fetchSubmissions()} />
         )}
 
         <SubmissionTable
@@ -415,13 +360,9 @@ function EntregasContent() {
           isLoading={isSubmissionLoading}
         />
 
-        {/* Form Modal */}
         <SubmissionForm
           isOpen={isFormOpen}
-          onClose={() => {
-            setIsFormOpen(false);
-            setEditingSubmission(null);
-          }}
+          onClose={() => { setIsFormOpen(false); setEditingSubmission(null); }}
           onSubmit={handleFormSubmit}
           selectedStudentId={userInfo?.id}
           availableTasks={availableTasks}
@@ -430,12 +371,16 @@ function EntregasContent() {
     );
   }
 
+  // Staff view with inline selectors
+  const isTeacher = userInfo?.role === "teacher";
+  const showSubmissions = isTeacher ? !!selectedCourseId : !!selectedStudentId || !!selectedCourseId;
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Entregas"
         action={
-          canCreateSubmission && currentStep === "submissions" ? (
+          canCreateSubmission && showSubmissions ? (
             <Button onClick={handleCreateSubmission}>
               <PlusIcon className="w-4 h-4 mr-2" />
               Nueva Entrega
@@ -444,60 +389,35 @@ function EntregasContent() {
         }
       />
 
+      <InlineSelectionBar
+        courses={courses}
+        selectedCourseId={selectedCourseId}
+        onCourseChange={setSelectedCourseId}
+        students={students}
+        selectedStudentId={selectedStudentId}
+        onStudentChange={setSelectedStudentId}
+        showStudentSelector={!isTeacher}
+      />
 
-      {currentStep === "course" && (
-        <CourseSelector
-          courses={courses}
-          onCourseSelect={handleCourseSelect}
-          selectedCourseId={selectedCourseId}
-          title="Selecciona un curso"
-          description="Elige el curso para gestionar las entregas de tareas"
-        />
-      )}
-
-      {currentStep === "student" && (
-        <StudentSelector
-          students={students}
-          onStudentSelect={handleStudentSelect}
-          onBack={handleBackToCourse}
-          selectedStudentId={selectedStudentId}
-          title="Selecciona un estudiante"
-          description="Elige el estudiante para ver o gestionar sus entregas"
-        />
-      )}
-
-      {currentStep === "submissions" && (
+      {showSubmissions && (
         <div className="space-y-6">
-          {/* Navegación - Solo para admin y preceptor */}
-          {(userInfo?.role === "admin" || userInfo?.role === "preceptor") && selectedStudentId && (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleBackToStudent}
-                className="text-sm text-text-secondary hover:text-foreground transition-colors"
-              >
-                ← Volver a selección de estudiante
-              </button>
-            </div>
-          )}
-
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats.total}</p>
-                    <p className="text-sm text-text-secondary">Total entregas</p>
+                    <p className="text-sm text-text-secondary">Total</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-success-muted rounded-lg">
                     <CheckCircle className="h-5 w-5 text-success" />
@@ -509,23 +429,21 @@ function EntregasContent() {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-error-muted rounded-lg">
                     <XCircle className="h-5 w-5 text-error" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats.late}</p>
-                    <p className="text-sm text-text-secondary">Tardías</p>
+                    <p className="text-sm text-text-secondary">Tardias</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-warning-muted rounded-lg">
                     <Clock className="h-5 w-5 text-warning" />
@@ -539,7 +457,7 @@ function EntregasContent() {
             </Card>
           </div>
 
-          {/* Filtros */}
+          {/* Filters */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -558,7 +476,6 @@ function EntregasContent() {
                     className="pl-10"
                   />
                 </div>
-                
                 <Select value={filterTask} onValueChange={setFilterTask}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filtrar por tarea" />
@@ -572,7 +489,6 @@ function EntregasContent() {
                     ))}
                   </SelectContent>
                 </Select>
-
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filtrar por estado" />
@@ -580,7 +496,7 @@ function EntregasContent() {
                   <SelectContent>
                     <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="on_time">A tiempo</SelectItem>
-                    <SelectItem value="late">Tardías</SelectItem>
+                    <SelectItem value="late">Tardias</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -588,10 +504,7 @@ function EntregasContent() {
           </Card>
 
           {submissionError && (
-            <ErrorDisplay 
-              error={submissionError}
-              retry={() => fetchSubmissions()}
-            />
+            <ErrorDisplay error={submissionError} retry={() => fetchSubmissions()} />
           )}
 
           <SubmissionTable
@@ -604,13 +517,19 @@ function EntregasContent() {
         </div>
       )}
 
-      {/* Form Modal */}
+      {!showSubmissions && (
+        <div className="sacred-card text-center py-8">
+          <FileText className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Selecciona un curso</p>
+          <p className="text-sm text-text-secondary mt-1">
+            Elige un curso del selector para ver las entregas
+          </p>
+        </div>
+      )}
+
       <SubmissionForm
         isOpen={isFormOpen}
-        onClose={() => {
-          setIsFormOpen(false);
-          setEditingSubmission(null);
-        }}
+        onClose={() => { setIsFormOpen(false); setEditingSubmission(null); }}
         onSubmit={handleFormSubmit}
         selectedStudentId={selectedStudentId || userInfo?.id}
         availableTasks={availableTasks}
@@ -621,9 +540,9 @@ function EntregasContent() {
 
 function EntregasWithAuth() {
   const { isLoading: isAuthLoading } = useAuthRedirect();
-  
+
   if (isAuthLoading) {
-    return <LoadingPage message="Cargando información de entregas..." />;
+    return <LoadingPage message="Cargando informacion de entregas..." />;
   }
 
   return (
@@ -635,7 +554,7 @@ function EntregasWithAuth() {
 
 export default function Entregas() {
   return (
-    <Suspense fallback={<LoadingPage message="Cargando página de entregas..." />}>
+    <Suspense fallback={<LoadingPage message="Cargando pagina de entregas..." />}>
       <EntregasWithAuth />
     </Suspense>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
+import { useRouter } from "next/navigation";
 import "./dashboard-no-scroll.css";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import userInfoStore from "@/store/userInfoStore";
@@ -11,8 +12,16 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export default function Dashboard() {
   const { isLoading } = useAuthRedirect();
   const { userInfo } = userInfoStore();
+  const router = useRouter();
 
-  if (isLoading) {
+  // Admin goes directly to admin panel
+  useEffect(() => {
+    if (!isLoading && userInfo?.role === "admin") {
+      router.replace("/admin");
+    }
+  }, [isLoading, userInfo?.role, router]);
+
+  if (isLoading || !userInfo?.role) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <LoadingSpinner size="lg" />
@@ -20,7 +29,8 @@ export default function Dashboard() {
     );
   }
 
-  if (!userInfo?.role) {
+  // Admin redirects above, show spinner while navigating
+  if (userInfo.role === "admin") {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <LoadingSpinner size="lg" />
@@ -28,7 +38,7 @@ export default function Dashboard() {
     );
   }
 
-  if (userInfo.role === "admin" || userInfo.role === "preceptor" || userInfo.role === "teacher") {
+  if (userInfo.role === "preceptor" || userInfo.role === "teacher") {
     return (
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-[50vh]">

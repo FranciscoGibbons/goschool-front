@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { NewDisciplinarySanction, UpdateDisciplinarySanction, SANCTION_TYPES, SANCTION_LABELS, SanctionType } from "@/types/disciplinarySanction";
+import { SANCTION_TEMPLATES, TEMPLATE_CUSTOM_ID } from "@/config/sanctionTemplates";
 import {
   Card,
   CardContent,
@@ -16,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/sacred";
 
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 
 interface SanctionFormProps {
@@ -50,7 +51,34 @@ export function SanctionForm({
     date: initialData?.date ? format(new Date(initialData.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
   });
 
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(TEMPLATE_CUSTOM_ID);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+
+    if (templateId === TEMPLATE_CUSTOM_ID) {
+      // Reset to empty for custom entry
+      setFormData({
+        sanction_type: '',
+        quantity: 1,
+        description: '',
+        date: formData.date
+      });
+    } else {
+      const template = SANCTION_TEMPLATES.find(t => t.id === templateId);
+      if (template) {
+        setFormData({
+          sanction_type: template.sanctionType,
+          quantity: template.quantity,
+          description: template.description,
+          date: formData.date
+        });
+        // Clear any errors since template is valid
+        setErrors({});
+      }
+    }
+  };
 
   useEffect(() => {
     if (initialData) {
@@ -168,14 +196,52 @@ export function SanctionForm({
             </div>
           )}
 
+          {/* Template Selector - only show for new sanctions */}
+          {!initialData && (
+            <div className="space-y-2">
+              <Label htmlFor="template" className="flex items-center gap-2">
+                <DocumentDuplicateIcon className="h-4 w-4" />
+                Plantilla Rapida
+              </Label>
+              <Select
+                value={selectedTemplateId}
+                onValueChange={handleTemplateChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar plantilla o escribir personalizada" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TEMPLATE_CUSTOM_ID}>
+                    <span className="text-muted-foreground">Escribir descripcion personalizada...</span>
+                  </SelectItem>
+                  {SANCTION_TEMPLATES.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{template.label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({SANCTION_LABELS[template.sanctionType]})
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedTemplateId !== TEMPLATE_CUSTOM_ID && (
+                <p className="text-xs text-muted-foreground">
+                  Puedes modificar la descripcion despues de seleccionar la plantilla
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label htmlFor="sanction_type">Tipo de Sanción *</Label>
+            <Label htmlFor="sanction_type">Tipo de Sancion *</Label>
             <Select
               value={formData.sanction_type}
               onValueChange={(value) => handleFieldChange('sanction_type', value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar tipo de sanción" />
+                <SelectValue placeholder="Seleccionar tipo de sancion" />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(SANCTION_TYPES).map(([key, value]) => (

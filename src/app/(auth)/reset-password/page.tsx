@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
+import { branding, brandingMeta } from "@/config/branding";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -78,8 +79,8 @@ function ResetPasswordForm() {
       <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-6 bg-surface p-6 sm:p-8 rounded-lg border border-border">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success-muted flex items-center justify-center">
+              <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -106,8 +107,8 @@ function ResetPasswordForm() {
       <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-6 bg-surface p-6 sm:p-8 rounded-lg border border-border">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-error-muted flex items-center justify-center">
+              <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
@@ -135,8 +136,8 @@ function ResetPasswordForm() {
         <div className="text-center">
           <div className="w-20 mx-auto mb-4">
             <Image
-              src="/images/logo.webp"
-              alt="Colegio Stella Maris Rosario"
+              src={branding.logoPath}
+              alt={brandingMeta.logoAlt}
               width={80}
               height={40}
               className="w-full h-auto"

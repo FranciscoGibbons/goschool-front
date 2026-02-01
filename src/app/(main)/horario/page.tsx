@@ -1,15 +1,14 @@
 "use client";
 
-import { Clock, ChevronLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Clock } from "lucide-react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
-import CourseSelector from "@/components/CourseSelector";
+import InlineCourseSelector from "@/components/InlineCourseSelector";
 import TimetableClient from "./components/TimetableClient";
 import TimetableDisplay from "./components/TimetableDisplay";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
-import { LoadingSpinner, Button, PageHeader } from "@/components/sacred";
+import { LoadingSpinner, PageHeader } from "@/components/sacred";
 
 
 function HorarioContent() {
@@ -17,30 +16,6 @@ function HorarioContent() {
   const { selectedChild } = childSelectionStore();
   const { courses, selectedCourseId, isLoading, error, setSelectedCourseId } =
     useCourseStudentSelection(userInfo?.role || null);
-
-  const [currentStep, setCurrentStep] = useState<"course" | "timetable">(
-    "course"
-  );
-
-  useEffect(() => {
-    if (!userInfo?.role) return;
-
-    if (userInfo.role === "student") {
-      setCurrentStep("timetable");
-    } else if (userInfo.role === "father" && selectedChild) {
-      setCurrentStep("timetable");
-    }
-  }, [userInfo?.role, selectedChild]);
-
-  const handleCourseSelect = (courseId: number) => {
-    setSelectedCourseId(courseId);
-    setCurrentStep("timetable");
-  };
-
-  const handleBack = () => {
-    setCurrentStep("course");
-    setSelectedCourseId(null);
-  };
 
   if (isLoading) {
     return (
@@ -52,17 +27,16 @@ function HorarioContent() {
 
   if (error) {
     return (
-        <div className="space-y-6">
-          <PageHeader title="Horario" />
-          <div className="sacred-card text-center py-8">
-            <p className="text-error text-sm">{error}</p>
-          </div>
+      <div className="space-y-6">
+        <PageHeader title="Horario" />
+        <div className="sacred-card text-center py-8">
+          <p className="text-error text-sm">{error}</p>
         </div>
-
+      </div>
     );
   }
 
-  // Student view - direct timetable (use their enrolled course)
+  // Student view - direct timetable
   if (userInfo?.role === "student") {
     const studentCourseId = courses.length > 0 ? courses[0].id : null;
 
@@ -93,7 +67,6 @@ function HorarioContent() {
     );
   }
 
-
   // Father without child selected
   if (userInfo?.role === "father" && !selectedChild) {
     return (
@@ -110,7 +83,7 @@ function HorarioContent() {
     );
   }
 
-  // Father with child selected - direct timetable
+  // Father with child selected
   if (userInfo?.role === "father" && selectedChild) {
     return (
       <div className="space-y-6">
@@ -124,47 +97,37 @@ function HorarioContent() {
     );
   }
 
-  // Admin/Teacher/Preceptor - show course selector
+  // Admin/Teacher/Preceptor - inline course selector
   return (
     <div className="space-y-6">
       <PageHeader
         title="Horario"
-        subtitle={
-          currentStep === "course"
-            ? "Selecciona un curso"
-            : "Cronograma de clases"
-        }
-        action={
-          currentStep === "timetable" ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBack}
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          ) : null
-        }
+        subtitle="Cronograma de clases"
       />
 
-
-      {currentStep === "course" && (
-        <CourseSelector
+      <div className="flex flex-wrap items-center gap-3 p-3 sacred-card">
+        <InlineCourseSelector
           courses={courses}
-          onCourseSelect={handleCourseSelect}
           selectedCourseId={selectedCourseId}
+          onCourseChange={setSelectedCourseId}
         />
-      )}
+      </div>
 
-      {currentStep === "timetable" &&
-        (selectedCourseId || userInfo?.role === "father") && (
-          <TimetableClient
-            courses={courses}
-            initialCourseId={selectedCourseId || selectedChild?.course_id}
-            initialTimetables={[]}
-          />
-        )}
+      {selectedCourseId ? (
+        <TimetableClient
+          courses={courses}
+          initialCourseId={selectedCourseId}
+          initialTimetables={[]}
+        />
+      ) : (
+        <div className="sacred-card text-center py-8">
+          <Clock className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Selecciona un curso</p>
+          <p className="text-sm text-text-secondary mt-1">
+            Elige un curso del selector para ver el horario
+          </p>
+        </div>
+      )}
     </div>
   );
 }

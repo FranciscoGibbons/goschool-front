@@ -9,13 +9,13 @@
  * ==========================================================================
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useInView } from "react-intersection-observer";
 
 import userInfoStore from "@/store/userInfoStore";
 import { toast } from "sonner";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon } from "@heroicons/react/24/outline";
 import {
   Button,
   EmptyState,
@@ -28,6 +28,7 @@ import {
   Label,
   Input,
   Textarea,
+  NativeSelect,
 } from "@/components/sacred";
 import axios from "axios";
 
@@ -60,6 +61,73 @@ export default function MessageList() {
   const { userInfo } = userInfoStore();
   const [hasMore, setHasMore] = useState(true);
 
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [selectedSender, setSelectedSender] = useState<string>("");
+
+  // Extract unique courses for filter dropdown
+  const uniqueCourses = useMemo(() => {
+    const courses = new Set<string>();
+    messages.forEach((msg) => {
+      if (msg.courses) {
+        msg.courses.split(",").forEach((c) => courses.add(c.trim()));
+      }
+    });
+    return Array.from(courses).sort();
+  }, [messages]);
+
+  // Extract unique senders for filter dropdown
+  const uniqueSenders = useMemo(() => {
+    const senders: { id: number; name: string }[] = [];
+    const seen = new Set<number>();
+    messages.forEach((msg) => {
+      if (!seen.has(msg.sender_id)) {
+        seen.add(msg.sender_id);
+        const sender = sendersMap.get(msg.sender_id);
+        senders.push({
+          id: msg.sender_id,
+          name: sender?.full_name || msg.sender_name || "Desconocido",
+        });
+      }
+    });
+    return senders.sort((a, b) => a.name.localeCompare(b.name));
+  }, [messages, sendersMap]);
+
+  // Filter messages based on search and filters
+  const filteredMessages = useMemo(() => {
+    return messages.filter((msg) => {
+      // Text search
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = msg.title?.toLowerCase().includes(query);
+        const matchesContent = msg.message?.toLowerCase().includes(query);
+        if (!matchesTitle && !matchesContent) return false;
+      }
+      // Course filter
+      if (selectedCourse && msg.courses) {
+        const msgCourses = msg.courses.split(",").map((c) => c.trim());
+        if (!msgCourses.includes(selectedCourse)) return false;
+      } else if (selectedCourse && !msg.courses) {
+        return false;
+      }
+      // Sender filter
+      if (selectedSender && msg.sender_id !== Number(selectedSender)) {
+        return false;
+      }
+      return true;
+    });
+  }, [messages, searchQuery, selectedCourse, selectedSender]);
+
+  // Clear filters
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedCourse("");
+    setSelectedSender("");
+  };
+
+  const hasActiveFilters = searchQuery || selectedCourse || selectedSender;
+
   // Intersection Observer para detectar cuando el usuario llega al final
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0.1,
@@ -69,12 +137,18 @@ export default function MessageList() {
   // Cargar más mensajes cuando el usuario llega al final
   useEffect(() => {
     if (inView && hasMore && !loading) {
-      setVisibleCount((prev) => Math.min(prev + 10, messages.length));
-      if (visibleCount + 10 >= messages.length) {
+      setVisibleCount((prev) => Math.min(prev + 10, filteredMessages.length));
+      if (visibleCount + 10 >= filteredMessages.length) {
         setHasMore(false);
       }
     }
-  }, [inView, hasMore, loading, messages.length, visibleCount]);
+  }, [inView, hasMore, loading, filteredMessages.length, visibleCount]);
+
+  // Reset visible count and hasMore when filters change
+  useEffect(() => {
+    setVisibleCount(10);
+    setHasMore(filteredMessages.length > 10);
+  }, [searchQuery, selectedCourse, selectedSender, filteredMessages.length]);
 
   // Cargar mensajes iniciales
   useEffect(() => {
@@ -223,8 +297,8 @@ export default function MessageList() {
       .toUpperCase();
   };
 
-  // Obtener solo los mensajes visibles
-  const visibleMessages = messages.slice(0, visibleCount);
+  // Obtener solo los mensajes visibles (usando filteredMessages)
+  const visibleMessages = filteredMessages.slice(0, visibleCount);
 
   // Función para borrar un mensaje
   const handleDelete = async (id: number) => {
@@ -274,9 +348,65 @@ export default function MessageList() {
 
   return (
     <div className="space-y-6">
+      {/* Filtros */}
+      <div className="space-y-4">
+        {/* Búsqueda */}
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
+          <Input
+            type="text"
+            placeholder="Buscar en mensajes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Filtros de curso y remitente */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex items-center gap-2">
+            <FunnelIcon className="h-4 w-4 text-text-muted" />
+            <span className="text-sm text-text-secondary">Filtrar:</span>
+          </div>
+
+          <NativeSelect
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+            className="min-w-[150px]"
+          >
+            <option value="">Todos los cursos</option>
+            {uniqueCourses.map((course) => (
+              <option key={course} value={course}>
+                {course}
+              </option>
+            ))}
+          </NativeSelect>
+
+          <NativeSelect
+            value={selectedSender}
+            onChange={(e) => setSelectedSender(e.target.value)}
+            className="min-w-[150px]"
+          >
+            <option value="">Todos los remitentes</option>
+            {uniqueSenders.map((sender) => (
+              <option key={sender.id} value={sender.id}>
+                {sender.name}
+              </option>
+            ))}
+          </NativeSelect>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Contador de mensajes mostrados */}
       <div className="text-sm text-text-secondary">
-        Mostrando {visibleMessages.length} de {messages.length} mensajes
+        Mostrando {visibleMessages.length} de {filteredMessages.length} mensajes
+        {hasActiveFilters && ` (${messages.length} totales)`}
       </div>
 
       {/* Lista de mensajes */}

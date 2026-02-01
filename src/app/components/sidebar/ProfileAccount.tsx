@@ -81,10 +81,10 @@ export default function ProfileAccount() {
   if (isLoading) {
     return (
       <div className="flex items-center gap-3 p-2 rounded-lg">
-        <div className="h-10 w-10 rounded-full bg-surface-muted"></div>
+        <div className="h-10 w-10 rounded-full bg-sidebar-accent"></div>
         <div className="flex flex-col gap-1">
-          <div className="h-4 w-32 bg-surface-muted rounded"></div>
-          <div className="h-3 w-20 bg-surface-muted rounded"></div>
+          <div className="h-4 w-32 bg-sidebar-accent rounded"></div>
+          <div className="h-3 w-20 bg-sidebar-accent rounded"></div>
         </div>
       </div>
     );
@@ -93,14 +93,14 @@ export default function ProfileAccount() {
   if (error) {
     return (
       <div className="flex items-center gap-3 p-2 rounded-lg">
-        <div className="h-10 w-10 rounded-full bg-error-muted flex items-center justify-center">
+        <div className="h-10 w-10 rounded-full bg-error/20 flex items-center justify-center">
           <span className="text-error text-xs">!</span>
         </div>
         <div className="flex flex-col gap-1">
           <div className="text-sm text-error">Error al cargar</div>
           <button
             onClick={fetchUserInfo}
-            className="text-xs text-primary hover:underline"
+            className="text-xs text-sidebar-primary hover:underline"
           >
             Reintentar
           </button>
@@ -112,14 +112,14 @@ export default function ProfileAccount() {
   if (!userInfo || !userInfo.role) {
     return (
       <div className="flex items-center gap-3 p-2 rounded-lg">
-        <div className="h-10 w-10 rounded-full bg-surface-muted flex items-center justify-center">
-          <span className="text-text-muted text-xs">?</span>
+        <div className="h-10 w-10 rounded-full bg-sidebar-accent flex items-center justify-center">
+          <span className="text-sidebar-foreground text-xs">?</span>
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-sm text-text-muted">No hay datos</div>
+          <div className="text-sm text-sidebar-foreground">No hay datos</div>
           <button
             onClick={fetchUserInfo}
-            className="text-xs text-primary hover:underline"
+            className="text-xs text-sidebar-primary hover:underline"
           >
             Cargar datos
           </button>
@@ -141,7 +141,7 @@ export default function ProfileAccount() {
             }
 
           />
-          <AvatarFallback className="bg-primary/10 text-primary font-bold">
+          <AvatarFallback className="bg-sidebar-primary/20 text-sidebar-primary font-bold">
             {getInitials(
               userInfo.name && userInfo.last_name
                 ? `${userInfo.name} ${userInfo.last_name}`
@@ -157,7 +157,7 @@ export default function ProfileAccount() {
           </p>
           {roleDisplay(userInfo.role)}
         </div>
-        <ChevronDownIcon className="h-4 w-4 text-sidebar-foreground" />
+        <ChevronDownIcon className="h-4 w-4 text-sidebar-foreground/70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuItem asChild>

@@ -1,5 +1,6 @@
 import LoginForm from "./components/LoginForm";
 import Image from "next/image";
+import { branding, brandingMeta } from "@/config/branding";
 import "./login.css";
 
 export default function LoginPage() {
@@ -23,8 +24,8 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col items-center text-center px-4 w-full">
           <div className="mb-6 w-40">
             <Image
-              src="/images/logo.webp"
-              alt="Colegio Stella Maris Rosario"
+              src={branding.logoPath}
+              alt={brandingMeta.logoAlt}
               width={160}
               height={80}
               className="w-full h-auto"
@@ -32,7 +33,7 @@ export default function LoginPage() {
             />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            Stella Maris Alumnos
+            {branding.schoolName} Alumnos
           </h1>
         </div>
       </div>
@@ -44,8 +45,8 @@ export default function LoginPage() {
           <div className="md:hidden mb-6 text-center">
             <div className="w-32 mx-auto mb-4">
               <Image
-                src="/images/logo.webp"
-                alt="Colegio Stella Maris Rosario"
+                src={branding.logoPath}
+                alt={brandingMeta.logoAlt}
                 width={128}
                 height={64}
                 className="w-full h-auto"
@@ -53,7 +54,7 @@ export default function LoginPage() {
               />
             </div>
             <h1 className="text-2xl font-bold text-foreground">
-              Stella Maris Alumnos
+              {branding.schoolName} Alumnos
             </h1>
           </div>
           

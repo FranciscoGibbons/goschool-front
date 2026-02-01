@@ -2,13 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AddActionHandler } from "./AddActionHandler";
 import { Role } from "@/utils/types";
 import {
   BookOpen,
-  Calendar,
   MessageSquare,
-  MessageCircle,
   ClipboardCheck,
   UserCheck,
   ArrowRight,
@@ -121,35 +118,32 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
     return cards;
   };
 
-  const getQuickActions = () => {
+  const getPrimaryActions = () => {
     switch (role) {
-      case "admin":
-        return [
-          { icon: BookOpen, title: "Asignaturas", description: "Gestionar materias", href: "/asignaturas" },
-          { icon: MessageSquare, title: "Mensajes", description: "Ver comunicaciones", href: "/mensajes" },
-          { icon: MessageCircle, title: "Chat", description: "Conversaciones en tiempo real", href: "/chat" },
-          { icon: Calendar, title: "Horarios", description: "Ver horarios", href: "/horario" },
-        ];
       case "preceptor":
         return [
-          { icon: UserCheck, title: "Asistencias", description: "Gestionar asistencias", href: "/asistencia" },
-          { icon: MessageSquare, title: "Mensajes", description: "Ver comunicaciones", href: "/mensajes" },
-          { icon: MessageCircle, title: "Chat", description: "Conversaciones en tiempo real", href: "/chat" },
-          { icon: Calendar, title: "Horarios", description: "Ver horarios", href: "/horario" },
+          { icon: UserCheck, title: "Tomar Asistencia", href: "/asistencia", primary: true },
+          { icon: ClipboardCheck, title: "Registrar Conducta", href: "/conducta", primary: true },
+          { icon: MessageSquare, title: "Nuevo Mensaje", href: "/mensajes", primary: false },
         ];
       case "teacher":
         return [
-          { icon: BookOpen, title: "Asignaturas", description: "Ver mis materias", href: "/asignaturas" },
-          { icon: ClipboardCheck, title: "Calificaciones", description: "Cargar notas", href: "/calificaciones" },
-          { icon: MessageSquare, title: "Mensajes", description: "Ver comunicaciones", href: "/mensajes" },
-          { icon: MessageCircle, title: "Chat", description: "Conversaciones en tiempo real", href: "/chat" },
+          { icon: FileText, title: "Cargar Notas", href: "/calificaciones", primary: true },
+          { icon: BookOpen, title: "Ver Entregas", href: "/entregas", primary: true },
+          { icon: MessageSquare, title: "Nuevo Mensaje", href: "/mensajes", primary: false },
+        ];
+      case "admin":
+        return [
+          { icon: Settings, title: "Panel Admin", href: "/admin", primary: true },
+          { icon: MessageSquare, title: "Nuevo Mensaje", href: "/mensajes", primary: true },
+          { icon: FileText, title: "Calificaciones", href: "/calificaciones", primary: false },
         ];
       default:
         return [];
     }
   };
 
-  const quickActions = getQuickActions();
+  const primaryActions = getPrimaryActions();
   const statsCards = getStatsCards();
 
   if (loading) {
@@ -173,26 +167,38 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
         }
       />
 
-      {/* Admin Panel Button */}
-      {role === "admin" && (
-        <button
-          onClick={() => router.push("/admin")}
-          className="w-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 hover:from-primary/15 hover:to-primary/10 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Settings className="h-6 w-6 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="text-lg font-semibold text-text-primary">Panel de Administración</p>
-                <p className="text-sm text-text-secondary">Gestionar usuarios, cursos, materias y ciclos lectivos</p>
-              </div>
+      {/* Primary Action Buttons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {primaryActions.map((action, index) => (
+          <button
+            key={index}
+            onClick={() => router.push(action.href)}
+            className={`flex items-center gap-4 p-4 rounded-lg border transition-all text-left ${
+              action.primary
+                ? "bg-primary/5 border-primary/20 hover:bg-primary/10"
+                : "bg-surface border-border hover:bg-surface-muted"
+            }`}
+          >
+            <div className={`p-3 rounded-lg ${
+              action.primary ? "bg-primary/10" : "bg-surface-muted"
+            }`}>
+              <action.icon className={`h-5 w-5 ${
+                action.primary ? "text-primary" : "text-text-secondary"
+              }`} />
             </div>
-            <ArrowRight className="h-5 w-5 text-primary" />
-          </div>
-        </button>
-      )}
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${
+                action.primary ? "text-primary" : "text-text-primary"
+              }`}>
+                {action.title}
+              </p>
+            </div>
+            <ArrowRight className={`h-4 w-4 ${
+              action.primary ? "text-primary" : "text-text-muted"
+            }`} />
+          </button>
+        ))}
+      </div>
 
       {/* Stats */}
       {statsCards.length > 0 && (
@@ -211,50 +217,28 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-text-secondary">Acciones rapidas</h3>
-          <div className="space-y-2">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                className="w-full sacred-card-interactive text-left"
-                onClick={() => router.push(action.href)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <action.icon className="h-4 w-4 text-text-secondary" />
-                    <div className="text-left">
-                      <p className="text-sm font-medium text-text-primary">{action.title}</p>
-                      <p className="text-xs text-text-secondary">{action.description}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-text-secondary" />
-                </div>
-              </button>
-            ))}
-          </div>
+      {/* Quick Links */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-text-secondary">Acceso rapido</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { label: "Horarios", href: "/horario" },
+            { label: "Asignaturas", href: "/asignaturas" },
+            { label: "Chat", href: "/chat" },
+            { label: "Evaluaciones", href: "/examenes" },
+          ].map((link, index) => (
+            <button
+              key={index}
+              onClick={() => router.push(link.href)}
+              className="sacred-card-interactive text-center py-3"
+            >
+              <span className="text-sm font-medium text-text-primary">{link.label}</span>
+            </button>
+          ))}
         </div>
-
-        {/* Upcoming Events */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-text-secondary">Proximos eventos</h3>
-          <Card>
-            <CardContent className="flex items-center justify-center py-8">
-              <p className="text-sm text-text-secondary">No hay eventos programados</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Floating Action Button */}
-      <div className="fixed right-6 bottom-6 z-50">
-        <AddActionHandler role={role} />
       </div>
     </div>
   );
-
 };
 
 export default DashAdminPreceptorTeacher;

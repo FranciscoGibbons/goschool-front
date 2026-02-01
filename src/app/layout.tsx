@@ -5,6 +5,7 @@ import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { branding, brandingMeta } from "@/config/branding";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -29,20 +30,19 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#f5f6f8"
+  themeColor: "#3d7a5a"
 };
 
 
 export const metadata: Metadata = {
   title: {
-    default: "GoSchool - Stella Maris Rosario",
-    template: "%s | GoSchool - Stella Maris"
+    default: brandingMeta.defaultTitle,
+    template: brandingMeta.titleTemplate
   },
-  description: "Sistema integral de gestión académica para el Colegio Stella Maris Rosario. Gestiona calificaciones, exámenes, horarios y comunicación entre estudiantes, padres y profesores.",
+  description: `Sistema integral de gestión académica para ${branding.schoolFullName}. Gestiona calificaciones, exámenes, horarios y comunicación entre estudiantes, padres y profesores.`,
   keywords: [
     "gestión académica",
-    "colegio stella maris",
-    "rosario",
+    branding.schoolName.toLowerCase(),
     "sistema educativo",
     "calificaciones",
     "exámenes",
@@ -51,36 +51,36 @@ export const metadata: Metadata = {
     "padres",
     "profesores"
   ],
-  authors: [{ name: "Equipo GoSchool" }],
-  creator: "GoSchool Team",
-  publisher: "Colegio Stella Maris Rosario",
-  
+  authors: [{ name: `Equipo ${branding.appName}` }],
+  creator: `${branding.appName} Team`,
+  publisher: branding.schoolFullName,
+
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
-  
+
   openGraph: {
     type: "website",
     locale: "es_AR",
     url: "/",
-    siteName: "GoSchool - Stella Maris",
-    title: "GoSchool - Sistema de Gestión Académica",
-    description: "Plataforma integral para la gestión académica del Colegio Stella Maris Rosario",
+    siteName: brandingMeta.siteName,
+    title: `${branding.appName} - Sistema de Gestión Académica`,
+    description: `Plataforma integral para la gestión académica de ${branding.schoolFullName}`,
     images: [
       {
         url: "/images/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "GoSchool - Stella Maris Rosario"
+        alt: brandingMeta.defaultTitle
       }
     ]
   },
-  
+
   twitter: {
     card: "summary_large_image",
-    title: "GoSchool - Stella Maris",
+    title: brandingMeta.siteName,
     description: "Sistema integral de gestión académica",
     images: ["/images/twitter-card.jpg"]
   },
-  
+
   robots: {
     index: false, // Sistema privado, no indexar
     follow: false,
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     nosnippet: true,
     noimageindex: true
   },
-  
+
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -99,14 +99,14 @@ export const metadata: Metadata = {
       { url: "/images/apple-touch-icon.png", sizes: "180x180" }
     ]
   },
-  
+
   manifest: "/manifest.json",
-  
+
   other: {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
-    "apple-mobile-web-app-title": "GoSchool"
+    "apple-mobile-web-app-title": branding.appName
   }
 };
 
@@ -132,12 +132,12 @@ export default function RootLayout({
         <meta name="referrer" content="strict-origin-when-cross-origin" />
         
         {/* PWA meta tags */}
-        <meta name="application-name" content="GoSchool" />
-        <meta name="apple-mobile-web-app-title" content="GoSchool" />
+        <meta name="application-name" content={branding.appName} />
+        <meta name="apple-mobile-web-app-title" content={branding.appName} />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
-        <meta name="msapplication-TileColor" content="#1e3a8a" />
+        <meta name="msapplication-TileColor" content="#3d7a5a" />
 
         <meta name="msapplication-tap-highlight" content="no" />
       </head>

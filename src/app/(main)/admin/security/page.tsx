@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -29,9 +28,11 @@ import {
   MessageSquare,
   FileText,
   BarChart3,
-  Calendar,
   ChevronLeft,
   ChevronRight,
+  HardDrive,
+  MemoryStick,
+  Gauge,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -50,23 +51,37 @@ interface SecurityOverview {
   total_failed_logins: number;
 }
 
+interface SystemHealth {
+  uploaded_files: number;
+  remainig_space: number;
+  used_space_mb: number;
+  limit_mb: number;
+  used_mb: number;
+  latency: number;
+}
+
 interface TrafficStats {
-  hour: number;
-  request_count: number;
-  unique_users: number;
+  window_end: string;
+  requests_total: number;
+  bytes_in: number;
+  bytes_out: number;
+  errors_4xx: number;
+  errors_5xx: number;
 }
 
 export default function SecurityPage() {
   const router = useRouter();
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [securityOverview, setSecurityOverview] = useState<SecurityOverview | null>(null);
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [trafficStats, setTrafficStats] = useState<TrafficStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingTraffic, setIsLoadingTraffic] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  });
 
   const fetchTrafficStats = useCallback(async (date: string) => {
     setIsLoadingTraffic(true);
@@ -91,9 +106,10 @@ export default function SecurityPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [systemRes, securityRes] = await Promise.all([
+        const [systemRes, securityRes, healthRes] = await Promise.all([
           fetch("/api/proxy/admin/system/stats", { credentials: "include" }),
           fetch("/api/proxy/admin/security/overview", { credentials: "include" }),
+          fetch("/api/proxy/admin/system/health", { credentials: "include" }),
         ]);
 
         if (!systemRes.ok && systemRes.status === 401) {
@@ -101,13 +117,15 @@ export default function SecurityPage() {
           return;
         }
 
-        const [system, security] = await Promise.all([
+        const [system, security, health] = await Promise.all([
           systemRes.ok ? systemRes.json() : null,
           securityRes.ok ? securityRes.json() : null,
+          healthRes.ok ? healthRes.json() : null,
         ]);
 
         setSystemStats(system);
         setSecurityOverview(security);
+        setSystemHealth(health);
 
         // Fetch initial traffic stats
         await fetchTrafficStats(selectedDate);
@@ -119,7 +137,8 @@ export default function SecurityPage() {
     };
 
     fetchData();
-  }, [router, fetchTrafficStats, selectedDate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
@@ -127,17 +146,18 @@ export default function SecurityPage() {
   };
 
   const handlePreviousDay = () => {
-    const date = new Date(selectedDate);
-    date.setDate(date.getDate() - 1);
-    const newDate = date.toISOString().split('T')[0];
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const date = new Date(year, month - 1, day - 1);
+    const newDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     handleDateChange(newDate);
   };
 
   const handleNextDay = () => {
-    const date = new Date(selectedDate);
-    date.setDate(date.getDate() + 1);
-    const today = new Date().toISOString().split('T')[0];
-    const newDate = date.toISOString().split('T')[0];
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const date = new Date(year, month - 1, day + 1);
+    const newDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     // Don't allow future dates
     if (newDate <= today) {
       handleDateChange(newDate);
@@ -145,11 +165,17 @@ export default function SecurityPage() {
   };
 
   const handleToday = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     handleDateChange(today);
   };
 
-  const isToday = selectedDate === new Date().toISOString().split('T')[0];
+  const getTodayString = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  };
+
+  const isToday = selectedDate === getTodayString();
 
   const formatDisplayDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
@@ -187,10 +213,23 @@ export default function SecurityPage() {
     );
   }
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  const formatMB = (mb: number) => {
+    if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+    return `${mb} MB`;
+  };
+
   const getFailedLoginsBadge = (count: number) => {
-    if (count === 0) return "bg-green-100 text-green-800";
-    if (count < 10) return "bg-yellow-100 text-yellow-800";
-    return "bg-red-100 text-red-800";
+    if (count === 0) return "bg-success-muted text-success";
+    if (count < 10) return "bg-warning-muted text-warning";
+    return "bg-error-muted text-error";
   };
 
   return (
@@ -224,8 +263,8 @@ export default function SecurityPage() {
           <CardContent>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <Clock className="h-6 w-6 text-blue-600" />
+                <div className="p-3 bg-status-info-muted rounded-full">
+                  <Clock className="h-6 w-6 text-status-info" />
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{securityOverview.active_sessions}</p>
@@ -233,8 +272,8 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-green-100 rounded-full">
-                  <UserCheck className="h-6 w-6 text-green-600" />
+                <div className="p-3 bg-success-muted rounded-full">
+                  <UserCheck className="h-6 w-6 text-success" />
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{securityOverview.logins_today}</p>
@@ -242,8 +281,8 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-yellow-100 rounded-full">
-                  <AlertTriangle className="h-6 w-6 text-yellow-600" />
+                <div className="p-3 bg-warning-muted rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-warning" />
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{securityOverview.failed_logins_today}</p>
@@ -251,13 +290,123 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="p-3 bg-red-100 rounded-full">
-                  <Shield className="h-6 w-6 text-red-600" />
+                <div className="p-3 bg-error-muted rounded-full">
+                  <Shield className="h-6 w-6 text-error" />
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{securityOverview.total_failed_logins}</p>
                   <p className="text-sm text-muted-foreground">Total intentos fallidos</p>
                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* System Health */}
+      {systemHealth && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Gauge className="h-5 w-5" />
+              Salud del Sistema
+            </CardTitle>
+            <CardDescription>
+              Disco, memoria y latencia de base de datos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Disk */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium">Disco</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Usado</span>
+                    <span className="font-medium">{formatMB(systemHealth.used_space_mb)}</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full ${
+                        systemHealth.remainig_space > 0 && systemHealth.used_space_mb / (systemHealth.used_space_mb + systemHealth.remainig_space) > 0.9
+                          ? "bg-error"
+                          : systemHealth.remainig_space > 0 && systemHealth.used_space_mb / (systemHealth.used_space_mb + systemHealth.remainig_space) > 0.7
+                            ? "bg-warning"
+                            : "bg-success"
+                      }`}
+                      style={{
+                        width: `${systemHealth.remainig_space > 0 ? Math.round((systemHealth.used_space_mb / (systemHealth.used_space_mb + systemHealth.remainig_space)) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Disponible</span>
+                    <span className="font-medium">{formatMB(systemHealth.remainig_space)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Archivos subidos</span>
+                    <span className="font-medium">{systemHealth.uploaded_files}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* RAM */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                  <MemoryStick className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium">Memoria RAM</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Usada</span>
+                    <span className="font-medium">{formatMB(systemHealth.used_mb)}</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full ${
+                        systemHealth.limit_mb > 0 && systemHealth.used_mb / systemHealth.limit_mb > 0.9
+                          ? "bg-error"
+                          : systemHealth.limit_mb > 0 && systemHealth.used_mb / systemHealth.limit_mb > 0.7
+                            ? "bg-warning"
+                            : "bg-success"
+                      }`}
+                      style={{
+                        width: `${systemHealth.limit_mb > 0 ? Math.round((systemHealth.used_mb / systemHealth.limit_mb) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-medium">{formatMB(systemHealth.limit_mb)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* DB Latency */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium">Base de Datos</span>
+                </div>
+                <div className="flex items-center gap-3 mt-2">
+                  <p className="text-4xl font-bold">{systemHealth.latency}</p>
+                  <span className="text-muted-foreground text-sm">ms</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Latencia (SELECT 1)</p>
+                <Badge
+                  className={
+                    systemHealth.latency < 10
+                      ? "bg-success-muted text-success"
+                      : systemHealth.latency < 50
+                        ? "bg-warning-muted text-warning"
+                        : "bg-error-muted text-error"
+                  }
+                >
+                  {systemHealth.latency < 10 ? "Excelente" : systemHealth.latency < 50 ? "Normal" : "Lenta"}
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -279,8 +428,8 @@ export default function SecurityPage() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <div className="flex items-center gap-3 p-4 border rounded-lg">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FileText className="h-5 w-5 text-purple-600" />
+                <div className="p-2 bg-icon-security-muted rounded-lg">
+                  <FileText className="h-5 w-5 text-icon-security" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{systemStats.total_assessments}</p>
@@ -288,8 +437,8 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 border rounded-lg">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-icon-academic-muted rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-icon-academic" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{systemStats.total_grades}</p>
@@ -297,8 +446,8 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 border rounded-lg">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <MessageSquare className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-icon-messages-muted rounded-lg">
+                  <MessageSquare className="h-5 w-5 text-icon-messages" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{systemStats.total_messages}</p>
@@ -306,8 +455,8 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 border rounded-lg">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Users className="h-5 w-5 text-orange-600" />
+                <div className="p-2 bg-icon-stats-muted rounded-lg">
+                  <Users className="h-5 w-5 text-icon-stats" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{systemStats.total_sessions}</p>
@@ -315,8 +464,8 @@ export default function SecurityPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-4 border rounded-lg">
-                <div className="p-2 bg-teal-100 rounded-lg">
-                  <UserCheck className="h-5 w-5 text-teal-600" />
+                <div className="p-2 bg-icon-users-muted rounded-lg">
+                  <UserCheck className="h-5 w-5 text-icon-users" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{systemStats.logins_today}</p>
@@ -338,7 +487,7 @@ export default function SecurityPage() {
                 Trafico por Dia
               </CardTitle>
               <CardDescription>
-                Solicitudes y usuarios unicos por hora
+                Solicitudes, transferencia y errores por ventana de tiempo
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -355,7 +504,7 @@ export default function SecurityPage() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => handleDateChange(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={getTodayString()}
                   className="w-auto"
                 />
               </div>
@@ -396,25 +545,51 @@ export default function SecurityPage() {
                 <TableRow>
                   <TableHead>Hora</TableHead>
                   <TableHead className="text-center">Solicitudes</TableHead>
-                  <TableHead className="text-center">Usuarios Unicos</TableHead>
+                  <TableHead className="text-center">Entrada</TableHead>
+                  <TableHead className="text-center">Salida</TableHead>
+                  <TableHead className="text-center">4xx</TableHead>
+                  <TableHead className="text-center">5xx</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {trafficStats.map((stat) => (
-                  <TableRow key={stat.hour}>
-                    <TableCell className="font-medium">
-                      {String(stat.hour).padStart(2, '0')}:00 - {String(stat.hour).padStart(2, '0')}:59
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline">{stat.request_count}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="text-blue-600 border-blue-600">
-                        {stat.unique_users}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {trafficStats.map((stat) => {
+                  const date = new Date(stat.window_end);
+                  const hour = date.getHours();
+                  return (
+                    <TableRow key={stat.window_end}>
+                      <TableCell className="font-medium">
+                        {String(hour).padStart(2, '0')}:00 - {String(hour).padStart(2, '0')}:59
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{stat.requests_total}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground">
+                        {formatBytes(stat.bytes_in)}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground">
+                        {formatBytes(stat.bytes_out)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {stat.errors_4xx > 0 ? (
+                          <Badge variant="outline" className="text-warning border-warning">
+                            {stat.errors_4xx}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {stat.errors_5xx > 0 ? (
+                          <Badge variant="outline" className="text-error border-error">
+                            {stat.errors_5xx}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (
@@ -437,15 +612,15 @@ export default function SecurityPage() {
         <CardContent>
           <div className="space-y-4 text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
-              <Shield className="h-4 w-4 mt-0.5 text-green-500" />
+              <Shield className="h-4 w-4 mt-0.5 text-success" />
               <p>Las sesiones expiran automaticamente despues de 1 hora de inactividad.</p>
             </div>
             <div className="flex items-start gap-2">
-              <Shield className="h-4 w-4 mt-0.5 text-green-500" />
+              <Shield className="h-4 w-4 mt-0.5 text-success" />
               <p>Los tokens JWT utilizan firma ES256 para maxima seguridad.</p>
             </div>
             <div className="flex items-start gap-2">
-              <Shield className="h-4 w-4 mt-0.5 text-green-500" />
+              <Shield className="h-4 w-4 mt-0.5 text-success" />
               <p>Los intentos de inicio de sesion fallidos se registran para auditoria.</p>
             </div>
           </div>

@@ -153,50 +153,50 @@ export default function AdminPage() {
       description: "Administrar usuarios del sistema",
       href: "/admin/users",
       icon: Users,
-      color: "text-blue-500",
+      color: "text-icon-academic",
     },
     {
       title: "Ciclos Lectivos",
       description: "Administrar años académicos",
       href: "/admin/academic-years",
       icon: Calendar,
-      color: "text-green-500",
+      color: "text-icon-users",
     },
     {
       title: "Cursos",
       description: "Administrar cursos y divisiones",
       href: "/admin/courses",
       icon: GraduationCap,
-      color: "text-purple-500",
+      color: "text-icon-security",
     },
     {
       title: "Materias",
       description: "Administrar materias y asignaciones",
       href: "/admin/subjects",
       icon: BookOpen,
-      color: "text-orange-500",
+      color: "text-icon-stats",
     },
     {
       title: "Seguridad y Sistema",
       description: "Monitoreo y estadísticas técnicas",
       href: "/admin/security",
       icon: Shield,
-      color: "text-red-500",
+      color: "text-icon-settings",
     },
   ];
 
   const getGradeColor = (grade: number | null) => {
     if (grade === null) return "text-muted-foreground";
-    if (grade >= 8) return "text-green-600";
-    if (grade >= 6) return "text-yellow-600";
-    return "text-red-600";
+    if (grade >= 8) return "text-grade-good";
+    if (grade >= 6) return "text-grade-average";
+    return "text-grade-poor";
   };
 
   const getAttendanceColor = (rate: number | null) => {
     if (rate === null) return "text-muted-foreground";
-    if (rate >= 90) return "text-green-600";
-    if (rate >= 75) return "text-yellow-600";
-    return "text-red-600";
+    if (rate >= 90) return "text-grade-good";
+    if (rate >= 75) return "text-grade-average";
+    return "text-grade-poor";
   };
 
   return (
@@ -265,7 +265,7 @@ export default function AdminPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-2xl font-bold text-warning">
               {academicStats?.total_sanctions || 0}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -350,10 +350,10 @@ export default function AdminPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
-                        <Badge variant="outline" className="text-green-600 border-green-600">
+                        <Badge variant="outline" className="text-success border-success">
                           {course.passing_count} aprob.
                         </Badge>
-                        <Badge variant="outline" className="text-red-600 border-red-600">
+                        <Badge variant="outline" className="text-error border-error">
                           {course.failing_count} desaprob.
                         </Badge>
                       </div>
@@ -404,12 +404,12 @@ export default function AdminPage() {
                       {course.min_grade?.toFixed(1) || "-"} / {course.max_grade?.toFixed(1) || "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="text-green-600 border-green-600">
+                      <Badge variant="outline" className="text-success border-success">
                         {course.passing_count}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="text-red-600 border-red-600">
+                      <Badge variant="outline" className="text-error border-error">
                         {course.failing_count}
                       </Badge>
                     </TableCell>
@@ -450,22 +450,22 @@ export default function AdminPage() {
                     <TableCell className="font-medium">{course.course_name}</TableCell>
                     <TableCell className="text-center">{course.total_records}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="text-green-600 border-green-600">
+                      <Badge variant="outline" className="text-success border-success">
                         {course.present_count}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="text-red-600 border-red-600">
+                      <Badge variant="outline" className="text-error border-error">
                         {course.absent_count}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                      <Badge variant="outline" className="text-warning border-warning">
                         {course.late_count}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="text-blue-600 border-blue-600">
+                      <Badge variant="outline" className="text-status-info border-status-info">
                         {course.excused_count}
                       </Badge>
                     </TableCell>
@@ -538,8 +538,8 @@ export default function AdminPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-5">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <GraduationCap className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-role-student-muted rounded-lg">
+                <GraduationCap className="h-5 w-5 text-role-student" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{dashboardStats?.students || 0}</p>
@@ -547,8 +547,8 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Users className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-role-teacher-muted rounded-lg">
+                <Users className="h-5 w-5 text-role-teacher" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{dashboardStats?.teachers || 0}</p>
@@ -556,8 +556,8 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Shield className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-role-preceptor-muted rounded-lg">
+                <Shield className="h-5 w-5 text-role-preceptor" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{dashboardStats?.preceptors || 0}</p>
@@ -565,8 +565,8 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Users className="h-5 w-5 text-orange-600" />
+              <div className="p-2 bg-role-father-muted rounded-lg">
+                <Users className="h-5 w-5 text-role-father" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{dashboardStats?.fathers || 0}</p>
@@ -574,8 +574,8 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Settings className="h-5 w-5 text-red-600" />
+              <div className="p-2 bg-role-admin-muted rounded-lg">
+                <Settings className="h-5 w-5 text-role-admin" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{dashboardStats?.admins || 0}</p>

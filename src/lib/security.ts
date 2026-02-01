@@ -57,13 +57,17 @@ export class SecuritySanitizer {
    * Sanitiza URL para prevenir redirecciones maliciosas
    */
   static sanitizeUrl(url: string): string {
+    // Permitir rutas relativas (pero no protocol-relative URLs como //evil.com)
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      return url;
+    }
     try {
       const parsed = new URL(url);
-      // Solo permitir HTTPS y rutas relativas
-      if (parsed.protocol !== 'https:' && !url.startsWith('/')) {
-        return '/';
+      // Solo permitir protocolos http y https
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        return url;
       }
-      return url;
+      return '/';
     } catch {
       return '/';
     }

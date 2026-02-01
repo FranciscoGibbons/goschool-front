@@ -1,25 +1,37 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/sacred";
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Input, FormGroup, Label } from "@/components/sacred";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileUpload } from "@/components/ui/profile-upload";
 import userInfoStore from "@/store/userInfoStore";
-import { useEffect } from "react";
-import { 
-  User, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Shield, 
+import { useEffect, useState } from "react";
+import {
+  User,
+  Phone,
+  MapPin,
+  Calendar,
+  Shield,
   Camera,
   GraduationCap,
   Users,
   BookOpen,
-  UserCheck
+  UserCheck,
+  Pencil,
+  X,
+  Check,
 } from "lucide-react";
+import { branding } from "@/config/branding";
+import axios from "axios";
+import { toast } from "sonner";
 
 export function ProfileContent() {
   const { userInfo, fetchUserInfo } = userInfoStore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    phone_number: "",
+    address: "",
+  });
 
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
@@ -27,6 +39,15 @@ export function ProfileContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
+
+  useEffect(() => {
+    if (userInfo) {
+      setEditData({
+        phone_number: userInfo.phone_number || "",
+        address: userInfo.address || "",
+      });
+    }
+  }, [userInfo]);
 
   const getInitials = (name: string): string => {
     if (!name) return "";
@@ -40,6 +61,47 @@ export function ProfileContent() {
 
   const handleUploadSuccess = () => {
     fetchUserInfo();
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const dataToSend: { phone_number?: string; address?: string } = {};
+
+      if (editData.phone_number !== (userInfo?.phone_number || "")) {
+        dataToSend.phone_number = editData.phone_number;
+      }
+      if (editData.address !== (userInfo?.address || "")) {
+        dataToSend.address = editData.address;
+      }
+
+      if (Object.keys(dataToSend).length === 0) {
+        toast.info("No hay cambios para guardar");
+        setIsEditing(false);
+        return;
+      }
+
+      await axios.put("/api/proxy/profile/", dataToSend, {
+        withCredentials: true,
+      });
+
+      toast.success("Perfil actualizado correctamente");
+      await fetchUserInfo();
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Error al actualizar el perfil");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditData({
+      phone_number: userInfo?.phone_number || "",
+      address: userInfo?.address || "",
+    });
+    setIsEditing(false);
   };
 
   const getRoleIcon = (role: string) => {
@@ -144,13 +206,50 @@ export function ProfileContent() {
                 </Badge>
               </div>
               <p className="text-text-secondary max-w-2xl">
-                Bienvenido al portal académico del Colegio Stella Maris Rosario.
+                Bienvenido al portal académico de {branding.schoolFullName}.
                 Aquí puedes gestionar tu información personal y acceder a todas las funcionalidades del sistema.
               </p>
-              <div className="flex items-center justify-center md:justify-start text-sm text-text-muted">
-                <Camera className="h-4 w-4 mr-2" />
-                <span>Haz clic en tu foto de perfil para cambiarla</span>
+              <div className="flex items-center justify-center md:justify-start gap-4">
+                <div className="flex items-center text-sm text-text-muted">
+                  <Camera className="h-4 w-4 mr-2" />
+                  <span>Haz clic en tu foto de perfil para cambiarla</span>
+                </div>
               </div>
+            </div>
+
+            {/* Edit button */}
+            <div className="flex gap-2">
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSaveProfile}
+                    loading={isSaving}
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Guardar
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Editar Perfil
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -189,12 +288,27 @@ export function ProfileContent() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-text-secondary">Teléfono</p>
-              <p className="text-base font-semibold text-text-primary">
-                {userInfo.phone_number || "No disponible"}
-              </p>
-            </div>
+            {isEditing ? (
+              <FormGroup>
+                <Label htmlFor="phone_number">Teléfono</Label>
+                <Input
+                  id="phone_number"
+                  type="tel"
+                  value={editData.phone_number}
+                  onChange={(e) =>
+                    setEditData((prev) => ({ ...prev, phone_number: e.target.value }))
+                  }
+                  placeholder="Ej: +54 341 1234567"
+                />
+              </FormGroup>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-text-secondary">Teléfono</p>
+                <p className="text-base font-semibold text-text-primary">
+                  {userInfo.phone_number || "No disponible"}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -209,12 +323,27 @@ export function ProfileContent() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-text-secondary">Dirección</p>
-              <p className="text-base font-semibold text-text-primary">
-                {userInfo.address || "No disponible"}
-              </p>
-            </div>
+            {isEditing ? (
+              <FormGroup>
+                <Label htmlFor="address">Dirección</Label>
+                <Input
+                  id="address"
+                  type="text"
+                  value={editData.address}
+                  onChange={(e) =>
+                    setEditData((prev) => ({ ...prev, address: e.target.value }))
+                  }
+                  placeholder="Ej: Calle 123, Rosario"
+                />
+              </FormGroup>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-text-secondary">Dirección</p>
+                <p className="text-base font-semibold text-text-primary">
+                  {userInfo.address || "No disponible"}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

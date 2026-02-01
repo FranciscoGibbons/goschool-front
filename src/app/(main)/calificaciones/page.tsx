@@ -1,23 +1,23 @@
 "use client";
 
-import { FileText, ChevronLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { FileText, Users } from "lucide-react";
+import { useState } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { ProtectedPage } from "@/components/ProtectedPage";
-import CourseSelector from "@/components/CourseSelector";
-import StudentSelector from "@/components/StudentSelector";
-import { AcademicYearSelector } from "@/components/AcademicYearSelector";
+import InlineSelectionBar from "@/components/InlineSelectionBar";
 import GradesDisplay from "./components/GradesDisplay";
+import BulkGradeEntry from "./components/BulkGradeEntry";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
+import { AcademicYearSelector } from "@/components/AcademicYearSelector";
 
 function CalificacionesContent() {
   const { userInfo } = userInfoStore();
   const { selectedChild } = childSelectionStore();
-  const [currentStep, setCurrentStep] = useState<"course" | "student" | "grades">("course");
+  const [isBulkMode, setIsBulkMode] = useState(false);
 
   const {
     courses,
@@ -28,8 +28,6 @@ function CalificacionesContent() {
     error,
     setSelectedCourseId,
     setSelectedStudentId,
-    loadStudents,
-    resetSelection,
   } = useCourseStudentSelection(userInfo?.role || null);
 
   const {
@@ -37,35 +35,6 @@ function CalificacionesContent() {
     selectedYearId,
     setSelectedYearId,
   } = useAcademicYears();
-
-  useEffect(() => {
-    if (!userInfo?.role) return;
-
-    if (userInfo.role === "student" || userInfo.role === "father") {
-      setCurrentStep("grades");
-    }
-  }, [userInfo?.role, selectedChild]);
-
-  const handleCourseSelect = async (courseId: number) => {
-    setSelectedCourseId(courseId);
-    await loadStudents(courseId);
-    setCurrentStep("student");
-  };
-
-  const handleStudentSelect = (studentId: number) => {
-    setSelectedStudentId(studentId);
-    setCurrentStep("grades");
-  };
-
-  const handleBackToCourse = () => {
-    setCurrentStep("course");
-    resetSelection();
-  };
-
-  const handleBackToStudent = () => {
-    setCurrentStep("student");
-    setSelectedStudentId(null);
-  };
 
   if (isLoading) {
     return (
@@ -84,7 +53,6 @@ function CalificacionesContent() {
         <div className="sacred-card text-center py-8">
           <p className="text-destructive text-sm">{error}</p>
         </div>
-
       </div>
     );
   }
@@ -113,20 +81,16 @@ function CalificacionesContent() {
     );
   }
 
-  // Father without child selected
-  if (userInfo?.role === "father" && !selectedChild) {
+  const canUseBulk = userInfo?.role === "admin" || userInfo?.role === "teacher" || userInfo?.role === "preceptor";
+
+  // Bulk mode view
+  if (isBulkMode && canUseBulk) {
     return (
       <div className="space-y-6">
-        <div className="page-header">
-          <h1 className="page-title">Calificaciones</h1>
-        </div>
-        <div className="empty-state">
-          <FileText className="empty-state-icon" />
-          <p className="empty-state-title">Selecciona un hijo</p>
-          <p className="empty-state-text">
-            Usa el selector en la barra lateral
-          </p>
-        </div>
+        <BulkGradeEntry
+          onCancel={() => setIsBulkMode(false)}
+          onSuccess={() => setIsBulkMode(false)}
+        />
       </div>
     );
   }
@@ -134,56 +98,60 @@ function CalificacionesContent() {
   return (
     <div className="space-y-6">
       <div className="page-header">
-        <div className="flex items-center gap-3">
-          {currentStep !== "course" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={currentStep === "grades" ? handleBackToStudent : handleBackToCourse}
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          )}
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="page-title">Calificaciones</h1>
-            <p className="page-subtitle">
-              {currentStep === "course"
-                ? "Selecciona un curso"
-                : currentStep === "student"
-                ? "Selecciona un estudiante"
-                : "Notas del estudiante"}
-            </p>
+            <p className="page-subtitle">Notas del estudiante</p>
           </div>
+          {canUseBulk && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBulkMode(true)}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Carga Masiva
+            </Button>
+          )}
         </div>
-        {academicYears.length > 1 && (
-          <AcademicYearSelector
-            academicYears={academicYears}
-            selectedYearId={selectedYearId}
-            onYearChange={setSelectedYearId}
-          />
-        )}
       </div>
 
-      {currentStep === "course" && (
-        <CourseSelector
-          courses={courses}
-          onCourseSelect={handleCourseSelect}
-          selectedCourseId={selectedCourseId}
-        />
-      )}
+      <InlineSelectionBar
+        courses={courses}
+        selectedCourseId={selectedCourseId}
+        onCourseChange={setSelectedCourseId}
+        students={students}
+        selectedStudentId={selectedStudentId}
+        onStudentChange={setSelectedStudentId}
+        showStudentSelector={true}
+        academicYears={academicYears}
+        selectedYearId={selectedYearId}
+        onYearChange={setSelectedYearId}
+      />
 
-      {currentStep === "student" && (
-        <StudentSelector
-          students={students}
-          onStudentSelect={handleStudentSelect}
-          onBack={handleBackToCourse}
-          selectedStudentId={selectedStudentId}
-        />
-      )}
-
-      {currentStep === "grades" && selectedStudentId && (
+      {selectedStudentId && (
         <GradesDisplay selectedStudentId={selectedStudentId} academicYearId={selectedYearId} />
+      )}
+
+      {!selectedStudentId && selectedCourseId && students.length > 0 && (
+        <div className="sacred-card text-center py-8">
+          <FileText className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Selecciona un estudiante</p>
+          <p className="text-sm text-text-secondary mt-1">
+            Elige un estudiante del selector para ver sus calificaciones
+          </p>
+        </div>
+      )}
+
+      {!selectedCourseId && (
+        <div className="sacred-card text-center py-8">
+          <FileText className="h-10 w-10 text-text-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Selecciona un curso</p>
+          <p className="text-sm text-text-secondary mt-1">
+            Elige un curso del selector para comenzar
+          </p>
+        </div>
       )}
     </div>
   );

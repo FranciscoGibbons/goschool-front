@@ -36,6 +36,7 @@ import {
   Select,
 } from "@/components/sacred";
 import userInfoStore from "@/store/userInfoStore";
+import { SecuritySanitizer } from "@/lib/security";
 
 interface SubjectMessage {
   id: number;
@@ -43,7 +44,6 @@ interface SubjectMessage {
   title: string;
   content: string;
   type: "message" | "file" | "link";
-  file_url?: string;
   created_at: string;
 }
 
@@ -177,17 +177,17 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   };
 
   const getDownloadUrl = (message: SubjectMessage) => {
-    return (
-      message.file_url ||
-      (message.content && message.content.startsWith("http")
-        ? message.content
-        : null)
-    );
+    if (message.type === "file" && message.content) {
+      return message.content;
+    }
+    return null;
   };
 
   const handleDownload = (url: string, filename: string) => {
+    const safeUrl = SecuritySanitizer.sanitizeUrl(url);
+    if (safeUrl === '/') return;
     const link = document.createElement("a");
-    link.href = url;
+    link.href = safeUrl;
     link.download = filename;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
@@ -340,11 +340,6 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
 
                   {message.type === "file" && (
                     <>
-                      {message.content && !message.content.startsWith("http") && (
-                        <p className="text-text-secondary mb-2 whitespace-pre-line">
-                          {message.content}
-                        </p>
-                      )}
                       {getDownloadUrl(message) ? (
                         <div className="flex items-center gap-2 mb-2">
                           <Button
@@ -374,24 +369,27 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                           {message.content}
                         </p>
                       )}
-                      {message.content && message.content.startsWith("http") && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            asChild
-                          >
-                            <a
-                              href={message.content}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                      {message.content && (() => {
+                        const safeUrl = SecuritySanitizer.sanitizeUrl(message.content);
+                        return safeUrl !== '/' ? (
+                          <div className="flex items-center gap-2 mb-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              asChild
                             >
-                              <ArrowDownTrayIcon className="size-4" />
-                              Abrir enlace
-                            </a>
-                          </Button>
-                        </div>
-                      )}
+                              <a
+                                href={safeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ArrowDownTrayIcon className="size-4" />
+                                Abrir enlace
+                              </a>
+                            </Button>
+                          </div>
+                        ) : null;
+                      })()}
                     </>
                   )}
 

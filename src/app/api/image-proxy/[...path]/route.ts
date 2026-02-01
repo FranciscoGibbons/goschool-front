@@ -9,6 +9,14 @@ const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 });
 
+// Directorios permitidos para servir archivos (whitelist)
+const ALLOWED_PREFIXES = [
+  'uploads/profile_pictures/',
+  'uploads/files/',
+  'uploads/submissions/',
+  'uploads/chat_files/',
+];
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -16,21 +24,25 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const imagePath = resolvedParams.path.join('/');
-    const imageUrl = `${BACKEND_URL}/${imagePath}`;
 
-    console.log("[IMAGE PROXY DEBUG] Request for:", imagePath);
-    console.log("[IMAGE PROXY DEBUG] Fetching from:", imageUrl);
-    console.log("[IMAGE PROXY DEBUG] BACKEND_URL:", BACKEND_URL);
+    // Bloquear path traversal
+    if (imagePath.includes('..') || imagePath.includes('//') || imagePath.startsWith('/')) {
+      return new NextResponse("Invalid path", { status: 400 });
+    }
+
+    // Solo permitir paths dentro de directorios de uploads
+    if (!ALLOWED_PREFIXES.some(prefix => imagePath.startsWith(prefix))) {
+      return new NextResponse("Invalid path", { status: 400 });
+    }
+
+    const imageUrl = `${BACKEND_URL}/${imagePath}`;
 
     const response = await fetch(imageUrl, {
       // @ts-expect-error - agent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });
 
-    console.log("[IMAGE PROXY DEBUG] Response status:", response.status);
-
     if (!response.ok) {
-      console.error("[IMAGE PROXY DEBUG] Backend returned error:", response.status, response.statusText);
       return new NextResponse("Image not found", {
         status: response.status,
         headers: { 'Content-Type': 'text/plain' },
@@ -40,19 +52,18 @@ export async function GET(
     const buffer = await response.arrayBuffer();
     const contentType = response.headers.get('content-type') || 'image/jpeg';
 
-    console.log("[IMAGE PROXY DEBUG] Success, content-type:", contentType, "size:", buffer.byteLength);
+    // Solo permitir content-types de imagen
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const safeContentType = allowedTypes.includes(contentType) ? contentType : 'application/octet-stream';
 
     return new NextResponse(buffer, {
       status: 200,
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': safeContentType,
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
-  } catch (error) {
-    console.error("[IMAGE PROXY DEBUG] Error proxying image:", error);
-
-    // Return 404
+  } catch {
     return new NextResponse("Image not found", {
       status: 404,
       headers: {

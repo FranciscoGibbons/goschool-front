@@ -27,6 +27,7 @@ import { useChatStore } from '@/store/chatStore';
 import { useChat } from '@/hooks/useChat';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import userInfoStore from '@/store/userInfoStore';
+import { SecuritySanitizer } from '@/lib/security';
 import type { Chat, ChatMessage, PubUser, TypingUser } from '@/types/chat';
 
 // ============ HELPER FUNCTIONS ============
@@ -144,25 +145,31 @@ function MessageBubble({
               : 'bg-card border border-border rounded-bl-sm'
           }`}
         >
-          {message.type_message === 'image' && message.file_path && (
-            <img
-              src={message.file_path}
-              alt="Imagen"
-              className="max-w-full rounded mb-2 cursor-pointer"
-              onClick={() => window.open(message.file_path!, '_blank')}
-            />
-          )}
-          {message.type_message === 'file' && message.file_path && (
-            <a
-              href={message.file_path}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm underline mb-2"
-            >
-              <Paperclip className="h-4 w-4" />
-              {message.file_name || 'Archivo'}
-            </a>
-          )}
+          {message.type_message === 'image' && message.file_path && (() => {
+            const safeUrl = SecuritySanitizer.sanitizeUrl(message.file_path);
+            return safeUrl !== '/' ? (
+              <img
+                src={safeUrl}
+                alt="Imagen"
+                className="max-w-full rounded mb-2 cursor-pointer"
+                onClick={() => window.open(safeUrl, '_blank')}
+              />
+            ) : null;
+          })()}
+          {message.type_message === 'file' && message.file_path && (() => {
+            const safeUrl = SecuritySanitizer.sanitizeUrl(message.file_path);
+            return safeUrl !== '/' ? (
+              <a
+                href={safeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm underline mb-2"
+              >
+                <Paperclip className="h-4 w-4" />
+                {message.file_name || 'Archivo'}
+              </a>
+            ) : null;
+          })()}
           {message.message && (
             <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
           )}
@@ -254,7 +261,7 @@ function ChatWindow({
           <div className="font-medium truncate">{chat.name}</div>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             {isConnected ? (
-              <><Wifi className="h-3 w-3 text-green-500" /> Conectado</>
+              <><Wifi className="h-3 w-3 text-status-online" /> Conectado</>
             ) : (
               <><WifiOff className="h-3 w-3" /> Desconectado</>
             )}
@@ -597,7 +604,7 @@ export default function ChatPage() {
           <h1 className="text-lg font-bold">Mensajes</h1>
           <div className="flex items-center gap-1">
             <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
-              isConnected ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
+              isConnected ? 'bg-status-online-muted text-status-online' : 'bg-status-offline-muted text-status-offline'
             }`}>
               {isConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
             </div>

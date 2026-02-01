@@ -84,17 +84,17 @@ const ROLES = [
 const getRoleBadgeColor = (role: string) => {
   switch (role) {
     case "admin":
-      return "bg-red-100 text-red-800";
+      return "bg-role-admin-muted text-role-admin";
     case "teacher":
-      return "bg-green-100 text-green-800";
+      return "bg-role-teacher-muted text-role-teacher";
     case "student":
-      return "bg-blue-100 text-blue-800";
+      return "bg-role-student-muted text-role-student";
     case "preceptor":
-      return "bg-purple-100 text-purple-800";
+      return "bg-role-preceptor-muted text-role-preceptor";
     case "father":
-      return "bg-orange-100 text-orange-800";
+      return "bg-role-father-muted text-role-father";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "bg-role-default-muted text-role-default";
   }
 };
 
@@ -288,12 +288,12 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell>
                         {user.is_active ? (
-                          <Badge variant="outline" className="text-green-600 border-green-600">
+                          <Badge variant="outline" className="text-success border-success">
                             <UserCheck className="h-3 w-3 mr-1" />
                             Activo
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-red-600 border-red-600">
+                          <Badge variant="outline" className="text-error border-error">
                             <UserX className="h-3 w-3 mr-1" />
                             Inactivo
                           </Badge>

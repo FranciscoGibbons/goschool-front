@@ -1,87 +1,193 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   DESIGN CONTRACT TOKENS - Academic Student Management System
-   See DESIGN_CONTRACT.md for usage rules
+   TAILWIND 4 THEME - Verde Académico
+   All colors defined with literal values for Tailwind 4 compatibility
+   ========================================================================== */
+@theme {
+  /* Core backgrounds - green-tinted, never pure white */
+  --color-background: hsl(148 22% 94%);
+  --color-surface: hsl(150 14% 98.5%);
+  --color-surface-muted: hsl(150 20% 92%);
+
+  /* Borders - noticeable green tint */
+  --color-border: hsl(150 18% 82%);
+  --color-border-muted: hsl(150 18% 88%);
+  --color-input: hsl(150 18% 82%);
+  --color-ring: hsl(158 45% 32%);
+
+  /* Text hierarchy */
+  --color-foreground: hsl(155 28% 14%);
+  --color-text-primary: hsl(155 28% 14%);
+  --color-text-secondary: hsl(152 12% 40%);
+  --color-text-muted: hsl(150 8% 54%);
+  --color-text-inverse: hsl(0 0% 100%);
+
+  /* Primary - Verde bosque */
+  --color-primary: hsl(158 45% 32%);
+  --color-primary-hover: hsl(158 45% 26%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  /* Status colors */
+  --color-success: hsl(152 50% 40%);
+  --color-success-muted: hsl(152 50% 93%);
+  --color-warning: hsl(40 80% 50%);
+  --color-warning-muted: hsl(40 80% 93%);
+  --color-error: hsl(0 65% 50%);
+  --color-error-muted: hsl(0 65% 94%);
+
+  /* Legacy shadcn compatibility */
+  --color-secondary: hsl(150 18% 89%);
+  --color-secondary-foreground: hsl(155 28% 14%);
+  --color-destructive: hsl(0 65% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(150 18% 89%);
+  --color-muted-foreground: hsl(152 12% 40%);
+  --color-accent: hsl(150 22% 91%);
+  --color-accent-foreground: hsl(155 28% 14%);
+  --color-popover: hsl(150 14% 98.5%);
+  --color-popover-foreground: hsl(155 28% 14%);
+  --color-card: hsl(150 14% 98.5%);
+  --color-card-foreground: hsl(155 28% 14%);
+
+  /* Sidebar - dark forest green */
+  --color-sidebar: hsl(155 35% 15%);
+  --color-sidebar-foreground: hsl(150 15% 78%);
+  --color-sidebar-primary: hsl(158 55% 50%);
+  --color-sidebar-primary-foreground: hsl(0 0% 100%);
+  --color-sidebar-accent: hsl(155 30% 22%);
+  --color-sidebar-accent-foreground: hsl(0 0% 96%);
+  --color-sidebar-border: hsl(155 25% 20%);
+  --color-sidebar-ring: hsl(158 55% 50%);
+
+  /* Charts */
+  --color-chart-1: hsl(158 45% 32%);
+  --color-chart-2: hsl(152 50% 40%);
+  --color-chart-3: hsl(40 80% 50%);
+  --color-chart-4: hsl(140 35% 45%);
+  --color-chart-5: hsl(175 30% 42%);
+
+  /* Role colors */
+  --color-role-admin: hsl(0 65% 45%);
+  --color-role-admin-muted: hsl(0 65% 94%);
+  --color-role-teacher: hsl(152 50% 38%);
+  --color-role-teacher-muted: hsl(152 50% 93%);
+  --color-role-student: hsl(200 70% 45%);
+  --color-role-student-muted: hsl(200 70% 93%);
+  --color-role-preceptor: hsl(270 50% 50%);
+  --color-role-preceptor-muted: hsl(270 50% 94%);
+  --color-role-father: hsl(30 80% 50%);
+  --color-role-father-muted: hsl(30 80% 93%);
+  --color-role-default: hsl(150 8% 45%);
+  --color-role-default-muted: hsl(150 8% 93%);
+
+  /* Status & Connection */
+  --color-status-online: hsl(152 50% 45%);
+  --color-status-online-muted: hsl(152 50% 93%);
+  --color-status-offline: hsl(0 65% 50%);
+  --color-status-offline-muted: hsl(0 65% 94%);
+  --color-status-pending: hsl(40 80% 50%);
+  --color-status-pending-muted: hsl(40 80% 93%);
+  --color-status-info: hsl(200 70% 45%);
+  --color-status-info-muted: hsl(200 70% 93%);
+
+  /* Grade performance */
+  --color-grade-excellent: hsl(152 50% 40%);
+  --color-grade-good: hsl(152 50% 45%);
+  --color-grade-average: hsl(40 80% 50%);
+  --color-grade-poor: hsl(0 65% 50%);
+
+  /* Section icons */
+  --color-icon-academic: hsl(200 70% 45%);
+  --color-icon-academic-muted: hsl(200 70% 93%);
+  --color-icon-users: hsl(152 50% 40%);
+  --color-icon-users-muted: hsl(152 50% 93%);
+  --color-icon-security: hsl(270 50% 50%);
+  --color-icon-security-muted: hsl(270 50% 94%);
+  --color-icon-settings: hsl(0 65% 50%);
+  --color-icon-settings-muted: hsl(0 65% 94%);
+  --color-icon-stats: hsl(30 80% 50%);
+  --color-icon-stats-muted: hsl(30 80% 93%);
+  --color-icon-messages: hsl(175 50% 42%);
+  --color-icon-messages-muted: hsl(175 50% 93%);
+
+  /* Gradients */
+  --color-gradient-start: hsl(158 45% 40%);
+  --color-gradient-mid: hsl(175 50% 45%);
+  --color-gradient-end: hsl(152 50% 40%);
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-default: 0.5rem;
+}
+
+/* ==========================================================================
+   CSS VARIABLES FOR CUSTOM STYLES
+   These are used by CSS rules that use hsl(var(--variable)) syntax
    ========================================================================== */
 
 :root {
-  /* Base radius for consistency */
+  /* Base radius */
   --radius: 0.5rem;
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
 
-  /* =======================================================================
-     LIGHT MODE - Institutional, Calm, Professional
-     ======================================================================= */
-
-  /* Backgrounds */
-  --background: 220 20% 97%;
-  --surface: 0 0% 100%;
-  --surface-muted: 220 22% 95%;
-
-  /* Borders */
-  --border: 220 16% 88%;
-  --border-muted: 220 18% 92%;
-
-  /* Primary - Deep institutional navy */
-  --primary: 220 56% 28%;
-  --primary-hover: 220 56% 24%;
+  /* Core colors (HSL values without hsl() wrapper for flexibility) */
+  --background: 148 22% 94%;
+  --surface: 150 14% 98.5%;
+  --surface-muted: 150 20% 92%;
+  --border: 150 18% 82%;
+  --border-muted: 150 18% 88%;
+  --primary: 158 45% 32%;
+  --primary-hover: 158 45% 26%;
   --primary-foreground: 0 0% 100%;
-
-  /* Status Colors - Functional only */
-  --success: 152 40% 30%;
-  --success-muted: 152 40% 94%;
-  --warning: 36 65% 38%;
-  --warning-muted: 36 65% 94%;
-  --error: 0 58% 45%;
-  --error-muted: 0 58% 95%;
-
-  /* Text Hierarchy */
-  --text-primary: 222 33% 12%;
-  --text-secondary: 218 14% 38%;
-  --text-muted: 218 10% 52%;
+  --success: 152 50% 40%;
+  --success-muted: 152 50% 93%;
+  --warning: 40 80% 50%;
+  --warning-muted: 40 80% 93%;
+  --error: 0 65% 50%;
+  --error-muted: 0 65% 94%;
+  --text-primary: 155 28% 14%;
+  --text-secondary: 152 12% 40%;
+  --text-muted: 150 8% 54%;
   --text-inverse: 0 0% 100%;
 
+  /* Legacy shadcn tokens */
+  --foreground: 155 28% 14%;
+  --card: 150 14% 98.5%;
+  --card-foreground: 155 28% 14%;
+  --popover: 150 14% 98.5%;
+  --popover-foreground: 155 28% 14%;
+  --secondary: 150 18% 89%;
+  --secondary-foreground: 155 28% 14%;
+  --muted: 150 18% 89%;
+  --muted-foreground: 152 12% 40%;
+  --accent: 150 22% 91%;
+  --accent-foreground: 155 28% 14%;
+  --destructive: 0 65% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 150 18% 82%;
+  --ring: 158 45% 32%;
 
-  /* Legacy token mapping (for existing shadcn components) */
-  --foreground: var(--text-primary);
-  --card: var(--surface);
-  --card-foreground: var(--text-primary);
-  --popover: var(--surface);
-  --popover-foreground: var(--text-primary);
-  --secondary: 220 16% 90%;
-  --secondary-foreground: var(--text-primary);
-  --muted: 220 16% 90%;
+  /* Sidebar - dark forest green */
+  --sidebar: 155 35% 15%;
+  --sidebar-foreground: 150 15% 78%;
+  --sidebar-primary: 158 55% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 155 30% 22%;
+  --sidebar-accent-foreground: 0 0% 96%;
+  --sidebar-border: 155 25% 20%;
+  --sidebar-ring: 158 55% 50%;
 
-  --muted-foreground: var(--text-secondary);
-  --accent: 220 22% 94%;
-
-  --accent-foreground: var(--text-primary);
-  --destructive: var(--error);
-  --destructive-foreground: var(--text-inverse);
-  --input: var(--border);
-  --ring: var(--primary);
-
-  /* Sidebar */
-  --sidebar: 220 24% 96%;
-  --sidebar-foreground: var(--text-secondary);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: 220 20% 92%;
-  --sidebar-accent-foreground: var(--text-primary);
-  --sidebar-border: 220 16% 86%;
-  --sidebar-ring: var(--primary);
-
-
-  /* Chart colors */
-  --chart-1: 220 56% 32%;
-  --chart-2: 152 40% 38%;
-  --chart-3: 36 65% 44%;
-  --chart-4: 30 28% 52%;
-  --chart-5: 212 18% 45%;
-
+  /* Charts */
+  --chart-1: 158 45% 32%;
+  --chart-2: 152 50% 40%;
+  --chart-3: 40 80% 50%;
+  --chart-4: 140 35% 45%;
+  --chart-5: 175 30% 42%;
 }
 
 
@@ -947,5 +1053,28 @@
 
   .sacred-card {
     padding: 1rem;
+  }
+
+  .sacred-card-interactive {
+    min-height: 44px;
+  }
+
+  .grid-stats {
+    gap: 0.75rem;
+  }
+
+  .grid-cards {
+    gap: 0.75rem;
+  }
+}
+
+/* ==========================================================================
+   SAFE AREA INSETS (devices with notch)
+   ========================================================================== */
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .page-container {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
   }
 }
