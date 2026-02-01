@@ -15,6 +15,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Users,
   GraduationCap,
   BookOpen,
@@ -26,8 +31,16 @@ import {
   AlertTriangle,
   CheckCircle,
   BarChart3,
+  Plus,
+  MessageSquare,
+  FileText,
+  ClipboardCheck,
+  UserCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { FormsObj } from "@/utils/types";
+import { ActionForm } from "../dashboard/components/adm_pre_tea/ActionForm";
+import "../dashboard/dashboard-modal.css";
 
 interface DashboardStats {
   total_users: number;
@@ -81,12 +94,21 @@ interface AcademicStats {
   discipline_by_course: CourseDisciplineStats[];
 }
 
+const adminCreateActions = [
+  { key: "Crear mensaje" as keyof FormsObj, label: "Nuevo Mensaje", icon: MessageSquare },
+  { key: "Crear examen" as keyof FormsObj, label: "Nuevo Examen", icon: FileText },
+  { key: "Crear conducta" as keyof FormsObj, label: "Registrar Conducta", icon: ClipboardCheck },
+  { key: "Crear asistencia" as keyof FormsObj, label: "Tomar Asistencia", icon: UserCheck },
+];
+
 export default function AdminPage() {
   const router = useRouter();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [academicStats, setAcademicStats] = useState<AcademicStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [createAction, setCreateAction] = useState<keyof FormsObj | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -586,9 +608,34 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
+      {/* Quick Create Actions */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Acciones rapidas</h2>
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          {adminCreateActions.map((action) => (
+            <button
+              key={action.key}
+              onClick={() => {
+                setCreateAction(action.key);
+                setModalOpen(true);
+              }}
+              className="flex items-center gap-3 p-4 rounded-xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all text-left cursor-pointer"
+            >
+              <div className="p-2.5 rounded-lg bg-primary/10">
+                <action.icon className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-primary">{action.label}</p>
+              </div>
+              <Plus className="h-4 w-4 text-primary flex-shrink-0" />
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Quick Links */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Accesos Rápidos</h2>
+        <h2 className="text-xl font-semibold mb-4">Administrar</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {adminLinks.map((link) => (
             <Link key={link.href} href={link.href}>
@@ -607,6 +654,28 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Create Dialog */}
+      <Dialog open={modalOpen} onOpenChange={(open) => {
+        setModalOpen(open);
+        if (!open) setCreateAction(null);
+      }}>
+        <DialogContent className="max-w-2xl dashboard-modal-content">
+          <DialogTitle>{createAction || "Crear"}</DialogTitle>
+          {createAction && (
+            <ActionForm
+              action={createAction}
+              onBack={() => {
+                setCreateAction(null);
+                setModalOpen(false);
+              }}
+              onClose={() => {
+                setCreateAction(null);
+                setModalOpen(false);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

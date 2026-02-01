@@ -56,7 +56,7 @@ function MasContent() {
               { icon: FileText, label: "Calificaciones", href: "/calificaciones" },
               { icon: ClipboardCheck, label: "Asistencia", href: "/asistencia" },
             ]
-          : [{ icon: FileText, label: "Entregas", href: "/entregas" }]),
+          : []),
         { icon: Users, label: "Conducta", href: "/conducta" },
       ],
     },

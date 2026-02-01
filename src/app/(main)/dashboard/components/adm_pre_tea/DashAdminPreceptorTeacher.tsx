@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Role } from "@/utils/types";
+import { Role, FormsObj } from "@/utils/types";
 import {
   BookOpen,
   MessageSquare,
@@ -12,8 +12,19 @@ import {
   School,
   FileText,
   Settings,
+  Plus,
+  GraduationCap,
+  Clock,
+  MessageCircle,
 } from "lucide-react";
 import { LoadingSpinner, PageHeader, Card, CardContent } from "@/components/sacred";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import "../../dashboard-modal.css";
+import { ActionForm } from "./ActionForm";
 
 import axios from "axios";
 
@@ -28,10 +39,38 @@ interface DashboardStats {
   grades?: number;
 }
 
+const getCreateActionsForRole = (role: ActionableRole) => {
+  switch (role) {
+    case "admin":
+      return [
+        { key: "Crear mensaje" as keyof FormsObj, label: "Nuevo Mensaje", icon: MessageSquare },
+        { key: "Crear examen" as keyof FormsObj, label: "Nuevo Examen", icon: FileText },
+        { key: "Crear conducta" as keyof FormsObj, label: "Registrar Conducta", icon: ClipboardCheck },
+        { key: "Crear asistencia" as keyof FormsObj, label: "Tomar Asistencia", icon: UserCheck },
+      ];
+    case "preceptor":
+      return [
+        { key: "Crear mensaje" as keyof FormsObj, label: "Nuevo Mensaje", icon: MessageSquare },
+        { key: "Crear conducta" as keyof FormsObj, label: "Registrar Conducta", icon: ClipboardCheck },
+        { key: "Crear asistencia" as keyof FormsObj, label: "Tomar Asistencia", icon: UserCheck },
+      ];
+    case "teacher":
+      return [
+        { key: "Crear examen" as keyof FormsObj, label: "Nuevo Examen", icon: FileText },
+        { key: "Cargar calificación" as keyof FormsObj, label: "Cargar Nota", icon: GraduationCap },
+        { key: "Crear mensaje de materia" as keyof FormsObj, label: "Mensaje a Materia", icon: MessageSquare },
+      ];
+    default:
+      return [];
+  }
+};
+
 const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({});
   const [loading, setLoading] = useState(true);
+  const [createAction, setCreateAction] = useState<keyof FormsObj | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -118,33 +157,41 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
     return cards;
   };
 
-  const getPrimaryActions = () => {
+  const getNavigationLinks = () => {
     switch (role) {
       case "preceptor":
         return [
-          { icon: UserCheck, title: "Tomar Asistencia", href: "/asistencia", primary: true },
-          { icon: ClipboardCheck, title: "Registrar Conducta", href: "/conducta", primary: true },
-          { icon: MessageSquare, title: "Nuevo Mensaje", href: "/mensajes", primary: false },
+          { icon: UserCheck, title: "Asistencia", subtitle: "Ver y tomar asistencia", href: "/asistencia" },
+          { icon: ClipboardCheck, title: "Conducta", subtitle: "Registro disciplinario", href: "/conducta" },
+          { icon: MessageSquare, title: "Mensajes", subtitle: "Ver comunicaciones", href: "/mensajes" },
+          { icon: Clock, title: "Horarios", subtitle: "Ver horarios", href: "/horario" },
         ];
       case "teacher":
         return [
-          { icon: FileText, title: "Cargar Notas", href: "/calificaciones", primary: true },
-          { icon: BookOpen, title: "Ver Entregas", href: "/entregas", primary: true },
-          { icon: MessageSquare, title: "Nuevo Mensaje", href: "/mensajes", primary: false },
+          { icon: FileText, title: "Calificaciones", subtitle: "Notas de estudiantes", href: "/calificaciones" },
+          { icon: GraduationCap, title: "Evaluaciones", subtitle: "Examenes programados", href: "/examenes" },
+          { icon: BookOpen, title: "Asignaturas", subtitle: "Tus materias", href: "/asignaturas" },
         ];
       case "admin":
         return [
-          { icon: Settings, title: "Panel Admin", href: "/admin", primary: true },
-          { icon: MessageSquare, title: "Nuevo Mensaje", href: "/mensajes", primary: true },
-          { icon: FileText, title: "Calificaciones", href: "/calificaciones", primary: false },
+          { icon: Settings, title: "Panel Admin", subtitle: "Administrar sistema", href: "/admin" },
+          { icon: FileText, title: "Calificaciones", subtitle: "Notas del sistema", href: "/calificaciones" },
+          { icon: UserCheck, title: "Asistencia", subtitle: "Registro de asistencia", href: "/asistencia" },
+          { icon: MessageSquare, title: "Mensajes", subtitle: "Comunicaciones", href: "/mensajes" },
         ];
       default:
         return [];
     }
   };
 
-  const primaryActions = getPrimaryActions();
+  const createActions = getCreateActionsForRole(role);
+  const navigationLinks = getNavigationLinks();
   const statsCards = getStatsCards();
+
+  const handleOpenCreate = (actionKey: keyof FormsObj) => {
+    setCreateAction(actionKey);
+    setModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -155,9 +202,15 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
-        title="Dashboard"
+        title={
+          role === "preceptor"
+            ? "Preceptoria"
+            : role === "teacher"
+            ? "Docente"
+            : "Dashboard"
+        }
         subtitle={
           role === "admin"
             ? "Panel de administracion"
@@ -167,76 +220,117 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
         }
       />
 
-      {/* Primary Action Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {primaryActions.map((action, index) => (
-          <button
-            key={index}
-            onClick={() => router.push(action.href)}
-            className={`flex items-center gap-4 p-4 rounded-lg border transition-all text-left ${
-              action.primary
-                ? "bg-primary/5 border-primary/20 hover:bg-primary/10"
-                : "bg-surface border-border hover:bg-surface-muted"
-            }`}
-          >
-            <div className={`p-3 rounded-lg ${
-              action.primary ? "bg-primary/10" : "bg-surface-muted"
-            }`}>
-              <action.icon className={`h-5 w-5 ${
-                action.primary ? "text-primary" : "text-text-secondary"
-              }`} />
-            </div>
-            <div className="flex-1">
-              <p className={`text-sm font-semibold ${
-                action.primary ? "text-primary" : "text-text-primary"
-              }`}>
-                {action.title}
-              </p>
-            </div>
-            <ArrowRight className={`h-4 w-4 ${
-              action.primary ? "text-primary" : "text-text-muted"
-            }`} />
-          </button>
-        ))}
+      {/* Create Actions - Big prominent buttons */}
+      <div>
+        <h2 className="text-base font-semibold text-text-primary mb-3">Crear</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {createActions.map((action) => (
+            <button
+              key={action.key}
+              onClick={() => handleOpenCreate(action.key)}
+              className="flex items-center gap-4 p-5 rounded-xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all text-left cursor-pointer"
+            >
+              <div className="p-3 rounded-xl bg-primary/10">
+                <action.icon className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-semibold text-primary">
+                  {action.label}
+                </p>
+              </div>
+              <Plus className="h-5 w-5 text-primary flex-shrink-0" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Navigation Links */}
+      <div>
+        <h2 className="text-base font-semibold text-text-primary mb-3">Ir a</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {navigationLinks.map((link, index) => (
+            <button
+              key={index}
+              onClick={() => router.push(link.href)}
+              className="flex items-center gap-4 p-4 rounded-xl border border-border bg-surface hover:bg-surface-muted transition-all text-left cursor-pointer"
+            >
+              <div className="p-2.5 rounded-lg bg-surface-muted">
+                <link.icon className="h-5 w-5 text-text-secondary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text-primary">{link.title}</p>
+                <p className="text-xs text-text-muted mt-0.5">{link.subtitle}</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-text-muted flex-shrink-0" />
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Stats */}
       {statsCards.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {statsCards.map((card, index) => (
-            <Card key={index}>
-              <CardContent className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-text-secondary">{card.title}</p>
-                  <p className="text-2xl font-semibold mt-1 text-text-primary">{card.value}</p>
-                </div>
-                <card.icon className="h-5 w-5 text-text-muted" />
-              </CardContent>
-            </Card>
-          ))}
+        <div>
+          <h2 className="text-base font-semibold text-text-primary mb-3">Resumen</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {statsCards.map((card, index) => (
+              <Card key={index}>
+                <CardContent className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-text-secondary">{card.title}</p>
+                    <p className="text-2xl font-semibold mt-1 text-text-primary">{card.value}</p>
+                  </div>
+                  <card.icon className="h-5 w-5 text-text-muted" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Quick Links */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-text-secondary">Acceso rapido</h3>
+      <div>
+        <h2 className="text-base font-semibold text-text-primary mb-3">Acceso rapido</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
-            { label: "Horarios", href: "/horario" },
-            { label: "Asignaturas", href: "/asignaturas" },
-            { label: "Chat", href: "/chat" },
-            { label: "Evaluaciones", href: "/examenes" },
+            { label: "Horarios", href: "/horario", icon: Clock },
+            { label: "Asignaturas", href: "/asignaturas", icon: BookOpen },
+            { label: "Chat", href: "/chat", icon: MessageCircle },
+            { label: "Evaluaciones", href: "/examenes", icon: GraduationCap },
           ].map((link, index) => (
             <button
               key={index}
               onClick={() => router.push(link.href)}
-              className="sacred-card-interactive text-center py-3"
+              className="sacred-card-interactive flex flex-col items-center gap-2 py-4"
             >
+              <link.icon className="h-5 w-5 text-text-muted" />
               <span className="text-sm font-medium text-text-primary">{link.label}</span>
             </button>
           ))}
         </div>
       </div>
+
+      {/* Create Dialog */}
+      <Dialog open={modalOpen} onOpenChange={(open) => {
+        setModalOpen(open);
+        if (!open) setCreateAction(null);
+      }}>
+        <DialogContent className="max-w-2xl dashboard-modal-content">
+          <DialogTitle>{createAction || "Crear"}</DialogTitle>
+          {createAction && (
+            <ActionForm
+              action={createAction}
+              onBack={() => {
+                setCreateAction(null);
+                setModalOpen(false);
+              }}
+              onClose={() => {
+                setCreateAction(null);
+                setModalOpen(false);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

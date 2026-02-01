@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
 
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
@@ -17,6 +18,14 @@ import {
   LoadingSpinner,
   PageHeader,
 } from "@/components/sacred";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ActionForm } from "../dashboard/components/adm_pre_tea/ActionForm";
+import "../dashboard/dashboard-modal.css";
 
 import { toast } from "sonner";
 
@@ -48,6 +57,9 @@ function ExamsContent() {
   const [exams, setExams] = useState<ExamWithSubjectId[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const canCreate = userInfo?.role === "admin" || userInfo?.role === "teacher";
 
   // Load data when course or year changes
   useEffect(() => {
@@ -151,6 +163,14 @@ function ExamsContent() {
       <PageHeader
         title="Evaluaciones"
         subtitle="Examenes y tareas programadas"
+        action={
+          canCreate ? (
+            <Button onClick={() => setCreateOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nuevo Examen
+            </Button>
+          ) : null
+        }
       />
 
       <div className="flex flex-wrap items-center gap-3 p-3 sacred-card">
@@ -181,6 +201,23 @@ function ExamsContent() {
             Elige un curso del selector para ver las evaluaciones
           </p>
         </div>
+      )}
+
+      {/* Create Exam Dialog */}
+      {canCreate && (
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogContent className="max-w-2xl dashboard-modal-content">
+            <DialogTitle>Crear examen</DialogTitle>
+            <ActionForm
+              action="Crear examen"
+              onBack={() => setCreateOpen(false)}
+              onClose={() => {
+                setCreateOpen(false);
+                window.location.reload();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

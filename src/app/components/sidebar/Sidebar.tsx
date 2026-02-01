@@ -14,7 +14,8 @@ import {
   Clock,
   ClipboardCheck,
   Settings,
-  Upload,
+  BookMarked,
+  CalendarClock,
 } from "lucide-react";
 import ProfileAccount from "./ProfileAccount";
 import ChildSelector from "./ChildSelector";
@@ -27,10 +28,11 @@ const menuItems = [
   { name: "Asignaturas", icon: BookOpen, href: "/asignaturas" },
   { name: "Evaluaciones", icon: GraduationCap, href: "/examenes" },
   { name: "Calificaciones", icon: FileText, href: "/calificaciones" },
-  { name: "Entregas", icon: Upload, href: "/entregas" },
   { name: "Conducta", icon: Users, href: "/conducta" },
   { name: "Horario", icon: Clock, href: "/horario" },
   { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia" },
+  { name: "Cuaderno", icon: BookMarked, href: "/cuaderno" },
+  { name: "Turnos", icon: CalendarClock, href: "/turnos" },
 ];
 
 const adminMenuItems = [

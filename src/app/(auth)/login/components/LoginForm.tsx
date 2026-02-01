@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { useLoginForm } from "@/hooks/useLoginForm";
 import Link from "next/link";
+import { useState } from "react";
 
 // Role labels for display
 const ROLE_LABELS: Record<string, string> = {
@@ -18,6 +19,25 @@ const ROLE_LABELS: Record<string, string> = {
   preceptor: "Preceptor",
   father: "Padre/Tutor",
 };
+
+function EyeIcon({ open }: { open: boolean }) {
+  if (open) {
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+      <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+      <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+      <path d="m2 2 20 20" />
+    </svg>
+  );
+}
 
 export default function LoginForm() {
   const {
@@ -35,98 +55,133 @@ export default function LoginForm() {
     resetForm,
   } = useLoginForm();
 
-  // Renderizado condicional optimizado
+  const [showPassword, setShowPassword] = useState(false);
+
   const renderLoginForm = () => (
     <>
-      <div>
+      {/* Email field */}
+      <div className="login-field-group">
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-foreground"
+          className="login-label"
         >
-          Correo electrónico
+          Correo electronico
         </label>
-        <input
-          type="text"
-          id="email"
-          value={formData.email}
-          onChange={handleInputChange("email")}
-          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2.5 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder-muted-foreground transition-all duration-200"
-          placeholder="Ingresa tu correo electrónico"
-          required
-          autoComplete="email"
-          disabled={isLoading}
-        />
+        <div className="relative">
+          <div className="login-input-icon-left">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            id="email"
+            value={formData.email}
+            onChange={handleInputChange("email")}
+            className="login-input login-input-with-icon"
+            placeholder="nombre@ejemplo.com"
+            required
+            autoComplete="email"
+            disabled={isLoading}
+          />
+        </div>
       </div>
 
-      <div>
+      {/* Password field */}
+      <div className="login-field-group">
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-foreground"
+          className="login-label"
         >
-          Contraseña
+          Contrasena
         </label>
-        <input
-          type="password"
-          id="password"
-          value={formData.password}
-          onChange={handleInputChange("password")}
-          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2.5 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder-muted-foreground transition-all duration-200"
-          placeholder="Ingresa tu contraseña"
-          required
-          autoComplete="current-password"
-          disabled={isLoading}
-        />
+        <div className="relative">
+          <div className="login-input-icon-left">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <input
+            type={showPassword ? "text" : "password"}
+            id="password"
+            value={formData.password}
+            onChange={handleInputChange("password")}
+            className="login-input login-input-with-icon login-input-with-icon-right"
+            placeholder="Ingresa tu contrasena"
+            required
+            autoComplete="current-password"
+            disabled={isLoading}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="login-input-icon-right-btn"
+            tabIndex={-1}
+            aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+          >
+            <EyeIcon open={showPassword} />
+          </button>
+        </div>
       </div>
 
+      {/* Remember me + Forgot password */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center">
+        <label className="flex items-center gap-2.5 cursor-pointer select-none group">
           <input
             id="remember-me"
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => handleRememberMeChange(e.target.checked)}
-            className="h-4 w-4 text-primary border-input rounded focus:ring-primary bg-background"
+            className="login-checkbox"
             disabled={isLoading}
           />
-          <label
-            htmlFor="remember-me"
-            className="ml-2 block text-sm text-foreground"
-          >
+          <span className="text-sm text-text-secondary group-hover:text-foreground transition-colors">
             Recordarme
-          </label>
-        </div>
+          </span>
+        </label>
         <Link
           href="/forgot-password"
-          className="text-sm text-primary hover:underline"
+          className="text-sm font-medium text-primary hover:text-primary-hover transition-colors"
         >
-          ¿Olvidaste tu contraseña?
+          ¿Olvidaste tu contrasena?
         </Link>
       </div>
 
+      {/* Submit button */}
       <button
         type="submit"
         disabled={isLoading || !isFormValid}
-        className="w-full py-3 px-4 rounded-md login-button-primary transition-all duration-300 cursor-pointer"
+        className="login-button-primary w-full"
       >
         {isLoading ? (
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-            Procesando...
+          <div className="flex items-center justify-center gap-2.5">
+            <div className="login-spinner" />
+            Verificando...
           </div>
         ) : (
-          "Iniciar sesión"
+          "Iniciar sesion"
         )}
       </button>
     </>
   );
 
   const renderRoleSelector = () => (
-    <div className="space-y-4">
-      <div className="text-center">
-        <p className="text-sm text-muted-foreground mb-2">
-          Selecciona tu rol para continuar:
+    <div className="space-y-5">
+      <div className="text-center py-2">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-foreground mb-1">
+          Selecciona tu rol
         </p>
-        <p className="text-xs text-muted-foreground">{formData.email}</p>
+        <p className="text-xs text-text-muted">{formData.email}</p>
       </div>
 
       <Select onValueChange={handleRoleChange} disabled={isLoading}>
@@ -142,27 +197,27 @@ export default function LoginForm() {
         </SelectContent>
       </Select>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 pt-1">
         <button
           type="button"
           onClick={resetForm}
           disabled={isLoading}
-          className="flex-1 py-2.5 px-4 rounded-md text-foreground bg-secondary hover:bg-secondary/80 focus:bg-secondary/80 active:bg-secondary/70 transition-all duration-200 disabled:opacity-50 font-medium shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
+          className="flex-1 py-3 px-4 rounded-lg text-foreground bg-secondary hover:bg-secondary/80 focus:bg-secondary/80 active:bg-secondary/70 transition-all duration-200 disabled:opacity-50 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
         >
           Volver
         </button>
         <button
           type="submit"
           disabled={isLoading || !role}
-          className="flex-1 py-2.5 px-4 rounded-md login-button-primary transition-all duration-300"
+          className="login-button-primary flex-1"
         >
           {isLoading ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+            <div className="flex items-center justify-center gap-2.5">
+              <div className="login-spinner" />
               Procesando...
             </div>
           ) : (
-            "Confirmar rol e ingresar"
+            "Confirmar e ingresar"
           )}
         </button>
       </div>
@@ -170,11 +225,15 @@ export default function LoginForm() {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 login-form">
+    <form onSubmit={handleSubmit} className="space-y-5 login-form">
       {errorLogin && (
-        <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md">
-
-          <p className="text-destructive text-sm font-medium">{errorLogin}</p>
+        <div className="login-error-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-error shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" x2="12" y1="8" y2="12" />
+            <line x1="12" x2="12.01" y1="16" y2="16" />
+          </svg>
+          <p className="text-sm font-medium">{errorLogin}</p>
         </div>
       )}
 

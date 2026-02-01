@@ -39,7 +39,7 @@ const adminTabs: TabItem[] = [
 const studentTabs: TabItem[] = [
   { name: "Inicio", icon: Home, href: "/dashboard" },
   { name: "Notas", icon: FileText, href: "/calificaciones" },
-  { name: "Tareas", icon: BookOpen, href: "/entregas" },
+  { name: "Materias", icon: BookOpen, href: "/asignaturas" },
   { name: "Horario", icon: Clock, href: "/horario" },
   { name: "Mas", icon: MoreHorizontal, href: "/mas" },
 ];
