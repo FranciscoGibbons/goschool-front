@@ -44,7 +44,7 @@ import {
   Label,
   Input,
   Textarea,
-  Select,
+  NativeSelect,
 } from "@/components/sacred";
 import userInfoStore from "@/store/userInfoStore";
 import { SecuritySanitizer } from "@/lib/security";
@@ -355,7 +355,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                   {message.type === "file" && (
                     <>
                       {getDownloadUrl(message) ? (
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex justify-end">
                           <Button
                             variant="primary"
                             size="sm"
@@ -364,11 +364,11 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                             }
                           >
                             <ArrowDownTrayIcon className="size-4" />
-                            {message.title}
+                            Descargar
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 text-warning text-sm mb-2">
+                        <div className="flex items-center gap-2 text-warning text-sm">
                           <ExclamationTriangleIcon className="size-4" />
                           <span>Archivo no disponible</span>
                         </div>
@@ -376,36 +376,27 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                     </>
                   )}
 
-                  {message.type === "link" && (
-                    <>
-                      {message.content && (
-                        <p className="text-text-secondary mb-2 whitespace-pre-line">
-                          {message.content}
-                        </p>
-                      )}
-                      {message.content && (() => {
-                        const safeUrl = SecuritySanitizer.sanitizeUrl(message.content);
-                        return safeUrl !== '/' ? (
-                          <div className="flex items-center gap-2 mb-2">
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              asChild
-                            >
-                              <a
-                                href={safeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <ArrowDownTrayIcon className="size-4" />
-                                Abrir enlace
-                              </a>
-                            </Button>
-                          </div>
-                        ) : null;
-                      })()}
-                    </>
-                  )}
+                  {message.type === "link" && message.content && (() => {
+                    const safeUrl = SecuritySanitizer.sanitizeUrl(message.content);
+                    return safeUrl !== '/' ? (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          asChild
+                        >
+                          <a
+                            href={safeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ArrowDownTrayIcon className="size-4" />
+                            Abrir enlace
+                          </a>
+                        </Button>
+                      </div>
+                    ) : null;
+                  })()}
 
                   <div className="flex justify-end gap-2 mt-2">
                     <span className="text-xs text-text-muted">
@@ -468,10 +459,10 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
 
             <FormGroup>
               <Label htmlFor="edit-type">Tipo</Label>
-              <Select
+              <NativeSelect
                 id="edit-type"
                 value={editData.type || "message"}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setEditData({
                     ...editData,
                     type: e.target.value as "message" | "file" | "link",
@@ -482,7 +473,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 <option value="message">Mensaje</option>
                 <option value="file">Archivo</option>
                 <option value="link">Link</option>
-              </Select>
+              </NativeSelect>
             </FormGroup>
 
             <FormGroup>

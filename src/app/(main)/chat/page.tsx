@@ -18,6 +18,9 @@ import {
   Loader2,
   Check,
   CheckCheck,
+  Pencil,
+  Trash2,
+  MoreVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -145,61 +148,160 @@ function MessageBubble({
   message,
   isOwn,
   showSender,
+  onEdit,
+  onDelete,
 }: {
   message: ChatMessage;
   isOwn: boolean;
   showSender: boolean;
+  onEdit?: (message: ChatMessage) => void;
+  onDelete?: (message: ChatMessage) => void;
 }) {
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuAbove, setMenuAbove] = useState(true);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showMenu]);
+
+  const toggleMenu = () => {
+    if (!showMenu && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      // If there's less than 100px above the button, open downward
+      setMenuAbove(rect.top > 100);
+    }
+    setShowMenu(!showMenu);
+  };
+
+  const isEdited = !message.is_deleted && message.updated_at !== message.created_at;
+
+  if (message.is_deleted) {
+    return (
+      <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
+        <div className={`max-w-[75%] min-w-0 ${isOwn ? 'items-end' : 'items-start'}`}>
+          {showSender && !isOwn && (
+            <div className="text-xs text-muted-foreground mb-1 px-3">
+              {message.sender?.full_name || 'Usuario'}
+            </div>
+          )}
+          <div className={`px-4 py-2 rounded-2xl ${
+            isOwn
+              ? 'bg-primary/40 rounded-br-sm'
+              : 'bg-card/60 border border-border rounded-bl-sm'
+          }`}>
+            <p className="text-sm italic text-muted-foreground">Mensaje eliminado</p>
+            <div className={`text-xs mt-1 ${isOwn ? 'text-primary-foreground/50 text-right' : 'text-muted-foreground'}`}>
+              {formatTime(message.created_at)}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
-      <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
+    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2 group`}>
+      <div className={`max-w-[75%] min-w-0 relative ${isOwn ? 'items-end' : 'items-start'}`}>
         {showSender && !isOwn && (
           <div className="text-xs text-muted-foreground mb-1 px-3">
             {message.sender?.full_name || 'Usuario'}
           </div>
         )}
-        <div
-          className={`px-4 py-2 rounded-2xl ${
-            isOwn
-              ? 'bg-primary text-primary-foreground rounded-br-sm'
-              : 'bg-card border border-border rounded-bl-sm'
-          }`}
-        >
-          {message.type_message === 'image' && message.file_path && (() => {
-            const proxiedUrl = toImageProxy(message.file_path);
-            return (
-              <img
-                src={proxiedUrl}
-                alt={message.file_name || 'Imagen'}
-                className="w-48 h-48 object-cover rounded mb-2 cursor-pointer"
-                onClick={() => window.open(proxiedUrl, '_blank')}
-              />
-            );
-          })()}
-          {message.type_message === 'file' && message.file_path && (() => {
-            const safeUrl = SecuritySanitizer.sanitizeUrl(message.file_path);
-            return safeUrl !== '/' ? (
-              <a
-                href={safeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm underline mb-2"
+        <div className="relative">
+          {/* Context menu button for own messages */}
+          {isOwn && (
+            <div className={`absolute -left-8 top-1 opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+              <button
+                ref={btnRef}
+                onClick={toggleMenu}
+                className="p-1 rounded-full hover:bg-accent text-muted-foreground"
               >
-                <Paperclip className="h-4 w-4" />
-                {message.file_name || 'Archivo'}
-              </a>
-            ) : null;
-          })()}
-          {message.type_message === 'text' && message.message && (
-            <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </div>
           )}
-          <div className={`text-xs mt-1 flex items-center gap-1 ${isOwn ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'}`}>
-            {formatTime(message.created_at)}
-            {isOwn && (
-              message.is_read
-                ? <CheckCheck className="h-3.5 w-3.5 text-blue-300" />
-                : <Check className="h-3.5 w-3.5" />
+
+          {/* Dropdown menu */}
+          {showMenu && isOwn && (
+            <div
+              ref={menuRef}
+              className={`absolute ${isOwn ? 'right-0' : 'left-0'} ${menuAbove ? '-top-2 -translate-y-full' : 'bottom-0 translate-y-full'} z-20 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[140px]`}
+            >
+              {message.type_message === 'text' && onEdit && (
+                <button
+                  onClick={() => { onEdit(message); setShowMenu(false); }}
+                  className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-accent text-left"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Editar
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={() => { onDelete(message); setShowMenu(false); }}
+                  className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-accent text-destructive text-left"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Eliminar
+                </button>
+              )}
+            </div>
+          )}
+
+          <div
+            className={`px-4 py-2 rounded-2xl overflow-hidden ${
+              isOwn
+                ? 'bg-primary text-primary-foreground rounded-br-sm'
+                : 'bg-card border border-border rounded-bl-sm'
+            }`}
+          >
+            {message.type_message === 'image' && message.file_path && (() => {
+              const proxiedUrl = toImageProxy(message.file_path);
+              return (
+                <img
+                  src={proxiedUrl}
+                  alt={message.file_name || 'Imagen'}
+                  className="w-48 h-48 object-cover rounded mb-2 cursor-pointer"
+                  onClick={() => window.open(proxiedUrl, '_blank')}
+                />
+              );
+            })()}
+            {message.type_message === 'file' && message.file_path && (() => {
+              const safeUrl = SecuritySanitizer.sanitizeUrl(message.file_path);
+              return safeUrl !== '/' ? (
+                <a
+                  href={safeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm underline mb-2"
+                >
+                  <Paperclip className="h-4 w-4" />
+                  {message.file_name || 'Archivo'}
+                </a>
+              ) : null;
+            })()}
+            {message.type_message === 'text' && message.message && (
+              <p className="text-sm whitespace-pre-wrap break-all">{message.message}</p>
             )}
+            <div className={`text-xs mt-1 flex items-center gap-1 ${isOwn ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'}`}>
+              {isEdited && <span className="italic">editado</span>}
+              {formatTime(message.created_at)}
+              {isOwn && (
+                message.is_read
+                  ? <CheckCheck className="h-3.5 w-3.5 text-blue-300" />
+                  : <Check className="h-3.5 w-3.5" />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -237,6 +339,8 @@ function ChatWindow({
   typingUsers,
   onBack,
   onSendMessage,
+  onEditMessage,
+  onDeleteMessage,
   onUploadFile,
   onLoadMore,
   onTypingStart,
@@ -248,6 +352,8 @@ function ChatWindow({
   typingUsers: TypingUser[];
   onBack: () => void;
   onSendMessage: (text: string) => void;
+  onEditMessage: (messageId: number, newMessage: string) => void;
+  onDeleteMessage: (messageId: number) => void;
   onUploadFile: (file: File) => Promise<void>;
   onLoadMore: () => void;
   onTypingStart: () => void;
@@ -259,9 +365,11 @@ function ChatWindow({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<{ id: number; text: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
   const { userInfo } = userInfoStore();
@@ -315,9 +423,31 @@ function ChatWindow({
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     }
     setIsLoading(true);
-    onSendMessage(text.trim());
+    if (editingMessage) {
+      onEditMessage(editingMessage.id, text.trim());
+      setEditingMessage(null);
+    } else {
+      onSendMessage(text.trim());
+    }
     setText('');
     setIsLoading(false);
+  };
+
+  const handleStartEdit = (message: ChatMessage) => {
+    setEditingMessage({ id: message.id, text: message.message });
+    setText(message.message);
+    inputRef.current?.focus();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessage(null);
+    setText('');
+  };
+
+  const handleDelete = (message: ChatMessage) => {
+    if (confirm('¿Eliminar este mensaje?')) {
+      onDeleteMessage(message.id);
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -401,7 +531,7 @@ function ChatWindow({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 bg-background"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 bg-background"
       >
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -418,6 +548,8 @@ function ChatWindow({
                 message={msg}
                 isOwn={isOwn}
                 showSender={showSender}
+                onEdit={handleStartEdit}
+                onDelete={handleDelete}
               />
             );
           })
@@ -468,6 +600,17 @@ function ChatWindow({
         </div>
       )}
 
+      {/* Editing indicator */}
+      {editingMessage && (
+        <div className="px-3 py-2 border-t border-border bg-accent/50 flex items-center gap-2">
+          <Pencil className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-sm text-muted-foreground truncate flex-1">Editando mensaje</span>
+          <button onClick={handleCancelEdit} className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 border-t border-border bg-card flex gap-2 shrink-0">
         <input
@@ -477,19 +620,26 @@ function ChatWindow({
           onChange={handleFileSelect}
           className="hidden"
         />
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-        >
-          <Paperclip className="h-5 w-5" />
-        </Button>
+        {!editingMessage && (
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            title="Adjuntar archivo (JPG, PNG, GIF, PDF, DOCX - max. 10MB)"
+          >
+            <Paperclip className="h-5 w-5" />
+          </Button>
+        )}
         <Input
+          ref={inputRef}
           value={text}
           onChange={e => handleTextChange(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-          placeholder="Escribe un mensaje..."
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) handleSend();
+            if (e.key === 'Escape' && editingMessage) handleCancelEdit();
+          }}
+          placeholder={editingMessage ? "Editar mensaje..." : "Escribe un mensaje..."}
           className="flex-1"
           disabled={isLoading}
         />
@@ -703,8 +853,8 @@ export default function ChatPage() {
     setCurrentChat,
   } = useChatStore();
 
-  const { fetchChats, fetchMessages, sendMessage, uploadFile, markAsRead } = useChat();
-  const { sendMessage: wsSendMessage, joinChat, reconnect, startTyping, stopTyping } = useWebSocket();
+  const { fetchChats, fetchMessages, sendMessage, editMessage: httpEditMessage, deleteMessage: httpDeleteMessage, uploadFile, markAsRead } = useChat();
+  const { sendMessage: wsSendMessage, editMessage: wsEditMessage, deleteMessage: wsDeleteMessage, joinChat, reconnect, startTyping, stopTyping } = useWebSocket();
 
   // Hydration
   useEffect(() => {
@@ -747,6 +897,26 @@ export default function ChatPage() {
       });
     }
   };
+
+  const handleEditMessage = useCallback((messageId: number, newMessage: string) => {
+    if (!currentChatId) return;
+    const sent = wsEditMessage(messageId, newMessage);
+    if (!sent) {
+      httpEditMessage(currentChatId, messageId, newMessage).then(() => {
+        fetchMessages(currentChatId);
+      });
+    }
+  }, [currentChatId, wsEditMessage, httpEditMessage, fetchMessages]);
+
+  const handleDeleteMessage = useCallback((messageId: number) => {
+    if (!currentChatId) return;
+    const sent = wsDeleteMessage(messageId);
+    if (!sent) {
+      httpDeleteMessage(currentChatId, messageId).then(() => {
+        fetchMessages(currentChatId);
+      });
+    }
+  }, [currentChatId, wsDeleteMessage, httpDeleteMessage, fetchMessages]);
 
   const handleTypingStart = useCallback(() => {
     if (currentChatId) startTyping(currentChatId);
@@ -831,7 +1001,7 @@ export default function ChatPage() {
       </div>
 
       {/* Main Area */}
-      <div className={`${!showMobileList || !currentChatId ? 'flex' : 'hidden'} md:flex flex-1 flex-col`}>
+      <div className={`${!showMobileList || !currentChatId ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 flex-col`}>
         {currentChat ? (
           <ChatWindow
             chat={currentChat}
@@ -839,6 +1009,8 @@ export default function ChatPage() {
             typingUsers={currentTyping}
             onBack={handleBack}
             onSendMessage={handleSendMessage}
+            onEditMessage={handleEditMessage}
+            onDeleteMessage={handleDeleteMessage}
             onUploadFile={handleUploadFile}
             onLoadMore={handleLoadMore}
             onTypingStart={handleTypingStart}

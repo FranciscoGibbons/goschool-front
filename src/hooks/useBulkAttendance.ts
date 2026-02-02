@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 
-type PresenceStatus = "present" | "absent" | "late" | "justified";
+type PresenceStatus = "present" | "absent" | "late" | "excused";
 
 interface BulkAttendanceEntry {
   student_id: number;
@@ -109,7 +109,7 @@ export function useBulkAttendance() {
       present: 0,
       absent: 0,
       late: 0,
-      justified: 0,
+      excused: 0,
     };
     attendanceRows.forEach((row) => {
       stats[row.presence]++;

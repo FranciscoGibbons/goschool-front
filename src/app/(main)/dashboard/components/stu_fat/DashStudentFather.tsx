@@ -105,7 +105,7 @@ export default function DashStudentFather() {
 
   const attendanceStats = useMemo(() => {
     if (attendance.length === 0) return null;
-    const present = attendance.filter(a => a.presence === 'present' || a.presence === 'justified').length;
+    const present = attendance.filter(a => a.presence === 'present' || a.presence === 'excused').length;
     const percentage = Math.round((present / attendance.length) * 100);
     return { percentage, total: attendance.length };
   }, [attendance]);

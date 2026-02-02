@@ -140,6 +140,43 @@ export function useChat() {
     }
   }, [handleUnauthorized]);
 
+  const editMessage = useCallback(async (
+    chatId: number,
+    messageId: number,
+    newMessage: string,
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/proxy/chats/${chatId}/messages/${messageId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: newMessage }),
+      });
+      if (handleUnauthorized(res)) return false;
+      return res.ok;
+    } catch (err) {
+      console.error('editMessage error:', err);
+      return false;
+    }
+  }, [handleUnauthorized]);
+
+  const deleteMessage = useCallback(async (
+    chatId: number,
+    messageId: number,
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/proxy/chats/${chatId}/messages/${messageId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (handleUnauthorized(res)) return false;
+      return res.ok;
+    } catch (err) {
+      console.error('deleteMessage error:', err);
+      return false;
+    }
+  }, [handleUnauthorized]);
+
   const fetchAvailableUsers = useCallback(async (): Promise<PubUser[]> => {
     try {
       const res = await fetch('/api/proxy/chats/available-users', {
@@ -159,6 +196,8 @@ export function useChat() {
     fetchChats,
     fetchMessages,
     sendMessage,
+    editMessage,
+    deleteMessage,
     createChat,
     uploadFile,
     markAsRead,

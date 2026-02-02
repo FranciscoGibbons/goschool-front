@@ -59,7 +59,8 @@ export function useSubmissions(filters?: SubmissionFilter) {
       }
 
       const data = await response.json();
-      setSubmissions(Array.isArray(data) ? data : []);
+      const items = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      setSubmissions(items);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Error al cargar entregas";
       setError(errorMessage);

@@ -109,8 +109,8 @@ export default function TimetableDisplay({
       try {
         setLoading(true);
         const [timetablesRes, subjectsRes] = await Promise.all([
-          axios.get(`/api/timetables?course_id=${courseId}`),
-          axios.get(`/api/subjects?course_id=${courseId}`),
+          axios.get(`/api/proxy/timetables?course_id=${courseId}`),
+          axios.get(`/api/proxy/subjects?course_id=${courseId}`),
         ]);
 
         // Handle paginated response for timetables

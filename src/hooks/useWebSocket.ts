@@ -181,6 +181,15 @@ export function useWebSocket() {
             }
           }
           break;
+        case 'MessageEdited':
+          store.updateMessage(msg.chat_id, msg.message_id, {
+            message: msg.new_message,
+            updated_at: msg.edited_at,
+          });
+          break;
+        case 'MessageDeleted':
+          store.deleteMessage(msg.chat_id, msg.message_id);
+          break;
         case 'Error':
           console.error('[WS] Server error:', msg.message);
           break;
@@ -226,6 +235,14 @@ export function useWebSocket() {
     return sendWs({ type: 'MarkAsRead', message_id: messageId });
   }, []);
 
+  const editMessage = useCallback((messageId: number, newMessage: string) => {
+    return sendWs({ type: 'EditMessage', message_id: messageId, new_message: newMessage });
+  }, []);
+
+  const deleteMessage = useCallback((messageId: number) => {
+    return sendWs({ type: 'DeleteMessage', message_id: messageId });
+  }, []);
+
   return {
     send: sendWs,
     sendMessage,
@@ -233,6 +250,8 @@ export function useWebSocket() {
     stopTyping,
     joinChat,
     markAsRead,
+    editMessage,
+    deleteMessage,
     reconnect: reconnectWs,
   };
 }

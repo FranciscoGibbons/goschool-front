@@ -47,7 +47,7 @@ const presenceConfig = {
     legendBg: "bg-warning",
     legendText: "Tardanza (T)",
   },
-  justified: {
+  excused: {
     bg: "bg-primary",
     label: "J",
     legendBg: "bg-primary",

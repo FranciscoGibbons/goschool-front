@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Exam,
   Role,
@@ -15,6 +15,9 @@ import {
   Pencil,
   Trash2,
   FileText,
+  Upload,
+  CheckCircle,
+  Paperclip,
 } from "lucide-react";
 
 import {
@@ -49,6 +52,8 @@ import userInfoStore from "@/store/userInfoStore";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import axios from "axios";
+import { useSubmissions } from "@/hooks/useSubmissions";
+import { validateFile } from "@/types/submission";
 
 
 interface Props {
@@ -78,6 +83,51 @@ export default function ExamList({ exams, role, subjects }: Props) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
   const router = useRouter();
+
+  // Student submission state
+  const [submittingHomeworkId, setSubmittingHomeworkId] = useState<number | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isStudent = role === "student";
+
+  // Memoize filter to avoid re-fetching on every render
+  const submissionFilter = useMemo(
+    () => (isStudent && userInfo?.id ? { student_id: userInfo.id } : undefined),
+    [isStudent, userInfo?.id]
+  );
+
+  // Fetch existing submissions for the student
+  const { submissions, createSubmission, isLoading: isSubmissionLoading } = useSubmissions(
+    submissionFilter
+  );
+
+  // Check if student already submitted for a given homework
+  const hasSubmitted = (examId: number): boolean => {
+    return submissions.some((s) => s.task_id === examId);
+  };
+
+  const handleSubmitHomework = async () => {
+    if (!submittingHomeworkId || !selectedFile || !userInfo?.id) return;
+
+    const validation = validateFile(selectedFile);
+    if (!validation.valid) {
+      toast.error(validation.error || "Archivo no valido");
+      return;
+    }
+
+    const success = await createSubmission({
+      student_id: userInfo.id,
+      task_id: submittingHomeworkId,
+      file: selectedFile,
+    });
+
+    if (success) {
+      setSubmittingHomeworkId(null);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   let filteredExams = [...exams];
   if (typeFilter !== "all") {
@@ -263,50 +313,96 @@ export default function ExamList({ exams, role, subjects }: Props) {
           ) : (
               <div
                 key={exam.id}
-                className="sacred-card flex items-start justify-between gap-4 animate-fade-in"
+                className="sacred-card flex flex-col gap-2 animate-fade-in"
               >
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                    <Badge variant={typeVariants[exam.type] || "neutral"}>
-                      {translateExamType(exam.type)}
-                    </Badge>
-
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={typeVariants[exam.type] || "neutral"}>
+                        {translateExamType(exam.type)}
+                      </Badge>
+                      {/* Student: show submitted badge */}
+                      {isStudent && exam.type === "homework" && hasSubmitted(exam.id) && (
+                        <Badge variant="success">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Entregado
+                        </Badge>
+                      )}
+                  </div>
+                  <h3 className="text-sm font-medium truncate">{exam.task}</h3>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <BookOpen className="h-3 w-3" />
+                      {getSubjectName(exam.subject_id)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(exam.due_date)}
+                    </span>
+                  </div>
                 </div>
-                <h3 className="text-sm font-medium truncate">{exam.task}</h3>
-                <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <BookOpen className="h-3 w-3" />
-                    {getSubjectName(exam.subject_id)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatDate(exam.due_date)}
-                  </span>
+
+                <div className="flex items-center gap-1">
+                  {/* Student: submit homework button */}
+                  {isStudent && exam.type === "homework" && !hasSubmitted(exam.id) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-primary"
+                      title="Entregar tarea"
+                      onClick={() => {
+                        setSubmittingHomeworkId(exam.id);
+                        setSelectedFile(null);
+                      }}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+
+                  {canEdit && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setEditingExam(exam)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setConfirmDeleteId(exam.id)}
+                        disabled={deletingId === exam.id}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {canEdit && (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setEditingExam(exam)}
+              {/* Teacher file attachment link */}
+              {exam.file_path && (() => {
+                let fileName = exam.file_path;
+                if (fileName.includes('/uploads/files/')) {
+                  fileName = fileName.split('/uploads/files/').pop() || fileName;
+                }
+                fileName = fileName.replace(/^\.\//, '');
+                const proxyUrl = `/api/image-proxy/uploads/files/${fileName}`;
+                return (
+                  <a
+                    href={proxyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-primary hover:underline w-fit"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => setConfirmDeleteId(exam.id)}
-                    disabled={deletingId === exam.id}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
+                    <Paperclip className="h-3 w-3" />
+                    Ver archivo adjunto
+                  </a>
+                );
+              })()}
             </div>
           )
         )}
@@ -342,6 +438,55 @@ export default function ExamList({ exams, role, subjects }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Submit Homework Modal */}
+      <Modal open={submittingHomeworkId !== null} onOpenChange={() => {
+        setSubmittingHomeworkId(null);
+        setSelectedFile(null);
+      }}>
+        <ModalContent className="max-w-md">
+          <ModalHeader>
+            <ModalTitle>Entregar tarea</ModalTitle>
+          </ModalHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="homework_file_submit">Archivo</Label>
+              <Input
+                id="homework_file_submit"
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                onChange={(e) => {
+                  setSelectedFile(e.target.files?.[0] || null);
+                }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Formatos permitidos: PDF, DOCX (max. 10MB)
+              </p>
+            </div>
+          </div>
+
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSubmittingHomeworkId(null);
+                setSelectedFile(null);
+              }}
+              disabled={isSubmissionLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmitHomework}
+              disabled={isSubmissionLoading || !selectedFile}
+            >
+              {isSubmissionLoading ? "Enviando..." : "Entregar"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* Edit Dialog */}
       <Modal open={!!editingExam} onOpenChange={() => setEditingExam(null)}>

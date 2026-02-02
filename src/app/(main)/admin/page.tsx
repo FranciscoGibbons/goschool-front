@@ -60,6 +60,7 @@ interface CourseGradeStats {
   course_id: number;
   course_name: string;
   total_students: number;
+  total_teachers: number;
   total_grades: number;
   average_grade: number | null;
   min_grade: number | null;
@@ -111,6 +112,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [createAction, setCreateAction] = useState<keyof FormsObj | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -252,66 +254,115 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardStats?.total_users || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {dashboardStats?.students || 0} estudiantes, {dashboardStats?.teachers || 0} docentes
-            </p>
-          </CardContent>
-        </Card>
+      {/* Quick Stats with Course Filter */}
+      {(() => {
+        const selectedGrade = selectedCourseId
+          ? academicStats?.grades_by_course.find((c) => c.course_id === selectedCourseId)
+          : null;
+        const selectedAttendance = selectedCourseId
+          ? academicStats?.attendance_by_course.find((c) => c.course_id === selectedCourseId)
+          : null;
+        const selectedDiscipline = selectedCourseId
+          ? academicStats?.discipline_by_course.find((c) => c.course_id === selectedCourseId)
+          : null;
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Promedio General</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${getGradeColor(academicStats?.overall_average_grade ?? null)}`}>
-              {academicStats?.overall_average_grade?.toFixed(2) || "N/A"}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Calificaciones del ciclo activo
-            </p>
-          </CardContent>
-        </Card>
+        const usersValue = selectedCourseId && selectedGrade
+          ? selectedGrade.total_students + selectedGrade.total_teachers
+          : dashboardStats?.total_users || 0;
+        const usersDetail = selectedCourseId && selectedGrade
+          ? `${selectedGrade.total_students} estudiantes, ${selectedGrade.total_teachers} docentes`
+          : `${dashboardStats?.students || 0} estudiantes, ${dashboardStats?.teachers || 0} docentes`;
+        const gradeValue = selectedCourseId
+          ? selectedGrade?.average_grade ?? null
+          : academicStats?.overall_average_grade ?? null;
+        const attendanceValue = selectedCourseId
+          ? selectedAttendance?.attendance_rate ?? null
+          : academicStats?.overall_attendance_rate ?? null;
+        const sanctionsValue = selectedCourseId
+          ? selectedDiscipline?.total_sanctions || 0
+          : academicStats?.total_sanctions || 0;
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Asistencia General</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${getAttendanceColor(academicStats?.overall_attendance_rate ?? null)}`}>
-              {academicStats?.overall_attendance_rate?.toFixed(1) || "N/A"}%
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <label htmlFor="course-filter" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                Filtrar por curso:
+              </label>
+              <select
+                id="course-filter"
+                value={selectedCourseId ?? ""}
+                onChange={(e) => setSelectedCourseId(e.target.value ? Number(e.target.value) : null)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Todos los cursos</option>
+                {academicStats?.grades_by_course.map((c) => (
+                  <option key={c.course_id} value={c.course_id}>
+                    {c.course_name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Tasa de asistencia promedio
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sanciones</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">
-              {academicStats?.total_sanctions || 0}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{usersValue}</div>
+                  <p className="text-xs text-muted-foreground">{usersDetail}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Promedio General</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${getGradeColor(gradeValue)}`}>
+                    {gradeValue?.toFixed(2) || "N/A"}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Calificaciones del ciclo activo
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Asistencia General</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${getAttendanceColor(attendanceValue)}`}>
+                    {attendanceValue?.toFixed(1) || "N/A"}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Tasa de asistencia promedio
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Sanciones</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-warning">
+                    {sanctionsValue}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Total en el ciclo activo
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Total en el ciclo activo
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Academic Stats Overview */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -350,59 +401,6 @@ export default function AdminPage() {
         </Card>
       </div>
 
-      {/* Per-Course Summary Cards */}
-      {academicStats && academicStats.grades_by_course.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Resumen por Curso
-            </CardTitle>
-            <CardDescription>Promedio de calificaciones y asistencia por curso</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {academicStats.grades_by_course.map((course) => {
-                const attendanceData = academicStats.attendance_by_course.find(
-                  (a) => a.course_id === course.course_id
-                );
-                return (
-                  <Card key={course.course_id} className="bg-muted/30">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">{course.course_name}</CardTitle>
-                      <CardDescription className="text-xs">
-                        {course.total_students} estudiantes
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Promedio Notas:</span>
-                        <span className={`text-lg font-bold ${getGradeColor(course.average_grade)}`}>
-                          {course.average_grade?.toFixed(2) || "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Asistencia:</span>
-                        <span className={`text-lg font-bold ${getAttendanceColor(attendanceData?.attendance_rate ?? null)}`}>
-                          {attendanceData?.attendance_rate?.toFixed(1) || "N/A"}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <Badge variant="outline" className="text-success border-success">
-                          {course.passing_count} aprob.
-                        </Badge>
-                        <Badge variant="outline" className="text-error border-error">
-                          {course.failing_count} desaprob.
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Grades by Course - Detailed Table */}
       {academicStats && academicStats.grades_by_course.length > 0 && (

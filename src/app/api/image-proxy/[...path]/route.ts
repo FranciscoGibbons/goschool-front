@@ -52,8 +52,12 @@ export async function GET(
     const buffer = await response.arrayBuffer();
     const contentType = response.headers.get('content-type') || 'image/jpeg';
 
-    // Solo permitir content-types de imagen
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    // Permitir content-types de imagen y documentos
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
     const safeContentType = allowedTypes.includes(contentType) ? contentType : 'application/octet-stream';
 
     return new NextResponse(buffer, {

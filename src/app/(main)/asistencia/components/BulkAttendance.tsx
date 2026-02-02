@@ -36,7 +36,7 @@ const PRESENCE_OPTIONS = [
   { value: "present", label: "Presente", color: "bg-success", dotColor: "bg-success" },
   { value: "absent", label: "Ausente", color: "bg-error", dotColor: "bg-error" },
   { value: "late", label: "Tardanza", color: "bg-warning", dotColor: "bg-warning" },
-  { value: "justified", label: "Justificado", color: "bg-primary", dotColor: "bg-primary" },
+  { value: "excused", label: "Justificado", color: "bg-primary", dotColor: "bg-primary" },
 ] as const;
 
 export default function BulkAttendance({ onCancel, onSuccess }: BulkAttendanceProps) {
@@ -229,7 +229,7 @@ export default function BulkAttendance({ onCancel, onSuccess }: BulkAttendancePr
                   <Select
                     value={row.presence}
                     onValueChange={(v) =>
-                      updateRow(row.student_id, v as "present" | "absent" | "late" | "justified")
+                      updateRow(row.student_id, v as "present" | "absent" | "late" | "excused")
                     }
                   >
                     <SelectTrigger className="w-36 h-9">

@@ -115,7 +115,7 @@ export default function AssistanceDisplay({
       present: { label: "Presente", color: "bg-success-muted text-success border-border", icon: Check },
       absent: { label: "Ausente", color: "bg-error-muted text-error border-border", icon: User },
       late: { label: "Tardanza", color: "bg-warning-muted text-warning border-border", icon: Clock },
-      justified: { label: "Justificado", color: "bg-primary/10 text-primary border-border", icon: Calendar },
+      excused: { label: "Justificado", color: "bg-primary/10 text-primary border-border", icon: Calendar },
     };
     return configs[status] || { label: status, color: "bg-surface-muted text-text-secondary border-border", icon: User };
   };
@@ -352,7 +352,7 @@ export default function AssistanceDisplay({
                   <SelectItem value="present">Presente</SelectItem>
                   <SelectItem value="absent">Ausente</SelectItem>
                   <SelectItem value="late">Tardanza</SelectItem>
-                  <SelectItem value="justified">Justificado</SelectItem>
+                  <SelectItem value="excused">Justificado</SelectItem>
                 </SelectContent>
               </Select>
             </div>

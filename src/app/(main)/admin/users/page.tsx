@@ -109,7 +109,7 @@ export default function UsersPage() {
 
   // Edit dialog state
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [editForm, setEditForm] = useState({ email: "", role: "", is_active: true });
+  const [editForm, setEditForm] = useState({ email: "", roles: [] as string[], is_active: true });
   const [isSaving, setIsSaving] = useState(false);
 
   // Delete dialog state
@@ -149,8 +149,20 @@ export default function UsersPage() {
     setEditingUser(user);
     setEditForm({
       email: user.email,
-      role: user.roles[0] || "student",
+      roles: [...user.roles],
       is_active: user.is_active,
+    });
+  };
+
+  const toggleRole = (roleValue: string) => {
+    setEditForm((prev) => {
+      const has = prev.roles.includes(roleValue);
+      return {
+        ...prev,
+        roles: has
+          ? prev.roles.filter((r) => r !== roleValue)
+          : [...prev.roles, roleValue],
+      };
     });
   };
 
@@ -374,22 +386,29 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Rol</Label>
-              <Select
-                value={editForm.role}
-                onValueChange={(value) => setEditForm({ ...editForm, role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
+              <Label>Roles</Label>
+              <div className="flex flex-wrap gap-2">
+                {ROLES.map((role) => {
+                  const selected = editForm.roles.includes(role.value);
+                  return (
+                    <button
+                      key={role.value}
+                      type="button"
+                      onClick={() => toggleRole(role.value)}
+                      className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer border ${
+                        selected
+                          ? `${getRoleBadgeColor(role.value)} border-transparent`
+                          : "bg-muted/40 text-muted-foreground border-dashed border-muted-foreground/30"
+                      }`}
+                    >
                       {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </button>
+                  );
+                })}
+              </div>
+              {editForm.roles.length === 0 && (
+                <p className="text-xs text-destructive">Selecciona al menos un rol</p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Label htmlFor="is_active">Estado</Label>
@@ -413,7 +432,7 @@ export default function UsersPage() {
             <Button variant="outline" onClick={() => setEditingUser(null)}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveEdit} disabled={isSaving}>
+            <Button onClick={handleSaveEdit} disabled={isSaving || editForm.roles.length === 0}>
               {isSaving ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>

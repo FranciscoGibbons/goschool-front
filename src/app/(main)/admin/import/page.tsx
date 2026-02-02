@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { fetchAllPages } from '@/utils/fetchAllPages';
 
-type EntityType = 'students' | 'teachers' | 'fathers' | 'subjects';
+type EntityType = 'students' | 'teachers' | 'fathers' | 'subjects' | 'timetables';
 
 interface Course {
   id: number;
@@ -48,6 +48,7 @@ const tabs: { key: EntityType; label: string }[] = [
   { key: 'teachers', label: 'Docentes' },
   { key: 'fathers', label: 'Padres' },
   { key: 'subjects', label: 'Materias' },
+  { key: 'timetables', label: 'Horarios' },
 ];
 
 const csvTemplates: Record<EntityType, { headers: string[]; example: string[] }> = {
@@ -66,6 +67,10 @@ const csvTemplates: Record<EntityType, { headers: string[]; example: string[] }>
   subjects: {
     headers: ['name', 'course', 'teacher_email'],
     example: ['Matematica', '3-A-secondary-morning', 'profesor1@school.com'],
+  },
+  timetables: {
+    headers: ['subject_name', 'course', 'day', 'start_time', 'end_time'],
+    example: ['Matematica', '3-A-secondary-morning', 'Monday', '08:00', '08:50'],
   },
 };
 
@@ -216,7 +221,7 @@ export default function ImportPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Importar datos</h1>
-          <p className="text-muted-foreground">Importar usuarios y materias desde archivos CSV o Excel</p>
+          <p className="text-muted-foreground">Importar usuarios, materias y horarios desde archivos CSV o Excel</p>
         </div>
       </div>
 
@@ -253,7 +258,7 @@ export default function ImportPage() {
               <p className="text-xs text-muted-foreground">
                 Headers: {csvTemplates[activeTab].headers.join(', ')}
               </p>
-              {(activeTab === 'students' || activeTab === 'subjects') && (
+              {(activeTab === 'students' || activeTab === 'subjects' || activeTab === 'timetables') && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Formato curso: <code className="bg-muted px-1 rounded">year-division-level-shift</code> (ej: 3-A-secondary-morning)
                 </p>
@@ -262,6 +267,16 @@ export default function ImportPage() {
                 <p className="text-xs text-muted-foreground mt-1">
                   En <code className="bg-muted px-1 rounded">teacher_email</code> poner el email del docente que dicta la materia
                 </p>
+              )}
+              {activeTab === 'timetables' && (
+                <>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Dias validos: <code className="bg-muted px-1 rounded">Monday</code>, <code className="bg-muted px-1 rounded">Tuesday</code>, <code className="bg-muted px-1 rounded">Wednesday</code>, <code className="bg-muted px-1 rounded">Thursday</code>, <code className="bg-muted px-1 rounded">Friday</code>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Formato hora: <code className="bg-muted px-1 rounded">HH:MM</code> (ej: 08:00, 13:30). La materia debe existir previamente en el curso indicado.
+                  </p>
+                </>
               )}
               {activeTab === 'fathers' && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -280,7 +295,7 @@ export default function ImportPage() {
           </button>
         </div>
 
-        {(activeTab === 'students' || activeTab === 'subjects') && (
+        {(activeTab === 'students' || activeTab === 'subjects' || activeTab === 'timetables') && (
           <div className="mt-3 pt-3 border-t">
             <p className="text-xs font-medium text-muted-foreground mb-2">Cursos disponibles:</p>
             {coursesLoading ? (
@@ -440,6 +455,9 @@ export default function ImportPage() {
             <Upload className="w-10 h-10 mx-auto text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
               Arrastra un archivo CSV o Excel aqui o
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              Formatos permitidos: .csv, .xlsx
             </p>
             <button
               onClick={() => fileInputRef.current?.click()}

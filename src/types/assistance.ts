@@ -30,7 +30,7 @@ export const PRESENCE_STATUS = {
   PRESENT: "present",
   ABSENT: "absent",
   LATE: "late",
-  JUSTIFIED: "justified"
+  JUSTIFIED: "excused"
 } as const;
 
 export type PresenceStatus = typeof PRESENCE_STATUS[keyof typeof PRESENCE_STATUS];

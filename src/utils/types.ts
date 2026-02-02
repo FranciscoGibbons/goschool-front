@@ -7,12 +7,13 @@ export interface BaseExam {
   readonly created_at: string;
   readonly type:
     | "exam"
-    | "homework" 
+    | "homework"
     | "project"
     | "oral"
     | "remedial"
     | "selfassessable";
   readonly questions?: readonly string[];
+  readonly file_path?: string | null;
 }
 
 export interface SelfAssessableExam extends BaseExam {
@@ -65,6 +66,7 @@ export interface BaseExamForm {
     | "oral"
     | "remedial"
     | "selfassessable";
+  file?: File;
 }
 
 // Formulario para examen autoevaluable

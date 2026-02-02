@@ -80,6 +80,17 @@ export interface WSLeaveChat {
   chat_id: number;
 }
 
+export interface WSEditMessage {
+  type: 'EditMessage';
+  message_id: number;
+  new_message: string;
+}
+
+export interface WSDeleteMessage {
+  type: 'DeleteMessage';
+  message_id: number;
+}
+
 export interface WSPing {
   type: 'Ping';
 }
@@ -91,6 +102,8 @@ export type WSClientMessage =
   | WSMarkAsRead
   | WSJoinChat
   | WSLeaveChat
+  | WSEditMessage
+  | WSDeleteMessage
   | WSPing;
 
 export interface WSNewMessage {
@@ -138,6 +151,20 @@ export interface WSChatRead {
   read_at: string;
 }
 
+export interface WSMessageEdited {
+  type: 'MessageEdited';
+  chat_id: number;
+  message_id: number;
+  new_message: string;
+  edited_at: string;
+}
+
+export interface WSMessageDeleted {
+  type: 'MessageDeleted';
+  chat_id: number;
+  message_id: number;
+}
+
 export interface WSError {
   type: 'Error';
   message: string;
@@ -155,5 +182,7 @@ export type WSServerMessage =
   | WSUserOnline
   | WSUserOffline
   | WSChatRead
+  | WSMessageEdited
+  | WSMessageDeleted
   | WSError
   | WSPong;

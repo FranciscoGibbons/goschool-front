@@ -620,6 +620,17 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
           };
 
           url = `/api/proxy/assessments`;
+        } else if (formData.file && formData.type === "homework") {
+          // Homework with file attachment: use multipart upload
+          const formDataToSend = new FormData();
+          formDataToSend.append("subject", String(Number(formData.subject)));
+          formDataToSend.append("task", formData.task);
+          formDataToSend.append("due_date", formData.due_date);
+          formDataToSend.append("type", formData.type);
+          formDataToSend.append("file", formData.file);
+
+          payload = formDataToSend;
+          url = `/api/proxy/assessments/upload`;
         } else {
           payload = {
             newtask: {
@@ -1234,6 +1245,33 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             </SelectContent>
           </Select>
 
+          {/* File attachment for homework type */}
+          {formData.type === "homework" && (
+            <div>
+              <Label htmlFor="homework_file">Archivo adjunto (opcional)</Label>
+              <Input
+                id="homework_file"
+                type="file"
+                accept=".pdf,.docx"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setFormData({
+                      ...formData,
+                      file,
+                    } as ExamForm);
+                  } else {
+                    const { ...rest } = formData;
+                    setFormData({ ...rest, file: undefined } as ExamForm);
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Formatos permitidos: PDF, DOCX (max. 10MB)
+              </p>
+            </div>
+          )}
+
           {/* Campos adicionales para exámenes autoevaluables */}
           {isSelfAssessableExamForm(formData) && (
             <div className="space-y-6 mt-4">
@@ -1635,6 +1673,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                   <Input
                     id="file"
                     type="file"
+                    accept=".pdf,.docx"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -1645,6 +1684,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                       }
                     }}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Formatos permitidos: PDF, DOCX (max. 10MB)
+                  </p>
                 </div>
               )}
             </div>

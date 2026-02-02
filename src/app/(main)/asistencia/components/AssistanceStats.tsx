@@ -70,7 +70,7 @@ export default function AssistanceStats({
     const present = assistances.filter(a => a.presence === "present").length;
     const absent = assistances.filter(a => a.presence === "absent").length;
     const late = assistances.filter(a => a.presence === "late").length;
-    const justified = assistances.filter(a => a.presence === "justified").length;
+    const justified = assistances.filter(a => a.presence === "excused").length;
 
     return {
       total,
@@ -78,7 +78,7 @@ export default function AssistanceStats({
       absent,
       late,
       justified,
-      presentPercentage: Math.round((present / total) * 100),
+      presentPercentage: Math.round(((present + late * 0.5) / total) * 100),
       absentPercentage: Math.round((absent / total) * 100),
     };
   }, [assistances]);

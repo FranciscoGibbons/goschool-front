@@ -82,11 +82,16 @@ export function ProfileUpload({
       )}
 
 
+      {/* Overlay hint */}
+      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+        JPG, JPEG, PNG
+      </div>
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept=".jpg,.jpeg,.png"
         onChange={handleFileChange}
         className="hidden"
       />
