@@ -585,14 +585,14 @@ export default function ChatPage() {
 
   if (!hydrated) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="fixed inset-0 top-14 bottom-20 lg:top-0 lg:bottom-0 lg:left-64 flex items-center justify-center z-10 bg-background">
         <div className="h-8 w-8 border-4 border-primary border-r-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="fixed inset-0 top-14 bottom-20 lg:top-0 lg:bottom-0 lg:left-64 flex bg-background z-10">
       {/* Sidebar */}
       <div
         className={`${
