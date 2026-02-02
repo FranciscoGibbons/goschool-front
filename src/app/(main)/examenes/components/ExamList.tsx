@@ -34,6 +34,16 @@ import {
   Badge,
 } from "@/components/sacred";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useInView } from "react-intersection-observer";
 import userInfoStore from "@/store/userInfoStore";
 import { useRouter } from "next/navigation";
@@ -65,6 +75,7 @@ export default function ExamList({ exams, role, subjects }: Props) {
   const [editData, setEditData] = useState<Exam | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
   const router = useRouter();
 
@@ -142,8 +153,10 @@ export default function ExamList({ exams, role, subjects }: Props) {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Eliminar esta evaluacion?")) return;
+  const handleDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     setDeletingId(id);
     try {
       await axios.delete(`/api/proxy/assessments/${id}/`, {
@@ -287,7 +300,7 @@ export default function ExamList({ exams, role, subjects }: Props) {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(exam.id)}
+                    onClick={() => setConfirmDeleteId(exam.id)}
                     disabled={deletingId === exam.id}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -308,6 +321,27 @@ export default function ExamList({ exams, role, subjects }: Props) {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={confirmDeleteId !== null} onOpenChange={() => setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar evaluacion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminara esta evaluacion. Esta accion no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Dialog */}
       <Modal open={!!editingExam} onOpenChange={() => setEditingExam(null)}>

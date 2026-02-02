@@ -18,6 +18,16 @@ import {
   ModalTitle,
 } from "@/components/sacred";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChevronLeft, Plus, Pencil, Trash2, Clock } from "lucide-react";
 import axios from "axios";
 
@@ -70,6 +80,7 @@ export default function TimetableDisplay({
   const [showDialog, setShowDialog] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Timetable | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     subject_id: "",
@@ -215,9 +226,10 @@ export default function TimetableDisplay({
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Eliminar este horario?")) return;
-
+  const handleDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     try {
       await axios.delete(`/api/proxy/timetables/${id}/`, {
         withCredentials: true,
@@ -300,7 +312,7 @@ export default function TimetableDisplay({
                                 <Pencil className="h-2.5 w-2.5" />
                               </button>
                               <button
-                                onClick={() => handleDelete(entry.id)}
+                                onClick={() => setConfirmDeleteId(entry.id)}
                                 className="p-1 bg-background rounded shadow-sm hover:bg-destructive hover:text-destructive-foreground"
                               >
                                 <Trash2 className="h-2.5 w-2.5" />
@@ -341,6 +353,27 @@ export default function TimetableDisplay({
         </div>
 
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={confirmDeleteId !== null} onOpenChange={() => setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar horario</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminara este horario. Esta accion no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add/Edit Dialog */}
       <Modal open={showDialog} onOpenChange={setShowDialog}>

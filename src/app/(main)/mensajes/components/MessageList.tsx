@@ -30,6 +30,16 @@ import {
   Textarea,
   NativeSelect,
 } from "@/components/sacred";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import axios from "axios";
 
 interface Message {
@@ -58,6 +68,7 @@ export default function MessageList() {
   const [editMessage, setEditMessage] = useState<Message | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
   const [hasMore, setHasMore] = useState(true);
 
@@ -301,13 +312,15 @@ export default function MessageList() {
   const visibleMessages = filteredMessages.slice(0, visibleCount);
 
   // Función para borrar un mensaje
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Seguro que quieres borrar este mensaje?")) return;
+  const handleDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     setDeletingId(id);
     try {
-              await axios.delete(`/api/proxy/messages/${id}/`, {
-          withCredentials: true,
-        });
+      await axios.delete(`/api/proxy/messages/${id}/`, {
+        withCredentials: true,
+      });
       toast.success("Mensaje borrado");
       setMessages((prev) => prev.filter((msg) => Number(msg.id) !== id));
     } catch {
@@ -460,7 +473,7 @@ export default function MessageList() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => handleDelete(Number(message.id))}
+                        onClick={() => setConfirmDeleteId(Number(message.id))}
                         disabled={deletingId === Number(message.id)}
                         aria-label="Borrar"
                       >
@@ -505,6 +518,27 @@ export default function MessageList() {
           <span>Has visto todos los mensajes</span>
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={confirmDeleteId !== null} onOpenChange={() => setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar mensaje</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminara este mensaje. Esta accion no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Modal - Using Sacred Modal component */}
       <Modal

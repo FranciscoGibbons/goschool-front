@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -19,6 +20,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Shield,
   Activity,
@@ -168,6 +179,7 @@ export default function SuperAdminSecurityPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isRevoking, setIsRevoking] = useState<string | null>(null);
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // New state
@@ -301,8 +313,10 @@ export default function SuperAdminSecurityPage() {
     fetchTenantSessions(1, value);
   };
 
-  const handleRevoke = async (sessionId: string) => {
-    if (!confirm("Are you sure you want to revoke this session?")) return;
+  const handleRevoke = async () => {
+    if (!revokingSessionId) return;
+    const sessionId = revokingSessionId;
+    setRevokingSessionId(null);
     setIsRevoking(sessionId);
     try {
       const res = await fetch(
@@ -317,10 +331,10 @@ export default function SuperAdminSecurityPage() {
         ]);
       } else {
         const msg = await res.json();
-        alert(typeof msg === "string" ? msg : "Failed to revoke session");
+        toast.error(typeof msg === "string" ? msg : "Error al revocar sesion");
       }
     } catch {
-      alert("Failed to revoke session");
+      toast.error("Error al revocar sesion");
     } finally {
       setIsRevoking(null);
     }
@@ -672,7 +686,7 @@ export default function SuperAdminSecurityPage() {
                         variant="destructive"
                         size="sm"
                         disabled={isRevoking === session.session_id}
-                        onClick={() => handleRevoke(session.session_id)}
+                        onClick={() => setRevokingSessionId(session.session_id)}
                       >
                         <XCircle className="h-3 w-3 mr-1" />
                         {isRevoking === session.session_id
@@ -1018,6 +1032,27 @@ export default function SuperAdminSecurityPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Revoke Session Confirmation */}
+      <AlertDialog open={!!revokingSessionId} onOpenChange={() => setRevokingSessionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revocar sesion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta accion cerrara la sesion seleccionada. El usuario tendra que volver a iniciar sesion.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevoke}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Revocar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

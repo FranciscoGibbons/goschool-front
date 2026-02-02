@@ -21,6 +21,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import userInfoStore from "@/store/userInfoStore";
 import type { Assistance, UpdateAssistance } from "../../../../types/assistance";
@@ -50,6 +60,7 @@ export default function AssistanceDisplay({
   const [editingAssistance, setEditingAssistance] = useState<Assistance | null>(null);
   const [editData, setEditData] = useState<UpdateAssistance | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const currentStudentIdRef = useRef<number | undefined>(selectedStudentId);
   const canEdit = userInfo?.role === "admin" || userInfo?.role === "preceptor";
@@ -135,8 +146,10 @@ export default function AssistanceDisplay({
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Eliminar este registro?")) return;
+  const handleDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     await deleteAssistance(id);
   };
 
@@ -264,7 +277,7 @@ export default function AssistanceDisplay({
                                   <Pencil className="h-3.5 w-3.5 text-text-secondary" />
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(assistance.id)}
+                                  onClick={() => setConfirmDeleteId(assistance.id)}
                                   className="p-1.5 rounded hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                 >
                                   <Trash2 className="h-3.5 w-3.5 text-text-secondary" />
@@ -286,6 +299,27 @@ export default function AssistanceDisplay({
           <AssistanceCalendar assistances={assistances} />
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={confirmDeleteId !== null} onOpenChange={() => setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar registro</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminara este registro de asistencia. Esta accion no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingAssistance} onOpenChange={() => { setEditingAssistance(null); setEditData(null); }}>

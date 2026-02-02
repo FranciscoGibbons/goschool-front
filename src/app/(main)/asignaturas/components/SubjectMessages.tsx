@@ -19,6 +19,17 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   Button,
@@ -107,6 +118,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const { userInfo } = userInfoStore();
 
   useEffect(() => {
@@ -196,8 +208,10 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
     document.body.removeChild(link);
   };
 
-  const handleDelete = async (messageId: number) => {
-    if (!confirm("¿Seguro que quieres borrar este mensaje?")) return;
+  const handleDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const messageId = confirmDeleteId;
+    setConfirmDeleteId(null);
     setDeletingId(messageId);
     try {
       await axios.delete(`/api/proxy/subject-messages/${messageId}/`, {
@@ -205,7 +219,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
       });
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
     } catch {
-      alert("Error al borrar el mensaje");
+      toast.error("Error al borrar el mensaje");
     } finally {
       setDeletingId(null);
     }
@@ -242,10 +256,10 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
         );
         setEditingMessage(null);
       } else {
-        alert("Error al actualizar el mensaje");
+        toast.error("Error al actualizar el mensaje");
       }
     } catch {
-      alert("Error de red al actualizar");
+      toast.error("Error de red al actualizar");
     } finally {
       setIsSaving(false);
     }
@@ -322,7 +336,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => handleDelete(message.id)}
+                          onClick={() => setConfirmDeleteId(message.id)}
                           disabled={deletingId === message.id}
                           aria-label="Borrar"
                         >
@@ -404,6 +418,27 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
           ))}
         </div>
       ))}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={confirmDeleteId !== null} onOpenChange={() => setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar mensaje</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminara este mensaje de materia. Esta accion no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Modal - Using Sacred Modal component */}
       <Modal

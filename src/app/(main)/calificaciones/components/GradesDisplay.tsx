@@ -18,6 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -72,6 +82,7 @@ export default function GradesDisplay({ selectedStudentId, academicYearId }: Gra
   const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
   const [editData, setEditData] = useState<Partial<Grade> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const { userInfo } = userInfoStore();
   const currentStudentIdRef = useRef<number | undefined>(selectedStudentId);
@@ -299,9 +310,10 @@ export default function GradesDisplay({ selectedStudentId, academicYearId }: Gra
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Eliminar esta calificacion?")) return;
-
+  const handleDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     try {
       await fetch(`/api/proxy/grades/${id}`, { method: "DELETE", credentials: "include" });
       toast.success("Calificacion eliminada");
@@ -441,7 +453,7 @@ export default function GradesDisplay({ selectedStudentId, academicYearId }: Gra
                           <Pencil className="h-2.5 w-2.5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(grade.id)}
+                          onClick={() => setConfirmDeleteId(grade.id)}
                           className="p-1 bg-background rounded shadow-sm hover:bg-destructive hover:text-destructive-foreground"
                         >
                           <Trash2 className="h-2.5 w-2.5" />
@@ -455,6 +467,27 @@ export default function GradesDisplay({ selectedStudentId, academicYearId }: Gra
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={confirmDeleteId !== null} onOpenChange={() => setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar calificacion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminara esta calificacion. Esta accion no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingGrade} onOpenChange={() => { setEditingGrade(null); setEditData(null); }}>
