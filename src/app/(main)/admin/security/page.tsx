@@ -30,9 +30,6 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  HardDrive,
-  MemoryStick,
-  Gauge,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -51,15 +48,6 @@ interface SecurityOverview {
   total_failed_logins: number;
 }
 
-interface SystemHealth {
-  uploaded_files: number;
-  remainig_space: number;
-  used_space_mb: number;
-  limit_mb: number;
-  used_mb: number;
-  latency: number;
-}
-
 interface TrafficStats {
   window_end: string;
   requests_total: number;
@@ -73,7 +61,6 @@ export default function SecurityPage() {
   const router = useRouter();
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [securityOverview, setSecurityOverview] = useState<SecurityOverview | null>(null);
-  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [trafficStats, setTrafficStats] = useState<TrafficStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingTraffic, setIsLoadingTraffic] = useState(false);
@@ -106,10 +93,9 @@ export default function SecurityPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [systemRes, securityRes, healthRes] = await Promise.all([
+        const [systemRes, securityRes] = await Promise.all([
           fetch("/api/proxy/admin/system/stats", { credentials: "include" }),
           fetch("/api/proxy/admin/security/overview", { credentials: "include" }),
-          fetch("/api/proxy/admin/system/health", { credentials: "include" }),
         ]);
 
         if (!systemRes.ok && systemRes.status === 401) {
@@ -117,15 +103,13 @@ export default function SecurityPage() {
           return;
         }
 
-        const [system, security, health] = await Promise.all([
+        const [system, security] = await Promise.all([
           systemRes.ok ? systemRes.json() : null,
           securityRes.ok ? securityRes.json() : null,
-          healthRes.ok ? healthRes.json() : null,
         ]);
 
         setSystemStats(system);
         setSecurityOverview(security);
-        setSystemHealth(health);
 
         // Fetch initial traffic stats
         await fetchTrafficStats(selectedDate);
@@ -221,11 +205,6 @@ export default function SecurityPage() {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
-  const formatMB = (mb: number) => {
-    if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-    return `${mb} MB`;
-  };
-
   const getFailedLoginsBadge = (count: number) => {
     if (count === 0) return "bg-success-muted text-success";
     if (count < 10) return "bg-warning-muted text-warning";
@@ -297,116 +276,6 @@ export default function SecurityPage() {
                   <p className="text-3xl font-bold">{securityOverview.total_failed_logins}</p>
                   <p className="text-sm text-muted-foreground">Total intentos fallidos</p>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* System Health */}
-      {systemHealth && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gauge className="h-5 w-5" />
-              Salud del Sistema
-            </CardTitle>
-            <CardDescription>
-              Disco, memoria y latencia de base de datos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Disk */}
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                <div className="flex items-center gap-2">
-                  <HardDrive className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-medium">Disco</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Usado</span>
-                    <span className="font-medium">{formatMB(systemHealth.used_space_mb)}</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        systemHealth.remainig_space > 0 && systemHealth.used_space_mb / (systemHealth.used_space_mb + systemHealth.remainig_space) > 0.9
-                          ? "bg-error"
-                          : systemHealth.remainig_space > 0 && systemHealth.used_space_mb / (systemHealth.used_space_mb + systemHealth.remainig_space) > 0.7
-                            ? "bg-warning"
-                            : "bg-success"
-                      }`}
-                      style={{
-                        width: `${systemHealth.remainig_space > 0 ? Math.round((systemHealth.used_space_mb / (systemHealth.used_space_mb + systemHealth.remainig_space)) * 100) : 0}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Disponible</span>
-                    <span className="font-medium">{formatMB(systemHealth.remainig_space)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Archivos subidos</span>
-                    <span className="font-medium">{systemHealth.uploaded_files}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* RAM */}
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                <div className="flex items-center gap-2">
-                  <MemoryStick className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-medium">Memoria RAM</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Usada</span>
-                    <span className="font-medium">{formatMB(systemHealth.used_mb)}</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        systemHealth.limit_mb > 0 && systemHealth.used_mb / systemHealth.limit_mb > 0.9
-                          ? "bg-error"
-                          : systemHealth.limit_mb > 0 && systemHealth.used_mb / systemHealth.limit_mb > 0.7
-                            ? "bg-warning"
-                            : "bg-success"
-                      }`}
-                      style={{
-                        width: `${systemHealth.limit_mb > 0 ? Math.round((systemHealth.used_mb / systemHealth.limit_mb) * 100) : 0}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total</span>
-                    <span className="font-medium">{formatMB(systemHealth.limit_mb)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* DB Latency */}
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                <div className="flex items-center gap-2">
-                  <Database className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-medium">Base de Datos</span>
-                </div>
-                <div className="flex items-center gap-3 mt-2">
-                  <p className="text-4xl font-bold">{systemHealth.latency}</p>
-                  <span className="text-muted-foreground text-sm">ms</span>
-                </div>
-                <p className="text-sm text-muted-foreground">Latencia (SELECT 1)</p>
-                <Badge
-                  className={
-                    systemHealth.latency < 10
-                      ? "bg-success-muted text-success"
-                      : systemHealth.latency < 50
-                        ? "bg-warning-muted text-warning"
-                        : "bg-error-muted text-error"
-                  }
-                >
-                  {systemHealth.latency < 10 ? "Excelente" : systemHealth.latency < 50 ? "Normal" : "Lenta"}
-                </Badge>
               </div>
             </div>
           </CardContent>

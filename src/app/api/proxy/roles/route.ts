@@ -34,6 +34,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract tenant from subdomain (e.g., stella.goschool.ar -> stella)
+    const host = request.headers.get('host') || '';
+    const tenantMatch = host.match(/^([a-z0-9-]+)\.goschool\./);
+    const tenant = tenantMatch ? tenantMatch[1] : (request.headers.get('x-tenant') || '');
+
     // Send role selection to backend with the temp JWT
     // The body should just contain the role (e.g., "admin", "teacher", etc.)
     // Note: roles is at /api/roles/ (not /api/v1/roles/)
@@ -45,6 +50,7 @@ export async function POST(request: NextRequest) {
         'Cookie': `jwt=${jwtCookie.value}`,
         'User-Agent': userAgent,
         'X-Forwarded-For': forwardedFor,
+        ...(tenant ? { 'X-Tenant': tenant } : {}),
       },
     });
 

@@ -120,6 +120,7 @@ export default function CoursesPage() {
     shift: "morning",
     name: "",
     preceptor_id: "",
+    customDivisionLabel: "",
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -158,11 +159,10 @@ export default function CoursesPage() {
     fetchTeachers();
   }, [fetchCourses, fetchTeachers]);
 
-  const generateCourseName = (year: number, division: string, level: string) => {
-    const divLabel = getDivisionLabel(division, level);
+  const generateCourseName = (year: number, division: string, level: string, customLabel?: string) => {
+    const divLabel = customLabel || getDivisionLabel(division, level);
     const levelLabel = level === "primary" ? "Primaria" : "Secundaria";
-    const yearNum = level === "primary" ? year : year;
-    return `${yearNum}° ${levelLabel} ${divLabel}`;
+    return `${year}° ${levelLabel} ${divLabel}`;
   };
 
   const handleCreate = () => {
@@ -175,12 +175,21 @@ export default function CoursesPage() {
       shift: "morning",
       name: defaultName,
       preceptor_id: "",
+      customDivisionLabel: "",
     });
     setDialogOpen(true);
   };
 
   const handleEdit = (course: Course) => {
     setEditingCourse(course);
+    // Try to extract custom label: if name follows pattern "X° Level LABEL"
+    const defaultDiv = getDivisionLabel(course.division, course.level);
+    const prefix = `${course.year}° ${course.level === "primary" ? "Primaria" : "Secundaria"} `;
+    const extractedLabel = course.name.startsWith(prefix)
+      ? course.name.slice(prefix.length)
+      : "";
+    const isCustom = extractedLabel && extractedLabel !== defaultDiv;
+
     setForm({
       year: course.year,
       division: course.division,
@@ -188,6 +197,7 @@ export default function CoursesPage() {
       shift: course.shift,
       name: course.name,
       preceptor_id: course.preceptor_id?.toString() || "",
+      customDivisionLabel: isCustom ? extractedLabel : "",
     });
     setDialogOpen(true);
   };
@@ -195,12 +205,18 @@ export default function CoursesPage() {
   const handleFormChange = (field: string, value: string | number) => {
     const newForm = { ...form, [field]: value };
 
-    // Auto-generate name when year, division, or level changes
-    if (field === "year" || field === "division" || field === "level") {
+    // Reset custom label when level changes (different default labels)
+    if (field === "level") {
+      newForm.customDivisionLabel = "";
+    }
+
+    // Auto-generate name when year, division, level, or custom label changes
+    if (field === "year" || field === "division" || field === "level" || field === "customDivisionLabel") {
       const year = field === "year" ? value as number : newForm.year;
       const division = field === "division" ? value as string : newForm.division;
       const level = field === "level" ? value as string : newForm.level;
-      newForm.name = generateCourseName(year, division, level);
+      const custom = field === "customDivisionLabel" ? value as string : newForm.customDivisionLabel;
+      newForm.name = generateCourseName(year, division, level, custom || undefined);
     }
 
     setForm(newForm);
@@ -494,11 +510,24 @@ export default function CoursesPage() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="customDivisionLabel">Nombre personalizado de la division (opcional)</Label>
+              <Input
+                id="customDivisionLabel"
+                value={form.customDivisionLabel}
+                onChange={(e) => handleFormChange("customDivisionLabel", e.target.value)}
+                placeholder={getDivisionLabel(form.division, form.level)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Por defecto: <strong>{getDivisionLabel(form.division, form.level)}</strong>. Deja vacio para usar el nombre por defecto.
+              </p>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="name">Nombre del Curso *</Label>
               <Input
                 id="name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                disabled
               />
             </div>
             <div className="space-y-2">

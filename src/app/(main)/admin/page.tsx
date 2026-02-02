@@ -36,6 +36,8 @@ import {
   FileText,
   ClipboardCheck,
   UserCheck,
+  Upload,
+  UserCog,
 } from "lucide-react";
 import Link from "next/link";
 import { FormsObj } from "@/utils/types";
@@ -199,11 +201,25 @@ export default function AdminPage() {
       color: "text-icon-stats",
     },
     {
+      title: "Importar CSV",
+      description: "Importar usuarios y materias desde CSV",
+      href: "/admin/import",
+      icon: Upload,
+      color: "text-icon-academic",
+    },
+    {
       title: "Seguridad y Sistema",
       description: "Monitoreo y estadísticas técnicas",
       href: "/admin/security",
       icon: Shield,
       color: "text-icon-settings",
+    },
+    {
+      title: "Suplentes",
+      description: "Administrar suplencias de docentes y preceptores",
+      href: "/admin/replacements",
+      icon: UserCog,
+      color: "text-icon-users",
     },
   ];
 

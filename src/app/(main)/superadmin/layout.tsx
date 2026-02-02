@@ -7,6 +7,7 @@ import { Building2, LayoutDashboard, LogOut, Shield } from 'lucide-react';
 const menuItems = [
   { name: 'Dashboard', href: '/superadmin', icon: LayoutDashboard },
   { name: 'Schools', href: '/superadmin/schools', icon: Building2 },
+  { name: 'Security', href: '/superadmin/security', icon: Shield },
 ];
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
