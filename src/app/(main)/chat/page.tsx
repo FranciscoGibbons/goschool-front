@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -13,6 +13,11 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
+  X,
+  FileIcon,
+  Loader2,
+  Check,
+  CheckCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +36,16 @@ import { SecuritySanitizer } from '@/lib/security';
 import type { Chat, ChatMessage, PubUser, TypingUser } from '@/types/chat';
 
 // ============ HELPER FUNCTIONS ============
+
+/** Convert a backend upload URL to the frontend image-proxy path.
+ *  e.g. "https://127.0.0.1/./uploads/chat_files/uuid.jpg" → "/api/image-proxy/uploads/chat_files/uuid.jpg"
+ *  Falls back to original URL if pattern doesn't match. */
+function toImageProxy(url: string): string {
+  // Extract the "uploads/..." portion from the URL
+  const match = url.match(/uploads\/chat_files\/[^?#]+/);
+  if (match) return `/api/image-proxy/${match[0]}`;
+  return url;
+}
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return '??';
@@ -89,12 +104,17 @@ function ChatList({
             chat.id === currentChatId ? 'bg-accent' : ''
           }`}
         >
-          <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src={chat.photo || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-              {chat.chat_type === 'group' ? <Users className="h-4 w-4" /> : getInitials(chat.name)}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative shrink-0">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={chat.photo || undefined} />
+              <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                {chat.chat_type === 'group' ? <Users className="h-4 w-4" /> : getInitials(chat.name)}
+              </AvatarFallback>
+            </Avatar>
+            {chat.chat_type === 'direct' && chat.is_online && (
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
+            )}
+          </div>
           <div className="flex-1 min-w-0 text-left">
             <div className="flex justify-between items-baseline">
               <span className="font-medium truncate">{chat.name}</span>
@@ -146,15 +166,15 @@ function MessageBubble({
           }`}
         >
           {message.type_message === 'image' && message.file_path && (() => {
-            const safeUrl = SecuritySanitizer.sanitizeUrl(message.file_path);
-            return safeUrl !== '/' ? (
+            const proxiedUrl = toImageProxy(message.file_path);
+            return (
               <img
-                src={safeUrl}
-                alt="Imagen"
-                className="max-w-full rounded mb-2 cursor-pointer"
-                onClick={() => window.open(safeUrl, '_blank')}
+                src={proxiedUrl}
+                alt={message.file_name || 'Imagen'}
+                className="w-48 h-48 object-cover rounded mb-2 cursor-pointer"
+                onClick={() => window.open(proxiedUrl, '_blank')}
               />
-            ) : null;
+            );
           })()}
           {message.type_message === 'file' && message.file_path && (() => {
             const safeUrl = SecuritySanitizer.sanitizeUrl(message.file_path);
@@ -170,11 +190,16 @@ function MessageBubble({
               </a>
             ) : null;
           })()}
-          {message.message && (
+          {message.type_message === 'text' && message.message && (
             <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
           )}
-          <div className={`text-xs mt-1 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+          <div className={`text-xs mt-1 flex items-center gap-1 ${isOwn ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'}`}>
             {formatTime(message.created_at)}
+            {isOwn && (
+              message.is_read
+                ? <CheckCheck className="h-3.5 w-3.5 text-blue-300" />
+                : <Check className="h-3.5 w-3.5" />
+            )}
           </div>
         </div>
       </div>
@@ -203,13 +228,19 @@ function TypingIndicator({ users }: { users: TypingUser[] }) {
 
 // ============ CHAT WINDOW COMPONENT ============
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ACCEPTED_FILE_TYPES = 'image/jpeg,image/png,image/gif,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
 function ChatWindow({
   chat,
   messages,
   typingUsers,
   onBack,
   onSendMessage,
+  onUploadFile,
   onLoadMore,
+  onTypingStart,
+  onTypingStop,
   isConnected,
 }: {
   chat: Chat;
@@ -217,25 +248,116 @@ function ChatWindow({
   typingUsers: TypingUser[];
   onBack: () => void;
   onSendMessage: (text: string) => void;
+  onUploadFile: (file: File) => Promise<void>;
   onLoadMore: () => void;
+  onTypingStart: () => void;
+  onTypingStop: () => void;
   isConnected: boolean;
 }) {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
   const { userInfo } = userInfoStore();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+
+  // Clean up typing timer on unmount or chat change
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      if (isTypingRef.current) {
+        onTypingStop();
+        isTypingRef.current = false;
+      }
+    };
+  }, [onTypingStop]);
+
+  const handleTextChange = (value: string) => {
+    setText(value);
+
+    if (value.trim()) {
+      if (!isTypingRef.current) {
+        isTypingRef.current = true;
+        onTypingStart();
+      }
+      // Reset the stop timer on every keystroke
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => {
+        isTypingRef.current = false;
+        onTypingStop();
+      }, 2000);
+    } else {
+      // Input cleared
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        onTypingStop();
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      }
+    }
+  };
+
   const handleSend = async () => {
     if (!text.trim() || isLoading) return;
+    // Stop typing indicator on send
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      onTypingStop();
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    }
     setIsLoading(true);
     onSendMessage(text.trim());
     setText('');
     setIsLoading(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      alert('El archivo es muy grande. Maximo 10MB.');
+      return;
+    }
+
+    setSelectedFile(file);
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPreviewUrl(ev.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(null);
+    }
+
+    // Reset the input so the same file can be re-selected
+    e.target.value = '';
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || isUploading) return;
+    setIsUploading(true);
+    try {
+      await onUploadFile(selectedFile);
+    } finally {
+      setIsUploading(false);
+      clearSelectedFile();
+    }
   };
 
   const handleScroll = () => {
@@ -260,10 +382,16 @@ function ChatWindow({
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">{chat.name}</div>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
-            {isConnected ? (
-              <><Wifi className="h-3 w-3 text-status-online" /> Conectado</>
+            {chat.chat_type === 'direct' ? (
+              chat.is_online ? (
+                <><span className="h-2 w-2 rounded-full bg-green-500 inline-block" /> En linea</>
+              ) : chat.last_seen_at ? (
+                <>Ultima vez {formatRelative(chat.last_seen_at)}</>
+              ) : (
+                <>Desconectado</>
+              )
             ) : (
-              <><WifiOff className="h-3 w-3" /> Desconectado</>
+              <><Users className="h-3 w-3" /> Grupo</>
             )}
           </div>
         </div>
@@ -298,11 +426,68 @@ function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* File Preview Bar */}
+      {selectedFile && (
+        <div className="px-3 py-2 border-t border-border bg-card flex items-center gap-3">
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="h-16 w-16 object-cover rounded border border-border"
+            />
+          ) : (
+            <div className="h-16 w-16 flex items-center justify-center rounded border border-border bg-muted">
+              <FileIcon className="h-6 w-6 text-muted-foreground" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+            <p className="text-xs text-muted-foreground">
+              {(selectedFile.size / 1024).toFixed(0)} KB
+            </p>
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={clearSelectedFile}
+            disabled={isUploading}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            onClick={handleUpload}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 border-t border-border bg-card flex gap-2 shrink-0">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_FILE_TYPES}
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          <Paperclip className="h-5 w-5" />
+        </Button>
         <Input
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={e => handleTextChange(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="Escribe un mensaje..."
           className="flex-1"
@@ -518,8 +703,8 @@ export default function ChatPage() {
     setCurrentChat,
   } = useChatStore();
 
-  const { fetchChats, fetchMessages, sendMessage, markAsRead } = useChat();
-  const { sendMessage: wsSendMessage, joinChat, reconnect } = useWebSocket();
+  const { fetchChats, fetchMessages, sendMessage, uploadFile, markAsRead } = useChat();
+  const { sendMessage: wsSendMessage, joinChat, reconnect, startTyping, stopTyping } = useWebSocket();
 
   // Hydration
   useEffect(() => {
@@ -562,6 +747,24 @@ export default function ChatPage() {
       });
     }
   };
+
+  const handleTypingStart = useCallback(() => {
+    if (currentChatId) startTyping(currentChatId);
+  }, [currentChatId, startTyping]);
+
+  const handleTypingStop = useCallback(() => {
+    if (currentChatId) stopTyping(currentChatId);
+  }, [currentChatId, stopTyping]);
+
+  const handleUploadFile = useCallback(async (file: File) => {
+    if (!currentChatId) return;
+    const success = await uploadFile(currentChatId, file);
+    if (success && !isConnected) {
+      // WebSocket will handle adding the message if connected
+      // Fallback: re-fetch messages if WS is down
+      fetchMessages(currentChatId);
+    }
+  }, [currentChatId, uploadFile, isConnected, fetchMessages]);
 
   const handleLoadMore = () => {
     if (currentChatId) {
@@ -636,7 +839,10 @@ export default function ChatPage() {
             typingUsers={currentTyping}
             onBack={handleBack}
             onSendMessage={handleSendMessage}
+            onUploadFile={handleUploadFile}
             onLoadMore={handleLoadMore}
+            onTypingStart={handleTypingStart}
+            onTypingStop={handleTypingStop}
             isConnected={isConnected}
           />
         ) : (

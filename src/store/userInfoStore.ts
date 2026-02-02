@@ -222,9 +222,10 @@ const userInfoStore = create<UserInfoStore>()(
               });
             }
 
-            const userInfo: UserInfo = { 
-              ...processedData, 
-              role: userRole, 
+            const userInfo: UserInfo = {
+              ...processedData,
+              id: processedData.user_id,
+              role: userRole,
               photo: profilePicture,
               children: processedChildren,
               // Mantener name y last_name para compatibilidad con componentes existentes

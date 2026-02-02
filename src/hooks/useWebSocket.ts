@@ -130,7 +130,11 @@ export function useWebSocket() {
           const fullMessage: ChatMessage = { ...msg.message, sender: msg.sender };
           store.addMessage(msg.chat_id, fullMessage);
           store.updateChat(msg.chat_id, {
-            last_message: msg.message.message || '[Archivo]',
+            last_message: msg.message.type_message === 'image'
+              ? '[Imagen]'
+              : msg.message.type_message === 'file'
+                ? '[Archivo]'
+                : msg.message.message || '[Archivo]',
             last_message_time: msg.message.created_at,
           });
           if (msg.chat_id !== currentChatIdRef.current) {
@@ -147,15 +151,40 @@ export function useWebSocket() {
           break;
         case 'UserOnline':
           store.setUserOnline(msg.user_id);
+          store.updateChatOnlineStatus(msg.user_id, true);
           break;
         case 'UserOffline':
           store.setUserOffline(msg.user_id);
+          store.updateChatOnlineStatus(msg.user_id, false, msg.last_seen_at);
+          break;
+        case 'ChatRead':
+          // Someone read all messages in a chat — mark messages not from the reader as read
+          store.markChatMessagesRead(msg.chat_id, msg.reader_id);
+          break;
+        case 'MessageRead':
+          // Individual message read — find which chat has this message and mark it
+          for (const [chatId, msgs] of Object.entries(store.messages)) {
+            if (msgs.some(m => m.id === msg.message_id)) {
+              const cid = Number(chatId);
+              const chatMsgs = store.messages[cid];
+              if (chatMsgs) {
+                useChatStore.setState((state) => ({
+                  messages: {
+                    ...state.messages,
+                    [cid]: state.messages[cid].map(m =>
+                      m.id === msg.message_id ? { ...m, is_read: true } : m
+                    ),
+                  },
+                }));
+              }
+              break;
+            }
+          }
           break;
         case 'Error':
           console.error('[WS] Server error:', msg.message);
           break;
         case 'Pong':
-        case 'MessageRead':
           break;
       }
     } catch (err) {
@@ -193,12 +222,17 @@ export function useWebSocket() {
     return sendWs({ type: 'JoinChat', chat_id: chatId });
   }, []);
 
+  const markAsRead = useCallback((messageId: number) => {
+    return sendWs({ type: 'MarkAsRead', message_id: messageId });
+  }, []);
+
   return {
     send: sendWs,
     sendMessage,
     startTyping,
     stopTyping,
     joinChat,
+    markAsRead,
     reconnect: reconnectWs,
   };
 }

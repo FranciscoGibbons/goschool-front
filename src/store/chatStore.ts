@@ -31,6 +31,9 @@ interface ChatStore {
   incrementUnread: (chatId: number) => void;
   resetUnread: (chatId: number) => void;
 
+  markChatMessagesRead: (chatId: number, readerId: number) => void;
+  updateChatOnlineStatus: (userId: number, isOnline: boolean, lastSeenAt?: string) => void;
+
   setConnected: (connected: boolean) => void;
   setLoading: (loading: boolean) => void;
 
@@ -116,6 +119,27 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     chats: state.chats.map(c =>
       c.id === chatId ? { ...c, unread_count: 0 } : c
     )
+  })),
+
+  markChatMessagesRead: (chatId, readerId) => set((state) => {
+    const chatMessages = state.messages[chatId];
+    if (!chatMessages) return state;
+    return {
+      messages: {
+        ...state.messages,
+        [chatId]: chatMessages.map(m =>
+          m.sender_id !== readerId ? { ...m, is_read: true } : m
+        ),
+      },
+    };
+  }),
+
+  updateChatOnlineStatus: (userId, isOnline, lastSeenAt) => set((state) => ({
+    chats: state.chats.map(c =>
+      c.chat_type === 'direct' && c.other_user_id === userId
+        ? { ...c, is_online: isOnline, ...(lastSeenAt !== undefined ? { last_seen_at: lastSeenAt } : {}) }
+        : c
+    ),
   })),
 
   setConnected: (connected) => set({ isConnected: connected }),

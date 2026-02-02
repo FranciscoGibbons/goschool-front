@@ -13,6 +13,8 @@ export interface Chat {
   last_message_time: string | null;
   unread_count: number;
   is_online: boolean;
+  other_user_id: number | null;
+  last_seen_at: string | null;
 }
 
 export interface ChatMessage {
@@ -28,6 +30,7 @@ export interface ChatMessage {
   updated_at: string;
   reply_to_id: number | null;
   is_deleted: boolean;
+  is_read: boolean;
   sender?: PubUser;
 }
 
@@ -125,6 +128,14 @@ export interface WSUserOnline {
 export interface WSUserOffline {
   type: 'UserOffline';
   user_id: number;
+  last_seen_at: string;
+}
+
+export interface WSChatRead {
+  type: 'ChatRead';
+  chat_id: number;
+  reader_id: number;
+  read_at: string;
 }
 
 export interface WSError {
@@ -143,5 +154,6 @@ export type WSServerMessage =
   | WSUserStoppedTyping
   | WSUserOnline
   | WSUserOffline
+  | WSChatRead
   | WSError
   | WSPong;
