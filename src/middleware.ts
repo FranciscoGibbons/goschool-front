@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Rutas que requieren autenticación - centralizadas para fácil mantenimiento
+// Rutas que requieren autenticación (solo con subdominio)
 const PROTECTED_ROUTES = [
   '/dashboard',
   '/asignaturas',
@@ -18,52 +18,41 @@ const PROTECTED_ROUTES = [
 // Rutas públicas que no requieren autenticación
 const PUBLIC_ROUTES = [
   '/login',
+  '/superadmin-login',
   '/api/proxy/login',
   '/api/proxy/roles',
   '/api/proxy/verify_token',
   '/api/proxy/verify-token',
+  '/api/proxy/superadmin',
   '/_next',
   '/favicon.ico',
   '/images',
   '/public'
 ] as const;
 
-// Función para verificar token usando el endpoint existente
-async function verifyTokenWithBackend(request: NextRequest): Promise<boolean> {
-  try {
-    const cookieHeader = request.headers.get('cookie');
-    if (!cookieHeader) return false;
+// Rutas permitidas sin subdominio (landing + superadmin)
+const NO_SUBDOMAIN_ALLOWED = [
+  '/superadmin-login',
+  '/superadmin',
+  '/_next',
+  '/favicon.ico',
+  '/images',
+  '/public',
+  '/api/proxy/superadmin',
+] as const;
 
-    // Hacer llamada interna al endpoint de verificación (corregido: usar underscore)
-    const verifyUrl = new URL('/api/proxy/verify_token/', request.url);
-    const response = await fetch(verifyUrl, {
-      method: 'GET',
-      headers: {
-        'Cookie': cookieHeader,
-        'Content-Type': 'application/json'
-      },
-      // Agregar timeout más corto
-      signal: AbortSignal.timeout(5000)
-    });
-
-    return response.ok;
-  } catch (error) {
-    console.error('Error en middleware verificando token:', error);
-    return false;
-  }
+function getSubdomain(host: string): string | null {
+  const match = host.match(/^([a-z0-9-]+)\.goschool\./);
+  return match ? match[1] : null;
 }
 
 // Headers de seguridad
 function addSecurityHeaders(response: NextResponse): NextResponse {
-  // Prevenir ataques XSS
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
-  
-  // Referrer policy
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
-  // Content Security Policy
+
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost';
   response.headers.set(
     'Content-Security-Policy',
@@ -75,14 +64,12 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     `connect-src 'self' ${backendUrl}; ` +
     "frame-ancestors 'none';"
   );
-  
-  // Strict Transport Security (HSTS)
+
   response.headers.set(
     'Strict-Transport-Security',
     'max-age=31536000; includeSubDomains; preload'
   );
-  
-  // Permissions Policy
+
   response.headers.set(
     'Permissions-Policy',
     'camera=(), microphone=(), geolocation=(), interest-cohort=()'
@@ -91,72 +78,66 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+  const host = request.headers.get('host') || '';
+  const subdomain = getSubdomain(host);
+
+  // --- Sin subdominio: solo landing + superadmin ---
+  if (!subdomain) {
+    // Permitir la raíz (landing page)
+    if (pathname === '/') {
+      const response = NextResponse.next();
+      return addSecurityHeaders(response);
+    }
+
+    // Permitir rutas de superadmin y estáticos
+    if (NO_SUBDOMAIN_ALLOWED.some(route => pathname.startsWith(route))) {
+      const response = NextResponse.next();
+      return addSecurityHeaders(response);
+    }
+
+    // Todo lo demás sin subdominio → redirect a landing
+    const landingUrl = new URL('/', request.url);
+    const response = NextResponse.redirect(landingUrl);
+    return addSecurityHeaders(response);
+  }
+
+  // --- Con subdominio: comportamiento normal de la app escolar ---
+
   // Permitir rutas públicas sin verificación
   if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
     const response = NextResponse.next();
     return addSecurityHeaders(response);
   }
-  
+
   // Verificar si la ruta actual requiere autenticación
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => 
+  const isProtectedRoute = PROTECTED_ROUTES.some(route =>
     pathname.startsWith(route)
   );
-  
+
   if (isProtectedRoute) {
-    // Obtener la cookie JWT
     const jwtCookie = request.cookies.get('jwt');
-    
-    // Si no hay token, redirigir a login
+
     if (!jwtCookie?.value) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('from', pathname);
       const response = NextResponse.redirect(loginUrl);
       return addSecurityHeaders(response);
     }
-    
-    // Verificar el token con el backend usando el endpoint correcto
-    const isValidToken = await verifyTokenWithBackend(request);
-    if (!isValidToken) {
-      // Token inválido, limpiar cookie y redirigir
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('from', pathname);
-      loginUrl.searchParams.set('expired', 'true');
-      const response = NextResponse.redirect(loginUrl);
-      
-      // Limpiar la cookie JWT inválida
-      response.cookies.set('jwt', '', {
-        expires: new Date(0),
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-      
-      return addSecurityHeaders(response);
-    }
-    
-    // Token válido, continuar
+
+    // Cookie exists — actual token validation is handled by AuthProvider client-side
     const response = NextResponse.next();
     return addSecurityHeaders(response);
   }
-  
-  // Para rutas no protegidas, solo añadir headers de seguridad
+
+  // Para rutas no protegidas con subdominio, solo añadir headers
   const response = NextResponse.next();
   return addSecurityHeaders(response);
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes) - excepto /api/proxy que necesita verificación especial
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
   ],
 }

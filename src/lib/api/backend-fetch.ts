@@ -12,6 +12,7 @@ interface BackendFetchOptions {
   headers?: Record<string, string>;
   body?: unknown | FormData;
   cookie?: string;
+  tenant?: string;
 }
 
 interface BackendFetchResult<T = unknown> {
@@ -36,7 +37,7 @@ export async function backendFetch<T = unknown>(
   endpoint: string,
   options: BackendFetchOptions = {}
 ): Promise<BackendFetchResult<T>> {
-  const { method = 'GET', headers = {}, body, cookie } = options;
+  const { method = 'GET', headers = {}, body, cookie, tenant } = options;
 
   // Extraer JWT de la cookie y enviarlo como Bearer token
   const token = cookie ? extractJwtFromCookie(cookie) : null;
@@ -45,6 +46,8 @@ export async function backendFetch<T = unknown>(
     ...headers,
     // Enviar como Authorization: Bearer en lugar de Cookie
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // Pasar tenant si está disponible
+    ...(tenant ? { 'X-Tenant': tenant } : {}),
   };
 
   // Add Content-Type for JSON body (not FormData)

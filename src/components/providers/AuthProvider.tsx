@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast } from "sonner";
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/login", "/reset-password", "/request-reset-password", "/roles"];
+const PUBLIC_ROUTES = ["/login", "/reset-password", "/request-reset-password", "/roles", "/superadmin-login", "/superadmin"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();

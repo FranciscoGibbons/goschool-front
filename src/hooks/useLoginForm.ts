@@ -62,10 +62,22 @@ export const useLoginForm = (): UseLoginFormReturn => {
         return res.data;
       } catch (error) {
         console.error("Login error:", error);
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          throw new Error("Credenciales inválidas");
+        if (axios.isAxiosError(error) && error.response) {
+          const status = error.response.status;
+          const data = error.response.data;
+          const msg = typeof data === 'string' ? data : data?.message || data?.error || '';
+
+          if (msg.includes("School not found") || msg.includes("Missing tenant")) {
+            throw new Error("Colegio no encontrado. Verifica que la direccion sea correcta.");
+          }
+          if (msg.includes("School is inactive")) {
+            throw new Error("Este colegio se encuentra desactivado.");
+          }
+          if (status === 401) {
+            throw new Error("Credenciales invalidas");
+          }
         }
-        throw new Error("Error al iniciar sesión");
+        throw new Error("Error al iniciar sesion. Intenta de nuevo mas tarde.");
       }
     },
     []

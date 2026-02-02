@@ -42,6 +42,11 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || '';
     const forwardedFor = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '';
 
+    // Extract tenant from the Host header (subdomain)
+    const host = request.headers.get('host') || '';
+    const tenantMatch = host.match(/^([a-z0-9-]+)\.goschool\./);
+    const tenant = tenantMatch ? tenantMatch[1] : (request.headers.get('x-tenant') || '');
+
     // Llamada directa al backend (sin usar backendFetch porque el login no necesita auth)
     // Note: login is at /api/login/ (not /api/v1/login/)
     const response = await axios.post(`${BACKEND_URL}/api/login/`, body, {
@@ -51,12 +56,14 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'User-Agent': userAgent,
         'X-Forwarded-For': forwardedFor,
+        ...(tenant ? { 'X-Tenant': tenant } : {}),
       },
     });
 
-    // Si el login falló, devolver el error
+    // Si el login falló, devolver el error con mensaje legible
     if (response.status !== 200) {
-      return NextResponse.json(response.data, { status: response.status });
+      const errorMsg = typeof response.data === 'string' ? response.data : response.data?.message || 'Login failed';
+      return NextResponse.json({ error: errorMsg }, { status: response.status });
     }
 
     // Extraer el token del Set-Cookie que devuelve el backend
