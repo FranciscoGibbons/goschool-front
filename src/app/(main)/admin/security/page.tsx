@@ -422,12 +422,13 @@ export default function SecurityPage() {
               </TableHeader>
               <TableBody>
                 {trafficStats.map((stat) => {
-                  const date = new Date(stat.window_end);
-                  const hour = date.getHours();
+                  const end = new Date(stat.window_end);
+                  const start = new Date(end.getTime() - 15 * 60 * 1000);
+                  const fmt = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                   return (
                     <TableRow key={stat.window_end}>
                       <TableCell className="font-medium">
-                        {String(hour).padStart(2, '0')}:00 - {String(hour).padStart(2, '0')}:59
+                        {fmt(start)} - {fmt(end)}
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline">{stat.requests_total}</Badge>
