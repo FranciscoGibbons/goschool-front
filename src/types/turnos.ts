@@ -1,119 +1,40 @@
-// ============================================================================
-// TEACHER AVAILABILITY
-// ============================================================================
-
-export interface TeacherAvailability {
+export interface MeetingRequestWithNames {
   id: number;
-  teacher_id: number;
-  date: string;
-  start_time: string;
-  end_time: string;
-  slot_duration_minutes: number;
+  requester_id: number;
+  requester_name: string;
+  receiver_id: number;
+  receiver_name: string;
+  student_id: number;
+  student_name: string;
+  subject: string;
+  status: string;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
   location: string | null;
-  is_virtual: boolean;
-  meeting_link: string | null;
+  cancelled_reason: string | null;
   created_at: string;
 }
 
-export interface NewTeacherAvailability {
-  date: string;
-  start_time: string;
-  end_time: string;
-  slot_duration_minutes?: number;
-  location?: string;
-  is_virtual?: boolean;
-  meeting_link?: string;
-}
-
-export interface UpdateTeacherAvailability {
-  date?: string;
-  start_time?: string;
-  end_time?: string;
-  slot_duration_minutes?: number;
-  location?: string;
-  is_virtual?: boolean;
-  meeting_link?: string;
-}
-
-// ============================================================================
-// BLOCKED SLOTS
-// ============================================================================
-
-export interface TeacherBlockedSlot {
-  id: number;
-  teacher_id: number;
-  date: string;
-  start_time: string;
-  end_time: string;
-  reason: string | null;
-}
-
-export interface NewTeacherBlockedSlot {
-  date: string;
-  start_time: string;
-  end_time: string;
-  reason?: string;
-}
-
-// ============================================================================
-// AVAILABLE SLOTS (computed)
-// ============================================================================
-
-export interface AvailableSlot {
-  date: string;
-  start_time: string;
-  end_time: string;
-  availability_id: number;
-  is_booked: boolean;
-  location: string | null;
-  is_virtual: boolean;
-  meeting_link: string | null;
-}
-
-// ============================================================================
-// BOOKINGS
-// ============================================================================
-
-export interface MeetingBookingWithNames {
-  id: number;
-  parent_name: string;
-  student_name: string;
-  teacher_name: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  location: string | null;
-  is_virtual: boolean;
-  meeting_link: string | null;
-  teacher_notes: string | null;
-  cancelled_reason: string | null;
-}
-
-export interface NewMeetingBooking {
-  availability_id: number;
+export interface NewMeetingRequest {
+  receiver_id: number;
   student_id: number;
-  teacher_id: number;
-  date: string;
-  start_time: string;
+  subject: string;
 }
 
-export interface CancelMeetingBooking {
+export interface AcceptMeetingRequest {
+  scheduled_date: string;
+  scheduled_time: string;
+  location?: string;
+}
+
+export interface CancelMeetingRequest {
   reason?: string;
 }
 
-export interface MeetingNotes {
-  notes: string;
-}
-
-// ============================================================================
-// FILTERS
-// ============================================================================
-
-export interface AvailabilityFilter {
-  teacher_id?: number;
-}
-
-export interface MeetingBookingFilter {
-  teacher_id?: number;
+export interface MeetingRequestFilter {
+  meeting_id?: number;
+  requester_id?: number;
+  receiver_id?: number;
+  student_id?: number;
+  status?: string;
 }

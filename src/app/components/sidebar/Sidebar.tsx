@@ -31,8 +31,8 @@ const menuItems = [
   { name: "Conducta", icon: Users, href: "/conducta" },
   { name: "Horario", icon: Clock, href: "/horario" },
   { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia" },
-  { name: "Cuaderno", icon: BookMarked, href: "/cuaderno" },
-  { name: "Turnos", icon: CalendarClock, href: "/turnos" },
+  { name: "Observaciones", icon: BookMarked, href: "/cuaderno" },
+  { name: "Reuniones", icon: CalendarClock, href: "/turnos" },
 ];
 
 const adminMenuItems = [
