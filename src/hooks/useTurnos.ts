@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import type {
   MeetingRequestWithNames,
   NewMeetingRequest,
-  AcceptMeetingRequest,
   CancelMeetingRequest,
   MeetingRequestFilter,
 } from "../types/turnos";
@@ -73,12 +72,10 @@ export function useMeetingRequests(filters?: MeetingRequestFilter, initialPagina
     }
   }, [fetchRequests]);
 
-  const acceptRequest = useCallback(async (id: number, data: AcceptMeetingRequest) => {
+  const acceptRequest = useCallback(async (id: number) => {
     try {
       const res = await fetch(`/api/proxy/turnos/${id}/accept`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error("Error al aceptar solicitud");
       toast.success("Solicitud aceptada");

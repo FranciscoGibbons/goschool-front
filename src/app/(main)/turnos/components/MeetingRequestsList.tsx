@@ -6,8 +6,6 @@ import { useMeetingRequests } from "@/hooks/useTurnos";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { MeetingRequestWithNames } from "@/types/turnos";
@@ -32,26 +30,11 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
 
 export default function MeetingRequestsList({ userId }: Props) {
   const { requests, isLoading, acceptRequest, cancelRequest, pagination, nextPage, prevPage } = useMeetingRequests();
-  const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
-  const [location, setLocation] = useState("");
   const [cancelReason, setCancelReason] = useState("");
 
   const handleAccept = async (id: number) => {
-    if (!scheduledDate || !scheduledTime) return;
-    const success = await acceptRequest(id, {
-      scheduled_date: scheduledDate,
-      scheduled_time: scheduledTime,
-      location: location || undefined,
-    });
-    if (success) {
-      setAcceptingId(null);
-      setScheduledDate("");
-      setScheduledTime("");
-      setLocation("");
-    }
+    await acceptRequest(id);
   };
 
   const handleCancel = async (id: number) => {
@@ -101,11 +84,14 @@ export default function MeetingRequestsList({ userId }: Props) {
               </p>
             </CardHeader>
             <CardContent>
-              {req.status === "accepted" && req.scheduled_date && (
+              {req.scheduled_date && (req.status === "accepted" || req.status === "pending") && (
                 <div className="p-3 rounded-md bg-surface-muted border border-border space-y-1">
+                  <p className="text-xs font-medium text-text-muted mb-1">
+                    {req.status === "pending" ? "Fecha propuesta" : "Fecha confirmada"}
+                  </p>
                   <div className="flex items-center gap-2 text-sm text-text-primary">
                     <Clock className="h-4 w-4" />
-                    <span>{new Date(req.scheduled_date).toLocaleDateString("es-AR")} a las {req.scheduled_time}</span>
+                    <span>{new Date(req.scheduled_date).toLocaleDateString("es-AR")}{req.scheduled_time ? ` a las ${req.scheduled_time}` : ""}</span>
                   </div>
                   {req.location && (
                     <div className="flex items-center gap-2 text-sm text-text-secondary">
@@ -118,36 +104,6 @@ export default function MeetingRequestsList({ userId }: Props) {
               {(req.status === "cancelled_by_requester" || req.status === "cancelled_by_receiver") && req.cancelled_reason && (
                 <div className="p-3 rounded-md bg-surface-muted border border-border">
                   <p className="text-sm text-text-secondary">Motivo: {req.cancelled_reason}</p>
-                </div>
-              )}
-
-              {/* Accept form */}
-              {acceptingId === req.id && (
-                <div className="mt-4 space-y-3 p-3 rounded-md border border-border">
-                  <p className="text-sm font-medium text-text-primary">Aceptar solicitud</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Fecha</Label>
-                      <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label>Hora</Label>
-                      <Input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Lugar (opcional)</Label>
-                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Sala de reuniones" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="default" size="sm" onClick={() => handleAccept(req.id)} disabled={!scheduledDate || !scheduledTime}>
-                      <Check className="h-4 w-4 mr-2" />
-                      Confirmar
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => { setAcceptingId(null); setScheduledDate(""); setScheduledTime(""); setLocation(""); }}>
-                      Cancelar
-                    </Button>
-                  </div>
                 </div>
               )}
 
@@ -174,8 +130,8 @@ export default function MeetingRequestsList({ userId }: Props) {
               )}
             </CardContent>
             <CardFooter className="flex gap-2 pt-2">
-              {canAccept && acceptingId !== req.id && (
-                <Button variant="default" size="sm" onClick={() => setAcceptingId(req.id)}>
+              {canAccept && (
+                <Button variant="default" size="sm" onClick={() => handleAccept(req.id)}>
                   <Check className="h-4 w-4 mr-2" />
                   Aceptar
                 </Button>

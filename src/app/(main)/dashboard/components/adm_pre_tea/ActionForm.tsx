@@ -1086,12 +1086,13 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             value={formData.title}
             onChange={(e) => handleChange<MessageForm>("title", e.target.value)}
           />
-          <Input
+          <Textarea
             placeholder="Mensaje"
             value={formData.message}
             onChange={(e) =>
               handleChange<MessageForm>("message", e.target.value)
             }
+            className="min-h-[120px]"
           />
           <div className="mb-2 font-medium">Selecciona uno o más cursos:</div>
           <DropdownMenu>

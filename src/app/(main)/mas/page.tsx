@@ -14,6 +14,7 @@ import {
   Mail,
   FileText,
   ClipboardCheck,
+  CalendarDays,
 } from "lucide-react";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import userInfoStore from "@/store/userInfoStore";
@@ -48,6 +49,7 @@ function MasContent() {
     {
       title: "Academico",
       items: [
+        { icon: CalendarDays, label: "Agenda", href: "/agenda" },
         { icon: Clock, label: "Horario", href: "/horario" },
         { icon: BookOpen, label: "Asignaturas", href: "/asignaturas" },
         { icon: GraduationCap, label: "Evaluaciones", href: "/examenes" },

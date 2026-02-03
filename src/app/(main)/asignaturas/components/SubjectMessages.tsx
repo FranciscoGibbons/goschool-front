@@ -18,6 +18,7 @@ import {
   PencilIcon,
   TrashIcon,
   ExclamationTriangleIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 import {
   AlertDialog,
@@ -119,6 +120,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [isCreateMode, setIsCreateMode] = useState(false);
   const { userInfo } = userInfoStore();
 
   useEffect(() => {
@@ -231,39 +233,62 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
 
     setIsSaving(true);
     try {
-      const res = await axios.put(
-        `/api/proxy/subject-messages/${editingMessage.id}/`,
-        {
-          title: editData.title || "",
-          content: editData.content || "",
-          type: editData.type || "message",
-        },
-        { withCredentials: true }
-      );
+      if (isCreateMode) {
+        const formDataToSend = new FormData();
+        formDataToSend.append("subject_id", subjectId.toString());
+        formDataToSend.append("title", editData.title || "");
+        formDataToSend.append("content", editData.content || "");
+        formDataToSend.append("type", editData.type || "message");
 
-      if (res && res.data) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === editingMessage.id
-              ? {
-                  ...m,
-                  ...editData,
-                  id: editingMessage.id,
-                  subject_id: editingMessage.subject_id,
-                }
-              : m
-          )
-        );
-        setEditingMessage(null);
+        const res = await axios.post(`/api/proxy/subject-messages`, formDataToSend, {
+          withCredentials: true,
+        });
+
+        if (res && res.data) {
+          setMessages((prev) => [res.data, ...prev]);
+          setEditingMessage(null);
+          setIsCreateMode(false);
+          toast.success("Mensaje de materia creado");
+        }
       } else {
-        toast.error("Error al actualizar el mensaje");
+        const res = await axios.put(
+          `/api/proxy/subject-messages/${editingMessage.id}/`,
+          {
+            title: editData.title || "",
+            content: editData.content || "",
+            type: editData.type || "message",
+          },
+          { withCredentials: true }
+        );
+
+        if (res && res.data) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === editingMessage.id
+                ? {
+                    ...m,
+                    ...editData,
+                    id: editingMessage.id,
+                    subject_id: editingMessage.subject_id,
+                  }
+                : m
+            )
+          );
+          setEditingMessage(null);
+        } else {
+          toast.error("Error al actualizar el mensaje");
+        }
       }
     } catch {
-      toast.error("Error de red al actualizar");
+      toast.error(isCreateMode ? "Error al crear el mensaje" : "Error de red al actualizar");
     } finally {
       setIsSaving(false);
     }
   };
+
+  const canCreate =
+    userInfo?.role &&
+    ["admin", "teacher"].includes(userInfo.role);
 
   const canEdit =
     userInfo?.role &&
@@ -282,6 +307,23 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
 
   return (
     <div className="space-y-8">
+      {canCreate && (
+        <div className="flex justify-end">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setIsCreateMode(true);
+              setEditData({ title: "", content: "", type: "message" });
+              setEditingMessage({ id: 0, subject_id: subjectId, title: "", content: "", type: "message", created_at: "" });
+            }}
+          >
+            <PlusIcon className="size-4" />
+            Crear mensaje de materia
+          </Button>
+        </div>
+      )}
+
       {dateKeys.length === 0 && (
         <EmptyState
           icon="document"
@@ -431,17 +473,18 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Modal - Using Sacred Modal component */}
+      {/* Edit/Create Modal - Using Sacred Modal component */}
       <Modal
         open={!!editingMessage}
         onOpenChange={() => {
           setEditingMessage(null);
           setEditData({});
+          setIsCreateMode(false);
         }}
       >
         <ModalContent>
           <ModalHeader>
-            <ModalTitle>Editar mensaje de materia</ModalTitle>
+            <ModalTitle>{isCreateMode ? "Crear mensaje de materia" : "Editar mensaje de materia"}</ModalTitle>
           </ModalHeader>
 
           <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -492,18 +535,22 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
               <Button
                 variant="secondary"
                 type="button"
-                onClick={() => setEditingMessage(null)}
+                onClick={() => {
+                  setEditingMessage(null);
+                  setIsCreateMode(false);
+                }}
                 disabled={isSaving}
               >
                 Cancelar
               </Button>
               <Button variant="primary" type="submit" loading={isSaving}>
-                Guardar cambios
+                {isCreateMode ? "Crear mensaje" : "Guardar cambios"}
               </Button>
             </ModalFooter>
           </form>
         </ModalContent>
       </Modal>
+
     </div>
   );
 }

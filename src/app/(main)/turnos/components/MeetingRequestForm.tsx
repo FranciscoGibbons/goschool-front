@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import InlineSelectionBar from "@/components/InlineSelectionBar";
 import userInfoStore from "@/store/userInfoStore";
+import childSelectionStore from "@/store/childSelectionStore";
 
 interface AvailableUser {
   id: number;
@@ -28,6 +29,7 @@ interface Props {
 export default function MeetingRequestForm({ onClose }: Props) {
   const { createRequest, isLoading } = useMeetingRequests();
   const { userInfo } = userInfoStore();
+  const { children, selectedChild, setSelectedChild } = childSelectionStore();
   const isFather = userInfo?.role === "father";
   const isStaff = userInfo?.role === "teacher" || userInfo?.role === "preceptor" || userInfo?.role === "admin";
 
@@ -42,6 +44,9 @@ export default function MeetingRequestForm({ onClose }: Props) {
 
   const [subject, setSubject] = useState("");
   const [receiverId, setReceiverId] = useState<number | null>(null);
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [location, setLocation] = useState("");
 
   // For fathers: list of available staff to choose from
   const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
@@ -109,6 +114,9 @@ export default function MeetingRequestForm({ onClose }: Props) {
       receiver_id: receiverId,
       student_id: selectedStudentId,
       subject,
+      scheduled_date: scheduledDate || undefined,
+      scheduled_time: scheduledTime || undefined,
+      location: location.trim() || undefined,
     });
     if (success) onClose();
   };
@@ -136,9 +144,35 @@ export default function MeetingRequestForm({ onClose }: Props) {
         />
       )}
 
-      {/* Father: student is auto-selected */}
-      {isFather && selectedStudentId && (
-        <p className="text-sm text-text-muted">Alumno seleccionado automaticamente desde el selector de hijos</p>
+      {/* Father: select child */}
+      {isFather && (
+        <Card>
+          <CardContent className="pt-4">
+            <Label>Hijo/a</Label>
+            {children.length === 0 ? (
+              <p className="text-sm text-text-muted py-2">No se encontraron hijos registrados</p>
+            ) : (
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={selectedChild?.id || ""}
+                onChange={e => {
+                  const childId = Number(e.target.value) || null;
+                  if (childId) {
+                    const child = children.find(c => c.id === childId);
+                    if (child) setSelectedChild(child);
+                  }
+                }}
+              >
+                <option value="">Seleccione un hijo/a</option>
+                {children.map(child => (
+                  <option key={child.id} value={child.id}>
+                    {child.name} {child.last_name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <Card>
@@ -199,6 +233,27 @@ export default function MeetingRequestForm({ onClose }: Props) {
             <Label>Asunto / Motivo</Label>
             <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Motivo de la reunion" />
           </div>
+
+          {isStaff && (
+            <div className="space-y-3 p-3 rounded-md border border-border">
+              <p className="text-sm font-medium text-text-primary">Proponer fecha y lugar (opcional)</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Fecha</Label>
+                  <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Hora</Label>
+                  <Input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <Label>Lugar</Label>
+                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Sala de reuniones" />
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2 pt-2">
             <Button
               variant="default"

@@ -16,6 +16,7 @@ import {
   Settings,
   BookMarked,
   CalendarClock,
+  CalendarDays,
 } from "lucide-react";
 import ProfileAccount from "./ProfileAccount";
 import ChildSelector from "./ChildSelector";
@@ -25,6 +26,7 @@ import userInfoStore from "@/store/userInfoStore";
 const menuItems = [
   { name: "Mensajes", icon: Mail, href: "/mensajes" },
   { name: "Chat", icon: MessageCircle, href: "/chat" },
+  { name: "Agenda", icon: CalendarDays, href: "/agenda" },
   { name: "Asignaturas", icon: BookOpen, href: "/asignaturas" },
   { name: "Evaluaciones", icon: GraduationCap, href: "/examenes" },
   { name: "Calificaciones", icon: FileText, href: "/calificaciones" },

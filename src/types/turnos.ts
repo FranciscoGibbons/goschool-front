@@ -19,6 +19,9 @@ export interface NewMeetingRequest {
   receiver_id: number;
   student_id: number;
   subject: string;
+  scheduled_date?: string;
+  scheduled_time?: string;
+  location?: string;
 }
 
 export interface AcceptMeetingRequest {

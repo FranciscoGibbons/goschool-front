@@ -19,7 +19,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-interface CalendarEvent {
+export interface CalendarEvent {
   id: string;
   title: string;
   start: string;
@@ -39,7 +39,7 @@ interface FullCalendarAgendaProps {
   selectable?: boolean;
 }
 
-const eventColors: Record<string, string> = {
+export const eventColors: Record<string, string> = {
   exam: "#3b82f6",
   homework: "#f59e0b",
   project: "#10b981",
@@ -81,9 +81,10 @@ export default function FullCalendarAgenda({
       allDay: clickInfo.event.allDay,
       extendedProps: clickInfo.event.extendedProps as Record<string, unknown>,
     };
-    setSelectedEvent(event);
     if (onEventClick) {
       onEventClick(event);
+    } else {
+      setSelectedEvent(event);
     }
   };
 
@@ -251,38 +252,40 @@ export default function FullCalendarAgenda({
         />
       </div>
 
-      {/* Event detail dialog */}
-      <Modal open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-        <ModalContent className="max-w-md">
-          <ModalHeader>
-            <ModalTitle>{selectedEvent?.title}</ModalTitle>
-            <ModalDescription>Detalle del evento seleccionado.</ModalDescription>
-          </ModalHeader>
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-medium text-text-secondary">Inicio</p>
-              <p className="text-sm text-text-primary">
-                {selectedEvent?.start
-                  ? new Date(selectedEvent.start).toLocaleString("es-AR")
-                  : "-"}
-              </p>
+      {/* Event detail dialog (only when no external handler) */}
+      {!onEventClick && (
+        <Modal open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+          <ModalContent className="max-w-md">
+            <ModalHeader>
+              <ModalTitle>{selectedEvent?.title}</ModalTitle>
+              <ModalDescription>Detalle del evento seleccionado.</ModalDescription>
+            </ModalHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-medium text-text-secondary">Inicio</p>
+                <p className="text-sm text-text-primary">
+                  {selectedEvent?.start
+                    ? new Date(selectedEvent.start).toLocaleString("es-AR")
+                    : "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-text-secondary">Fin</p>
+                <p className="text-sm text-text-primary">
+                  {selectedEvent?.end
+                    ? new Date(selectedEvent.end).toLocaleString("es-AR")
+                    : "-"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium text-text-secondary">Fin</p>
-              <p className="text-sm text-text-primary">
-                {selectedEvent?.end
-                  ? new Date(selectedEvent.end).toLocaleString("es-AR")
-                  : "-"}
-              </p>
-            </div>
-          </div>
-          <ModalFooter>
-            <Button variant="secondary" onClick={() => setSelectedEvent(null)}>
-              Cerrar
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+            <ModalFooter>
+              <Button variant="secondary" onClick={() => setSelectedEvent(null)}>
+                Cerrar
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
 
     </div>
   );

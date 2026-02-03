@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useInView } from "react-intersection-observer";
 
@@ -484,12 +485,23 @@ export default function MessageList() {
                 </div>
 
                 <div className="mt-1">
-                  <p className="font-semibold text-text-primary mb-1">
+                  <Link
+                    href={`/mensajes/${message.id}`}
+                    className="font-semibold text-text-primary mb-1 hover:underline block"
+                  >
                     {message.title}
-                  </p>
-                  <p className="text-text-secondary text-sm leading-relaxed">
+                  </Link>
+                  <p className="text-text-secondary text-sm leading-relaxed line-clamp-3">
                     {message.message}
                   </p>
+                  {message.message && message.message.length > 200 && (
+                    <Link
+                      href={`/mensajes/${message.id}`}
+                      className="text-xs text-primary hover:underline mt-1 inline-block"
+                    >
+                      Ver mas
+                    </Link>
+                  )}
                   {message.courses && (
                     <p className="text-xs text-text-muted mt-2">
                       Cursos: {message.courses}
