@@ -17,15 +17,14 @@ import {
   ErrorDisplay,
   LoadingSpinner,
   PageHeader,
+  Button,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
 } from "@/components/sacred";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ActionForm } from "../dashboard/components/adm_pre_tea/ActionForm";
-import "../dashboard/dashboard-modal.css";
+import { CreateExamForm } from "../dashboard/components/adm_pre_tea/forms";
 
 import { toast } from "sonner";
 
@@ -165,8 +164,8 @@ function ExamsContent() {
         subtitle="Examenes y tareas programadas"
         action={
           canCreate ? (
-            <Button onClick={() => setCreateOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
+            <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
               Nuevo Examen
             </Button>
           ) : null
@@ -203,21 +202,23 @@ function ExamsContent() {
         </div>
       )}
 
-      {/* Create Exam Dialog */}
+      {/* Create Exam Modal */}
       {canCreate && (
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogContent className="max-w-2xl dashboard-modal-content">
-            <DialogTitle>Crear examen</DialogTitle>
-            <ActionForm
-              action="Crear examen"
+        <Modal open={createOpen} onOpenChange={setCreateOpen}>
+          <ModalContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <ModalHeader>
+              <ModalTitle>Crear examen</ModalTitle>
+              <ModalDescription>Programar una evaluacion</ModalDescription>
+            </ModalHeader>
+            <CreateExamForm
               onBack={() => setCreateOpen(false)}
               onClose={() => {
                 setCreateOpen(false);
                 window.location.reload();
               }}
             />
-          </DialogContent>
-        </Dialog>
+          </ModalContent>
+        </Modal>
       )}
     </div>
   );

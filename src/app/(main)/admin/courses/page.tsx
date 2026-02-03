@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,7 +103,6 @@ const getDivisionLabel = (division: string, level: string) => {
 };
 
 export default function CoursesPage() {
-  const router = useRouter();
   const { academicYears, selectedYearId, setSelectedYearId, isLoading: isLoadingYears } = useAcademicYears();
   const [courses, setCourses] = useState<Course[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -320,8 +319,8 @@ export default function CoursesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Cursos</h1>
           <p className="text-muted-foreground">Administra los cursos del sistema</p>
         </div>
-        <Button onClick={handleCreate} disabled={!selectedYearId}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button size="sm" onClick={handleCreate} disabled={!selectedYearId}>
+          <Plus className="size-4" />
           Nuevo Curso
         </Button>
       </div>

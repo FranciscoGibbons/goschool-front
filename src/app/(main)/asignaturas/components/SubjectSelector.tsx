@@ -19,6 +19,7 @@ interface Subject {
   name: string;
   course_id?: number;
   course_name?: string;
+  special_course_id?: number;
 }
 
 interface Course {
@@ -89,12 +90,10 @@ export default function SubjectSelector({
     hasFetchedRef.current = false;
   }, [selectedCourseId]);
 
-  // Auto-select first subject when subjects load
+  // Reset selected subject when course changes
   useEffect(() => {
-    if (!selectedSubject && subjects.length > 0) {
-      setSelectedSubject(subjects[0]);
-    }
-  }, [subjects, selectedSubject]);
+    setSelectedSubject(null);
+  }, [selectedCourseId]);
 
 
   if (isLoadingSubjects) {
@@ -162,7 +161,10 @@ export default function SubjectSelector({
               >
                 <span className="text-sm">
                   {cleanSubjectName(subject.name)}
-                  {subject.course_name && (
+                  {subject.special_course_id && (
+                    <span className="text-xs text-primary ml-1">(CE)</span>
+                  )}
+                  {subject.course_name && !subject.special_course_id && (
                     <span className="text-muted-foreground ml-1">
                       ({subject.course_name})
                     </span>

@@ -13,48 +13,55 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import userInfoStore from "@/store/userInfoStore";
+import featureFlagsStore from "@/store/featureFlagsStore";
 
 interface TabItem {
   name: string;
   icon: typeof Home;
   href: string;
+  featureKey?: string;
 }
 
 const staffTabs: TabItem[] = [
   { name: "Inicio", icon: Home, href: "/dashboard" },
-  { name: "Notas", icon: FileText, href: "/calificaciones" },
-  { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia" },
-  { name: "Mensajes", icon: Mail, href: "/mensajes" },
+  { name: "Notas", icon: FileText, href: "/calificaciones", featureKey: "grades" },
+  { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia", featureKey: "assistance" },
+  { name: "Mensajes", icon: Mail, href: "/mensajes", featureKey: "messages" },
   { name: "Mas", icon: MoreHorizontal, href: "/mas" },
 ];
 
 const adminTabs: TabItem[] = [
   { name: "Inicio", icon: Home, href: "/admin" },
-  { name: "Notas", icon: FileText, href: "/calificaciones" },
-  { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia" },
-  { name: "Mensajes", icon: Mail, href: "/mensajes" },
+  { name: "Notas", icon: FileText, href: "/calificaciones", featureKey: "grades" },
+  { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia", featureKey: "assistance" },
+  { name: "Mensajes", icon: Mail, href: "/mensajes", featureKey: "messages" },
   { name: "Mas", icon: MoreHorizontal, href: "/mas" },
 ];
 
 const studentTabs: TabItem[] = [
   { name: "Inicio", icon: Home, href: "/dashboard" },
-  { name: "Notas", icon: FileText, href: "/calificaciones" },
-  { name: "Materias", icon: BookOpen, href: "/asignaturas" },
-  { name: "Horario", icon: Clock, href: "/horario" },
+  { name: "Notas", icon: FileText, href: "/calificaciones", featureKey: "grades" },
+  { name: "Materias", icon: BookOpen, href: "/asignaturas", featureKey: "subject_messages" },
+  { name: "Horario", icon: Clock, href: "/horario", featureKey: "timetables" },
   { name: "Mas", icon: MoreHorizontal, href: "/mas" },
 ];
 
 export default function MobileBottomTabs() {
   const pathname = usePathname();
   const { userInfo } = userInfoStore();
+  const { isEnabled } = featureFlagsStore();
+
+  // Superadmin has its own navigation
+  if (pathname.startsWith("/superadmin")) return null;
 
   const role = userInfo?.role;
-  const tabs =
+  const allTabs =
     role === "student" || role === "father"
       ? studentTabs
       : role === "admin"
       ? adminTabs
       : staffTabs;
+  const tabs = allTabs.filter((tab) => !tab.featureKey || isEnabled(tab.featureKey));
 
   return (
     <nav

@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Extract tenant from the Host header (subdomain)
     const host = request.headers.get('host') || '';
     const tenantMatch = host.match(/^([a-z0-9-]+)\.goschool\./);
-    const tenant = tenantMatch ? tenantMatch[1] : (request.headers.get('x-tenant') || '');
+    const tenant = tenantMatch ? tenantMatch[1] : (process.env.NEXT_PUBLIC_DEFAULT_SCHOOL || request.headers.get('x-tenant') || '');
 
     // Llamada directa al backend (sin usar backendFetch porque el login no necesita auth)
     // Note: login is at /api/login/ (not /api/v1/login/)

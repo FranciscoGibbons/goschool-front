@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { CalendarEvent, eventColors } from "@/components/FullCalendarAgenda";
 import { fetchAllPages } from "@/utils/fetchAllPages";
 import { MeetingRequestWithNames } from "@/types/turnos";
+import { SchoolEvent, EVENT_TYPES } from "@/types/events";
 
 interface AssessmentRaw {
   id: number;
@@ -30,12 +31,13 @@ interface TimetableRaw {
   end_time: string;
 }
 
-export type AgendaEventType = "assessment" | "meeting" | "class";
+export type AgendaEventType = "assessment" | "meeting" | "class" | "event";
 
 export interface AgendaFilters {
   showAssessments: boolean;
   showMeetings: boolean;
   showClasses: boolean;
+  showEvents: boolean;
 }
 
 interface UseAgendaEventsOptions {
@@ -44,6 +46,7 @@ interface UseAgendaEventsOptions {
   academicYearId: number | null;
   filters: AgendaFilters;
   showTimetables?: boolean;
+  refreshTrigger?: number;
 }
 
 interface UseAgendaEventsReturn {
@@ -83,11 +86,13 @@ export function useAgendaEvents({
   academicYearId,
   filters,
   showTimetables = false,
+  refreshTrigger = 0,
 }: UseAgendaEventsOptions): UseAgendaEventsReturn {
   const [assessments, setAssessments] = useState<AssessmentRaw[]>([]);
   const [subjects, setSubjects] = useState<SubjectRaw[]>([]);
   const [meetings, setMeetings] = useState<MeetingRequestWithNames[]>([]);
   const [timetables, setTimetables] = useState<TimetableRaw[]>([]);
+  const [schoolEvents, setSchoolEvents] = useState<SchoolEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -129,6 +134,15 @@ export function useAgendaEvents({
           );
         }
 
+        // Events
+        promises.push(
+          fetchAllPages<SchoolEvent>("/api/proxy/events/", params).then(
+            (eventsData) => {
+              setSchoolEvents(eventsData);
+            }
+          )
+        );
+
         // Timetables (optional)
         if (showTimetables && courseId) {
           promises.push(
@@ -150,7 +164,7 @@ export function useAgendaEvents({
     };
 
     loadData();
-  }, [role, courseId, academicYearId, showTimetables]);
+  }, [role, courseId, academicYearId, showTimetables, refreshTrigger]);
 
   const events = useMemo(() => {
     const result: CalendarEvent[] = [];
@@ -221,6 +235,63 @@ export function useAgendaEvents({
       }
     }
 
+    // School events (supports multi-day)
+    if (filters.showEvents) {
+      // Show general events (course_id null) + events for the selected course
+      const filteredEvents = courseId
+        ? schoolEvents.filter(
+            (e) => e.course_id === null || Number(e.course_id) === Number(courseId)
+          )
+        : schoolEvents;
+
+      for (const ev of filteredEvents) {
+        const typeName = EVENT_TYPES[ev.event_type] || ev.event_type;
+        const isMultiDay = ev.start_date !== ev.end_date;
+
+        let startStr: string;
+        let endStr: string | undefined;
+
+        if (isMultiDay) {
+          // Multi-day event: FullCalendar needs end date to be exclusive (day after)
+          startStr = ev.start_date;
+          const endDate = new Date(ev.end_date);
+          endDate.setDate(endDate.getDate() + 1);
+          endStr = endDate.toISOString().split("T")[0];
+        } else {
+          startStr = ev.start_time
+            ? `${ev.start_date}T${ev.start_time}`
+            : ev.start_date;
+          endStr = ev.end_time
+            ? `${ev.start_date}T${ev.end_time}`
+            : undefined;
+        }
+
+        result.push({
+          id: `event-${ev.id}`,
+          title: ev.title,
+          start: startStr,
+          end: endStr,
+          allDay: isMultiDay || !ev.start_time,
+          color: eventColors.event,
+          extendedProps: {
+            type: "event",
+            eventType: "event" as AgendaEventType,
+            eventTypeName: typeName,
+            eventTypeKey: ev.event_type,
+            description: ev.description,
+            location: ev.location,
+            creatorName: ev.creator_name,
+            startDate: ev.start_date,
+            endDate: ev.end_date,
+            startTime: ev.start_time,
+            endTime: ev.end_time,
+            eventId: ev.id,
+            courseId: ev.course_id,
+          },
+        });
+      }
+    }
+
     // Timetables
     if (filters.showClasses && showTimetables && timetables.length > 0) {
       const now = new Date();
@@ -255,7 +326,7 @@ export function useAgendaEvents({
     }
 
     return result;
-  }, [assessments, subjects, meetings, timetables, filters, courseId, role, showTimetables]);
+  }, [assessments, subjects, meetings, timetables, schoolEvents, filters, courseId, role, showTimetables]);
 
   return { events, isLoading, error };
 }

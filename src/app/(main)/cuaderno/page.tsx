@@ -36,8 +36,8 @@ function ObservacionesContent() {
             <p className="page-subtitle">Observaciones sobre alumnos</p>
           </div>
           {canCreate && (
-            <Button variant="default" size="sm" onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button size="sm" onClick={() => setShowForm(true)}>
+              <Plus className="size-4" />
               Nueva observacion
             </Button>
           )}

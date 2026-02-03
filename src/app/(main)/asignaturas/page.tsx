@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useCourseStudentSelection } from "@/hooks/useCourseStudentSelection";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import InlineCourseSelector from "@/components/InlineCourseSelector";
@@ -9,6 +9,16 @@ import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
 import { ErrorBoundary, ErrorDisplay } from "@/components/ui/error-boundary";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import {
+  Button,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+} from "@/components/sacred";
+import { CreateSubjectMessageForm } from "@/app/(main)/dashboard/components/adm_pre_tea/forms";
 
 function SubjectSelectorWrapper({
   selectedCourseId,
@@ -40,6 +50,7 @@ function SubjectSelectorWrapper({
 function AsignaturasContent() {
   const { userInfo } = userInfoStore();
   const { selectedChild } = childSelectionStore();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const {
     courses,
     selectedCourseId,
@@ -47,6 +58,36 @@ function AsignaturasContent() {
     error,
     setSelectedCourseId,
   } = useCourseStudentSelection(userInfo?.role || null);
+
+  const canCreate =
+    userInfo?.role &&
+    ["admin", "teacher"].includes(userInfo.role);
+
+  const createButton = canCreate ? (
+    <Button
+      variant="primary"
+      size="sm"
+      onClick={() => setCreateDialogOpen(true)}
+    >
+      <PlusIcon className="size-4" />
+      Crear mensaje de materia
+    </Button>
+  ) : null;
+
+  const createModal = canCreate ? (
+    <Modal open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <ModalContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <ModalHeader>
+          <ModalTitle>Crear mensaje de materia</ModalTitle>
+          <ModalDescription>Mensaje para una materia</ModalDescription>
+        </ModalHeader>
+        <CreateSubjectMessageForm
+          onBack={() => setCreateDialogOpen(false)}
+          onClose={() => setCreateDialogOpen(false)}
+        />
+      </ModalContent>
+    </Modal>
+  ) : null;
 
   if (isLoading) {
     return (
@@ -84,9 +125,12 @@ function AsignaturasContent() {
   // Staff view with inline course selector
   return (
     <div className="space-y-6">
-      <div className="page-header">
-        <h1 className="page-title">Asignaturas</h1>
-        <p className="page-subtitle">Materias del curso</p>
+      <div className="flex items-center justify-between">
+        <div className="page-header">
+          <h1 className="page-title">Asignaturas</h1>
+          <p className="page-subtitle">Materias del curso</p>
+        </div>
+        {createButton}
       </div>
 
       <div className="flex flex-wrap items-center gap-3 p-3 sacred-card">
@@ -107,6 +151,8 @@ function AsignaturasContent() {
           </p>
         </div>
       )}
+
+      {createModal}
     </div>
   );
 }

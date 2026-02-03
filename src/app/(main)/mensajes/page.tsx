@@ -5,14 +5,15 @@ import { Plus } from "lucide-react";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import MessageList from "./components/MessageList";
 import userInfoStore from "@/store/userInfoStore";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ActionForm } from "../dashboard/components/adm_pre_tea/ActionForm";
-import "../dashboard/dashboard-modal.css";
+  Button,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+} from "@/components/sacred";
+import { CreateMessageForm } from "../dashboard/components/adm_pre_tea/forms";
 
 function MensajesContent() {
   const { userInfo } = userInfoStore();
@@ -29,8 +30,8 @@ function MensajesContent() {
             <p className="page-subtitle">Comunicacion con la comunidad educativa</p>
           </div>
           {canCreate && (
-            <Button onClick={() => setCreateOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
+            <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
               Nuevo Mensaje
             </Button>
           )}
@@ -38,20 +39,22 @@ function MensajesContent() {
       </div>
       <MessageList />
 
-      {/* Create Message Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-2xl dashboard-modal-content">
-          <DialogTitle>Crear mensaje</DialogTitle>
-          <ActionForm
-            action="Crear mensaje"
+      {/* Create Message Modal */}
+      <Modal open={createOpen} onOpenChange={setCreateOpen}>
+        <ModalContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <ModalHeader>
+            <ModalTitle>Crear mensaje</ModalTitle>
+            <ModalDescription>Enviar un mensaje a cursos</ModalDescription>
+          </ModalHeader>
+          <CreateMessageForm
             onBack={() => setCreateOpen(false)}
             onClose={() => {
               setCreateOpen(false);
               window.location.reload();
             }}
           />
-        </DialogContent>
-      </Dialog>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

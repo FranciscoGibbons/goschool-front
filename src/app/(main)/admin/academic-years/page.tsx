@@ -226,8 +226,8 @@ export default function AcademicYearsPage() {
             Administra los años académicos del sistema
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button size="sm" onClick={handleCreate}>
+          <Plus className="size-4" />
           Nuevo Ciclo
         </Button>
       </div>

@@ -37,7 +37,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <Shield className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <p className="font-semibold text-sm">GoSchool</p>
+            <p className="font-semibold text-sm">Klass</p>
             <p className="text-xs text-muted-foreground">Super Admin</p>
           </div>
         </div>

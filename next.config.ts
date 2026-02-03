@@ -1,4 +1,19 @@
 import type { NextConfig } from "next";
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  cacheStartUrl: true,
+  dynamicStartUrl: true,
+  dynamicStartUrlRedirect: "/login",
+  fallbacks: {
+    document: "/~offline",
+  },
+  customWorkerSrc: "service-worker",
+  cacheOnFrontendNav: true,
+});
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -50,6 +65,13 @@ const nextConfig: NextConfig = {
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
         ],
       },
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
     ];
   },
   // Optimización para Vercel
@@ -58,4 +80,4 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

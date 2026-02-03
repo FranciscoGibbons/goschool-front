@@ -205,12 +205,6 @@ export default function SecurityPage() {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
-  const getFailedLoginsBadge = (count: number) => {
-    if (count === 0) return "bg-success-muted text-success";
-    if (count < 10) return "bg-warning-muted text-warning";
-    return "bg-error-muted text-error";
-  };
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">

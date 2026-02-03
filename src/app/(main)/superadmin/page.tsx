@@ -49,7 +49,7 @@ export default function SuperAdminDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of the GoSchool platform</p>
+        <p className="text-muted-foreground">Overview of the Klass platform</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,7 +74,6 @@ interface Teacher {
 }
 
 export default function SubjectsPage() {
-  const router = useRouter();
   const { academicYears, selectedYearId, setSelectedYearId, isLoading: isLoadingYears } = useAcademicYears();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -91,6 +90,12 @@ export default function SubjectsPage() {
     teacher_id: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Dialog-internal state for self-contained creation
+  const [dialogYearId, setDialogYearId] = useState<string>("");
+  const [dialogCourses, setDialogCourses] = useState<Course[]>([]);
+  const [dialogTeachers, setDialogTeachers] = useState<Teacher[]>([]);
+  const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
 
   // Delete dialog state
   const [deletingSubject, setDeletingSubject] = useState<Subject | null>(null);
@@ -141,14 +146,32 @@ export default function SubjectsPage() {
     fetchTeachers();
   }, [fetchSubjects, fetchCourses, fetchTeachers]);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setEditingSubject(null);
-    setForm({
-      name: "",
-      course_id: "",
-      teacher_id: "",
-    });
+    setForm({ name: "", course_id: "", teacher_id: "" });
+    // Pre-select the page's current year if available
+    const preselectedYear = selectedYearId ? selectedYearId.toString() : "";
+    setDialogYearId(preselectedYear);
+    setDialogCourses([]);
     setDialogOpen(true);
+
+    // Load teachers for the dialog
+    setIsLoadingDialogData(true);
+    try {
+      const teacherData = await fetchAllPages<Teacher>("/api/proxy/students/", { role: "teacher" });
+      setDialogTeachers(teacherData);
+    } catch { /* ignore */ }
+
+    // If a year is pre-selected, load its courses
+    if (preselectedYear) {
+      try {
+        const courseData = await fetchAllPages<Course>("/api/proxy/courses/", {
+          academic_year_id: parseInt(preselectedYear),
+        });
+        setDialogCourses(courseData);
+      } catch { /* ignore */ }
+    }
+    setIsLoadingDialogData(false);
   };
 
   const handleEdit = (subject: Subject) => {
@@ -158,7 +181,24 @@ export default function SubjectsPage() {
       course_id: subject.course_id.toString(),
       teacher_id: subject.teacher_id.toString(),
     });
+    // For editing, use the page's existing courses and teachers
+    setDialogYearId(selectedYearId ? selectedYearId.toString() : "");
+    setDialogCourses(courses);
+    setDialogTeachers(teachers);
     setDialogOpen(true);
+  };
+
+  const handleDialogYearChange = async (yearId: string) => {
+    setDialogYearId(yearId);
+    setForm((prev) => ({ ...prev, course_id: "" }));
+    setDialogCourses([]);
+    if (!yearId) return;
+    try {
+      const courseData = await fetchAllPages<Course>("/api/proxy/courses/", {
+        academic_year_id: parseInt(yearId),
+      });
+      setDialogCourses(courseData);
+    } catch { /* ignore */ }
   };
 
   const handleSave = async () => {
@@ -248,8 +288,8 @@ export default function SubjectsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Materias</h1>
           <p className="text-muted-foreground">Administra las materias del sistema</p>
         </div>
-        <Button onClick={handleCreate} disabled={!selectedYearId || courses.length === 0}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button size="sm" onClick={handleCreate}>
+          <Plus className="size-4" />
           Nueva Materia
         </Button>
       </div>
@@ -362,17 +402,38 @@ export default function SubjectsPage() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
+            {!editingSubject && (
+              <div className="space-y-2">
+                <Label htmlFor="dialog-year">Ciclo Lectivo *</Label>
+                <Select
+                  value={dialogYearId}
+                  onValueChange={handleDialogYearChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar ciclo lectivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicYears.map((year) => (
+                      <SelectItem key={year.id} value={year.id.toString()}>
+                        {year.name}{year.is_active ? " (Activo)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="course">Curso *</Label>
               <Select
                 value={form.course_id}
                 onValueChange={(value) => setForm({ ...form, course_id: value })}
+                disabled={!editingSubject && !dialogYearId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar curso" />
+                  <SelectValue placeholder={!editingSubject && !dialogYearId ? "Selecciona un ciclo lectivo primero" : "Seleccionar curso"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses.map((course) => (
+                  {dialogCourses.map((course) => (
                     <SelectItem key={course.id} value={course.id.toString()}>
                       {course.name}
                     </SelectItem>
@@ -390,7 +451,7 @@ export default function SubjectsPage() {
                   <SelectValue placeholder="Seleccionar docente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers.map((teacher) => (
+                  {dialogTeachers.map((teacher) => (
                     <SelectItem key={teacher.id} value={teacher.id.toString()}>
                       {teacher.full_name || teacher.email}
                     </SelectItem>
@@ -403,7 +464,7 @@ export default function SubjectsPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSave} disabled={isSaving || isLoadingDialogData}>
               {isSaving ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>

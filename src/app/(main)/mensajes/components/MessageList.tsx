@@ -16,6 +16,8 @@ import { useInView } from "react-intersection-observer";
 
 import userInfoStore from "@/store/userInfoStore";
 import { toast } from "sonner";
+import RichTextEditor from "@/components/RichTextEditor";
+import SafeHTML from "@/components/SafeHTML";
 import { PencilIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon } from "@heroicons/react/24/outline";
 import {
   Button,
@@ -28,7 +30,6 @@ import {
   FormGroup,
   Label,
   Input,
-  Textarea,
   NativeSelect,
 } from "@/components/sacred";
 import {
@@ -201,7 +202,20 @@ export default function MessageList() {
 
     for (const message of messagesToProcess) {
       const senderId = message.sender_id;
-      
+
+      // Skip if we already resolved this sender
+      if (newSendersMap.has(senderId)) continue;
+
+      // Si el remitente es el usuario actual, usar sus datos del store
+      if (userInfo && senderId === userInfo.id) {
+        newSendersMap.set(senderId, {
+          id: senderId,
+          full_name: userInfo.full_name || `${userInfo.name || ""} ${userInfo.last_name || ""}`.trim() || "Usuario",
+          photo: userInfo.photo || `/api/image-proxy/uploads/profile_pictures/default.jpg`,
+        });
+        continue;
+      }
+
       // Si el mensaje ya incluye la información del remitente, usarla directamente
       if (message.sender_name) {
         let profilePicture = null;
@@ -491,9 +505,10 @@ export default function MessageList() {
                   >
                     {message.title}
                   </Link>
-                  <p className="text-text-secondary text-sm leading-relaxed line-clamp-3">
-                    {message.message}
-                  </p>
+                  <SafeHTML
+                    html={message.message}
+                    className="text-text-secondary text-sm leading-relaxed line-clamp-3"
+                  />
                   {message.message && message.message.length > 200 && (
                     <Link
                       href={`/mensajes/${message.id}`}
@@ -589,7 +604,7 @@ export default function MessageList() {
                   setMessages((prev) =>
                     prev.map((msg) =>
                       Number(msg.id) === Number(updatingMessage.id)
-                        ? { ...msg, ...editMessage }
+                        ? { ...msg, title: editMessage.title, message: editMessage.message }
                         : msg
                     )
                   );
@@ -618,13 +633,11 @@ export default function MessageList() {
 
             <FormGroup>
               <Label htmlFor="edit-message">Mensaje</Label>
-              <Textarea
-                id="edit-message"
-                value={editMessage?.message || ""}
-                onChange={(e) =>
-                  setEditMessage(editMessage ? { ...editMessage, message: e.target.value } : null)
+              <RichTextEditor
+                content={editMessage?.message || ""}
+                onChange={(html) =>
+                  setEditMessage(editMessage ? { ...editMessage, message: html } : null)
                 }
-                required
               />
             </FormGroup>
 

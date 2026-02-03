@@ -347,8 +347,8 @@ export default function ReplacementsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Suplentes</h1>
           <p className="text-muted-foreground">Administra las suplencias de docentes y preceptores</p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button size="sm" onClick={handleCreate}>
+          <Plus className="size-4" />
           Nueva Suplencia
         </Button>
       </div>

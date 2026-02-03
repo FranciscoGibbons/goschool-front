@@ -8,6 +8,8 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary, LoadingSpinner } from "@/components/sacred";
 import axios from "axios";
+import SafeHTML from "@/components/SafeHTML";
+import userInfoStore from "@/store/userInfoStore";
 
 interface Message {
   id: string;
@@ -49,6 +51,7 @@ function MessageDetailContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { userInfo } = userInfoStore();
 
   const [message, setMessage] = useState<Message | null>(null);
   const [sender, setSender] = useState<Sender | null>(null);
@@ -68,7 +71,15 @@ function MessageDetailContent() {
 
         // Fetch sender info
         const senderId = data.sender_id;
-        if (data.sender_name) {
+
+        // Si el remitente es el usuario actual, usar sus datos del store
+        if (userInfo && senderId === userInfo.id) {
+          setSender({
+            id: senderId,
+            full_name: userInfo.full_name || `${userInfo.name || ""} ${userInfo.last_name || ""}`.trim() || "Usuario",
+            photo: userInfo.photo || processSenderPhoto(null),
+          });
+        } else if (data.sender_name) {
           setSender({
             id: senderId,
             full_name: data.sender_name,
@@ -107,7 +118,7 @@ function MessageDetailContent() {
     };
 
     if (id) fetchMessage();
-  }, [id]);
+  }, [id, userInfo]);
 
   if (loading) {
     return (
@@ -180,9 +191,10 @@ function MessageDetailContent() {
         </h1>
 
         {/* Body */}
-        <div className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
-          {message.message}
-        </div>
+        <SafeHTML
+          html={message.message}
+          className="text-sm text-text-secondary leading-relaxed"
+        />
       </div>
     </div>
   );

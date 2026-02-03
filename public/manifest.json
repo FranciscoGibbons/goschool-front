@@ -1,9 +1,10 @@
 {
   "name": "GoSchool - Colegio Stella Maris Rosario",
   "short_name": "GoSchool",
-  "description": "Sistema integral de gestión académica",
-  "start_url": "/",
+  "description": "Sistema integral de gestion academica",
+  "start_url": "/dashboard",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#3d7a5a",
   "icons": [
@@ -16,6 +17,12 @@
       "src": "/images/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

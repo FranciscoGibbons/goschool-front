@@ -78,6 +78,21 @@ export default function AgendaLegend({
             Clases
           </button>
         )}
+
+        <button
+          onClick={() => toggleFilter("showEvents")}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors border ${
+            filters.showEvents
+              ? "border-foreground/20 bg-foreground/5 text-text-primary"
+              : "border-border bg-surface-muted text-text-muted"
+          }`}
+        >
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: eventColors.event }}
+          />
+          Eventos
+        </button>
       </div>
 
       {filters.showAssessments && (

@@ -77,10 +77,12 @@ function formatRelative(date: string | null): string {
 function ChatList({
   chats,
   currentChatId,
+  typingUsers,
   onSelect,
 }: {
   chats: Chat[];
   currentChatId: number | null;
+  typingUsers: Record<number, TypingUser[]>;
   onSelect: (id: number) => void;
 }) {
   const sorted = [...chats].sort((a, b) => {
@@ -126,9 +128,20 @@ function ChatList({
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground truncate">
-                {chat.last_message || 'Sin mensajes'}
-              </span>
+              {(typingUsers[chat.id] || []).length > 0 ? (
+                <span className="text-sm text-primary truncate italic flex items-center gap-1">
+                  <span className="flex gap-0.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '-0.3s' }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '-0.15s' }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
+                  </span>
+                  Escribiendo...
+                </span>
+              ) : (
+                <span className="text-sm text-muted-foreground truncate">
+                  {chat.last_message || 'Sin mensajes'}
+                </span>
+              )}
               {chat.unread_count > 0 && (
                 <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 ml-2">
                   {chat.unread_count > 99 ? '99+' : chat.unread_count}
@@ -148,12 +161,14 @@ function MessageBubble({
   message,
   isOwn,
   showSender,
+  isGroup,
   onEdit,
   onDelete,
 }: {
   message: ChatMessage;
   isOwn: boolean;
   showSender: boolean;
+  isGroup: boolean;
   onEdit?: (message: ChatMessage) => void;
   onDelete?: (message: ChatMessage) => void;
 }) {
@@ -189,7 +204,7 @@ function MessageBubble({
     return (
       <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
         <div className={`max-w-[75%] min-w-0 ${isOwn ? 'items-end' : 'items-start'}`}>
-          {showSender && !isOwn && (
+          {isGroup && showSender && !isOwn && (
             <div className="text-xs text-muted-foreground mb-1 px-3">
               {message.sender?.full_name || 'Usuario'}
             </div>
@@ -212,7 +227,7 @@ function MessageBubble({
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2 group`}>
       <div className={`max-w-[75%] min-w-0 relative ${isOwn ? 'items-end' : 'items-start'}`}>
-        {showSender && !isOwn && (
+        {isGroup && showSender && !isOwn && (
           <div className="text-xs text-muted-foreground mb-1 px-3">
             {message.sender?.full_name || 'Usuario'}
           </div>
@@ -345,7 +360,6 @@ function ChatWindow({
   onLoadMore,
   onTypingStart,
   onTypingStop,
-  isConnected,
 }: {
   chat: Chat;
   messages: ChatMessage[];
@@ -358,7 +372,6 @@ function ChatWindow({
   onLoadMore: () => void;
   onTypingStart: () => void;
   onTypingStop: () => void;
-  isConnected: boolean;
 }) {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -503,18 +516,35 @@ function ChatWindow({
         <Button size="icon" variant="ghost" onClick={onBack} className="md:hidden">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={chat.photo || undefined} />
-          <AvatarFallback className="bg-primary/10 text-primary">
-            {getInitials(chat.name)}
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative shrink-0">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={chat.photo || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {chat.chat_type === 'group' ? <Users className="h-5 w-5" /> : getInitials(chat.name)}
+            </AvatarFallback>
+          </Avatar>
+          {chat.chat_type === 'direct' && chat.is_online && (
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
+          )}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">{chat.name}</div>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
-            {chat.chat_type === 'direct' ? (
+            {typingUsers.length > 0 ? (
+              <span className="text-primary italic flex items-center gap-1">
+                <span className="flex gap-0.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '-0.3s' }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '-0.15s' }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
+                </span>
+                {typingUsers.length === 1
+                  ? `${typingUsers[0].user_name} esta escribiendo...`
+                  : `${typingUsers.slice(0, 2).map(u => u.user_name).join(', ')} estan escribiendo...`
+                }
+              </span>
+            ) : chat.chat_type === 'direct' ? (
               chat.is_online ? (
-                <><span className="h-2 w-2 rounded-full bg-green-500 inline-block" /> En linea</>
+                <>En linea</>
               ) : chat.last_seen_at ? (
                 <>Ultima vez {formatRelative(chat.last_seen_at)}</>
               ) : (
@@ -548,6 +578,7 @@ function ChatWindow({
                 message={msg}
                 isOwn={isOwn}
                 showSender={showSender}
+                isGroup={chat.chat_type === 'group'}
                 onEdit={handleStartEdit}
                 onDelete={handleDelete}
               />
@@ -996,7 +1027,7 @@ export default function ChatPage() {
             <div className="h-8 w-8 border-4 border-primary border-r-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <ChatList chats={chats} currentChatId={currentChatId} onSelect={handleSelectChat} />
+          <ChatList chats={chats} currentChatId={currentChatId} typingUsers={typingUsers} onSelect={handleSelectChat} />
         )}
       </div>
 
@@ -1015,7 +1046,6 @@ export default function ChatPage() {
             onLoadMore={handleLoadMore}
             onTypingStart={handleTypingStart}
             onTypingStop={handleTypingStop}
-            isConnected={isConnected}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-background">

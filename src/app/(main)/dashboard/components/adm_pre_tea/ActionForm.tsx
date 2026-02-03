@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 import {
   Select,
   SelectContent,
@@ -24,26 +25,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cleanSubjectName } from "@/utils/subjectHelpers";
-import axios from "axios";
 import { fetchAllPages } from "@/utils/fetchAllPages";
-
-// Función simple para construir URLs con parámetros para rutas proxy
-const buildProxyUrl = (path: string, params?: Record<string, string | number | boolean>): string => {
-  let url = path;
-  if (params) {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        searchParams.append(key, String(value));
-      }
-    });
-    const queryString = searchParams.toString();
-    if (queryString) {
-      url += `?${queryString}`;
-    }
-  }
-  return url;
-};
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -1086,12 +1068,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
             value={formData.title}
             onChange={(e) => handleChange<MessageForm>("title", e.target.value)}
           />
-          <Textarea
-            placeholder="Mensaje"
-            value={formData.message}
-            onChange={(e) =>
-              handleChange<MessageForm>("message", e.target.value)
+          <RichTextEditor
+            content={formData.message}
+            onChange={(html) =>
+              handleChange<MessageForm>("message", html)
             }
+            placeholder="Mensaje"
             className="min-h-[120px]"
           />
           <div className="mb-2 font-medium">Selecciona uno o más cursos:</div>
@@ -1658,13 +1640,12 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
               <div>
                 <Label htmlFor="content">Contenido</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Contenido del mensaje"
-                  value={formData.content}
-                  onChange={(e) =>
-                    handleChange<SubjectMessageForm>("content", e.target.value)
+                <RichTextEditor
+                  content={formData.content}
+                  onChange={(html) =>
+                    handleChange<SubjectMessageForm>("content", html)
                   }
+                  placeholder="Contenido del mensaje"
                 />
               </div>
 

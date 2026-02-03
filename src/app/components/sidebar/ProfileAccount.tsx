@@ -20,13 +20,10 @@ import {
   UserCircleIcon,
   ArrowLeftStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { RefreshCw } from "lucide-react";
 import axios from "axios";
 
-
-
 export default function ProfileAccount() {
-  const { userInfo, fetchUserInfo, refreshUserInfo, isLoading, error } = userInfoStore();
+  const { userInfo, fetchUserInfo, isLoading, error } = userInfoStore();
 
 
 
@@ -36,11 +33,6 @@ export default function ProfileAccount() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
-
-  const forceRefresh = async () => {
-    await refreshUserInfo();
-  };
-
 
   const handleLogout = async () => {
     try {
@@ -171,15 +163,6 @@ export default function ProfileAccount() {
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
-
-
-        <DropdownMenuItem
-          onClick={forceRefresh}
-          className="flex items-center gap-2 cursor-pointer text-primary focus:text-primary"
-        >
-          <RefreshCw className="h-5 w-5" />
-          <span>Recargar Foto</span>
-        </DropdownMenuItem>
 
         <DropdownMenuItem
           onClick={handleLogout}

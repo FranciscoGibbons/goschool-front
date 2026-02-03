@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -17,24 +18,28 @@ import {
   BookMarked,
   CalendarClock,
   CalendarDays,
+  PartyPopper,
 } from "lucide-react";
 import ProfileAccount from "./ProfileAccount";
 import ChildSelector from "./ChildSelector";
+import NotificationBell from "@/components/NotificationBell";
 import { cn } from "@/lib/utils";
 import userInfoStore from "@/store/userInfoStore";
+import featureFlagsStore from "@/store/featureFlagsStore";
 
 const menuItems = [
-  { name: "Mensajes", icon: Mail, href: "/mensajes" },
-  { name: "Chat", icon: MessageCircle, href: "/chat" },
-  { name: "Agenda", icon: CalendarDays, href: "/agenda" },
-  { name: "Asignaturas", icon: BookOpen, href: "/asignaturas" },
-  { name: "Evaluaciones", icon: GraduationCap, href: "/examenes" },
-  { name: "Calificaciones", icon: FileText, href: "/calificaciones" },
-  { name: "Conducta", icon: Users, href: "/conducta" },
-  { name: "Horario", icon: Clock, href: "/horario" },
-  { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia" },
-  { name: "Observaciones", icon: BookMarked, href: "/cuaderno" },
-  { name: "Reuniones", icon: CalendarClock, href: "/turnos" },
+  { name: "Mensajes", icon: Mail, href: "/mensajes", featureKey: "messages" },
+  { name: "Chat", icon: MessageCircle, href: "/chat", featureKey: "chat" },
+  { name: "Agenda", icon: CalendarDays, href: "/agenda", featureKey: "events" },
+  { name: "Asignaturas", icon: BookOpen, href: "/asignaturas", featureKey: "subject_messages" },
+  { name: "Evaluaciones", icon: GraduationCap, href: "/examenes", featureKey: "assessments" },
+  { name: "Calificaciones", icon: FileText, href: "/calificaciones", featureKey: "grades" },
+  { name: "Conducta", icon: Users, href: "/conducta", featureKey: "disciplinary_sanctions" },
+  { name: "Horario", icon: Clock, href: "/horario", featureKey: "timetables" },
+  { name: "Asistencia", icon: ClipboardCheck, href: "/asistencia", featureKey: "assistance" },
+  { name: "Observaciones", icon: BookMarked, href: "/cuaderno", featureKey: "observaciones" },
+  { name: "Eventos", icon: PartyPopper, href: "/eventos", featureKey: "events" },
+  { name: "Reuniones", icon: CalendarClock, href: "/turnos", featureKey: "meeting_requests" },
 ];
 
 const adminMenuItems = [
@@ -44,6 +49,17 @@ const adminMenuItems = [
 export default function Sidebar({ className = "" }: { className?: string }) {
   const pathname = usePathname();
   const { userInfo } = userInfoStore();
+  const { fetchFlags, isEnabled } = featureFlagsStore();
+
+  useEffect(() => {
+    if (userInfo) {
+      fetchFlags();
+    }
+  }, [userInfo, fetchFlags]);
+
+  // Superadmin has its own sidebar
+  if (pathname.startsWith("/superadmin")) return null;
+
   const isAdmin = userInfo?.role === "admin";
   const homeHref = isAdmin ? "/admin" : "/dashboard";
 
@@ -59,8 +75,8 @@ export default function Sidebar({ className = "" }: { className?: string }) {
       aria-label="Menu principal"
     >
       <div className="flex-1 flex flex-col overflow-y-auto">
-        {/* Logo */}
-        <div className="px-4 py-4 border-b border-sidebar-border">
+        {/* Logo + Notifications */}
+        <div className="px-4 py-4 border-b border-sidebar-border flex items-center justify-between">
           <Link href={homeHref} className="block w-24">
             <Image
               src="/images/logo.webp"
@@ -71,6 +87,7 @@ export default function Sidebar({ className = "" }: { className?: string }) {
               priority
             />
           </Link>
+          <NotificationBell />
         </div>
 
         <div className="px-3 py-3">
@@ -137,7 +154,7 @@ export default function Sidebar({ className = "" }: { className?: string }) {
             </li>
 
             {/* All nav items */}
-            {menuItems.map((item) => {
+            {menuItems.filter((item) => isEnabled(item.featureKey)).map((item) => {
               const isActive = isNavActive(item.href);
               return (
                 <li key={item.name}>

@@ -48,6 +48,7 @@ export const eventColors: Record<string, string> = {
   selfassessable: "#8b5cf6",
   class: "#0ea5e9",
   meeting: "#ec4899",
+  event: "#f97316",
   default: "#64748b",
 };
 

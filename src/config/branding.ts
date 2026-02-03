@@ -11,7 +11,7 @@ export const branding = {
   schoolFullName: process.env.NEXT_PUBLIC_SCHOOL_FULL_NAME || "Colegio Stella Maris Rosario",
 
   // App name
-  appName: process.env.NEXT_PUBLIC_APP_NAME || "GoSchool",
+  appName: process.env.NEXT_PUBLIC_APP_NAME || "Klass",
 
   // Logo paths
   logoPath: process.env.NEXT_PUBLIC_LOGO_PATH || "/images/logo.webp",

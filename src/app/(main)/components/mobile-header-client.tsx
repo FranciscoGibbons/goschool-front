@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { branding } from "@/config/branding";
 import userInfoStore from "@/store/userInfoStore";
 import {
@@ -9,9 +10,14 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/sacred";
+import NotificationBell from "@/components/NotificationBell";
 
 export function MobileHeaderClient() {
+  const pathname = usePathname();
   const { userInfo } = userInfoStore();
+
+  // Superadmin has its own header
+  if (pathname.startsWith("/superadmin")) return null;
 
   const getInitials = (name: string): string => {
     if (!name) return "";
@@ -45,7 +51,8 @@ export function MobileHeaderClient() {
         </span>
       </Link>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <NotificationBell />
         <Link
           href="/perfil"
           className="flex items-center"

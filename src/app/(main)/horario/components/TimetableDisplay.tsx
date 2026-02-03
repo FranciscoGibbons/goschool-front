@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import useSubjectsStore from "@/store/subjectsStore";
 import userInfoStore from "@/store/userInfoStore";
@@ -95,6 +95,13 @@ export default function TimetableDisplay({
 
   const canEdit =
     userInfo?.role === "admin" || userInfo?.role === "preceptor";
+
+  const timeSlots = useMemo(() => {
+    if (timetables.length === 0) return TIME_SLOTS;
+    const unique = [...new Set(timetables.map(t => t.start_time.substring(0, 5)))];
+    unique.sort();
+    return unique;
+  }, [timetables]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -288,7 +295,7 @@ export default function TimetableDisplay({
             ))}
 
             {/* Time slots */}
-            {TIME_SLOTS.map((slot) => (
+            {timeSlots.map((slot) => (
 
               <React.Fragment key={slot}>
                 <div className="timetable-time">
@@ -302,6 +309,9 @@ export default function TimetableDisplay({
                         <div className="timetable-subject group relative">
                           <span className="text-xs">
                             {getSubjectName(entry.subject_id)}
+                          </span>
+                          <span className="text-[10px] text-text-secondary">
+                            {entry.start_time.substring(0, 5)} - {entry.end_time.substring(0, 5)}
                           </span>
                           {canEdit && (
                             <div className="absolute -top-1 -right-1 hidden group-hover:flex gap-0.5">
@@ -434,7 +444,7 @@ export default function TimetableDisplay({
                     <SelectValue placeholder="Hora" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TIME_SLOTS.map((t) => (
+                    {timeSlots.map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>
@@ -453,7 +463,7 @@ export default function TimetableDisplay({
                     <SelectValue placeholder="Hora" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TIME_SLOTS.map((t) => (
+                    {timeSlots.map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>

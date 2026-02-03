@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,10 +15,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Modal as Dialog,
+  ModalContent as DialogContent,
+  ModalHeader as DialogHeader,
+  ModalTitle as DialogTitle,
+  ModalDescription as DialogDescription,
+} from "@/components/sacred";
 import {
   Users,
   GraduationCap,
@@ -38,11 +40,12 @@ import {
   UserCheck,
   Upload,
   UserCog,
+  ToggleRight,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { FormsObj } from "@/utils/types";
-import { ActionForm } from "../dashboard/components/adm_pre_tea/ActionForm";
-import "../dashboard/dashboard-modal.css";
+import { ActionFormRouter } from "../dashboard/components/adm_pre_tea/AddActionHandler";
 
 interface DashboardStats {
   total_users: number;
@@ -147,6 +150,37 @@ export default function AdminPage() {
     fetchData();
   }, [router]);
 
+  // Build union of all courses from grades, attendance, and discipline
+  const allCourses = useMemo(() => {
+    if (!academicStats) return [];
+    const courseMap = new Map<number, string>();
+    for (const c of academicStats.grades_by_course) {
+      courseMap.set(c.course_id, c.course_name);
+    }
+    for (const c of academicStats.attendance_by_course) {
+      courseMap.set(c.course_id, c.course_name);
+    }
+    for (const c of academicStats.discipline_by_course) {
+      courseMap.set(c.course_id, c.course_name);
+    }
+    return Array.from(courseMap.entries())
+      .map(([id, name]) => ({ course_id: id, course_name: name }))
+      .sort((a, b) => a.course_id - b.course_id);
+  }, [academicStats]);
+
+  // Filtered tables data
+  const filteredAttendance = useMemo(() => {
+    if (!academicStats) return [];
+    if (selectedCourseId === null) return academicStats.attendance_by_course.filter(c => c.total_records > 0);
+    return academicStats.attendance_by_course.filter((c) => c.course_id === selectedCourseId && c.total_records > 0);
+  }, [academicStats, selectedCourseId]);
+
+  const filteredDiscipline = useMemo(() => {
+    if (!academicStats) return [];
+    if (selectedCourseId === null) return academicStats.discipline_by_course.filter(c => c.total_sanctions > 0);
+    return academicStats.discipline_by_course.filter((c) => c.course_id === selectedCourseId && c.total_sanctions > 0);
+  }, [academicStats, selectedCourseId]);
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -203,6 +237,13 @@ export default function AdminPage() {
       color: "text-icon-stats",
     },
     {
+      title: "Cursos Especiales",
+      description: "Administrar cursos especiales",
+      href: "/admin/special-courses",
+      icon: Star,
+      color: "text-icon-academic",
+    },
+    {
       title: "Importar CSV",
       description: "Importar usuarios y materias desde CSV",
       href: "/admin/import",
@@ -222,6 +263,13 @@ export default function AdminPage() {
       href: "/admin/replacements",
       icon: UserCog,
       color: "text-icon-users",
+    },
+    {
+      title: "Módulos",
+      description: "Activar o desactivar funcionalidades del sistema",
+      href: "/admin/feature-flags",
+      icon: ToggleRight,
+      color: "text-icon-settings",
     },
   ];
 
@@ -266,11 +314,13 @@ export default function AdminPage() {
           ? academicStats?.discipline_by_course.find((c) => c.course_id === selectedCourseId)
           : null;
 
-        const usersValue = selectedCourseId && selectedGrade
-          ? selectedGrade.total_students + selectedGrade.total_teachers
+        const usersValue = selectedCourseId
+          ? (selectedGrade ? selectedGrade.total_students + selectedGrade.total_teachers : 0)
           : dashboardStats?.total_users || 0;
-        const usersDetail = selectedCourseId && selectedGrade
-          ? `${selectedGrade.total_students} estudiantes, ${selectedGrade.total_teachers} docentes`
+        const usersDetail = selectedCourseId
+          ? (selectedGrade
+            ? `${selectedGrade.total_students} estudiantes, ${selectedGrade.total_teachers} docentes`
+            : "Sin datos")
           : `${dashboardStats?.students || 0} estudiantes, ${dashboardStats?.teachers || 0} docentes`;
         const gradeValue = selectedCourseId
           ? selectedGrade?.average_grade ?? null
@@ -295,7 +345,7 @@ export default function AdminPage() {
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="">Todos los cursos</option>
-                {academicStats?.grades_by_course.map((c) => (
+                {allCourses.map((c) => (
                   <option key={c.course_id} value={c.course_id}>
                     {c.course_name}
                   </option>
@@ -402,63 +452,8 @@ export default function AdminPage() {
       </div>
 
 
-      {/* Grades by Course - Detailed Table */}
-      {academicStats && academicStats.grades_by_course.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Detalle de Calificaciones por Curso
-            </CardTitle>
-            <CardDescription>Estadísticas detalladas de calificaciones</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Curso</TableHead>
-                  <TableHead className="text-center">Estudiantes</TableHead>
-                  <TableHead className="text-center">Calificaciones</TableHead>
-                  <TableHead className="text-center">Promedio</TableHead>
-                  <TableHead className="text-center">Mín / Máx</TableHead>
-                  <TableHead className="text-center">Aprobados</TableHead>
-                  <TableHead className="text-center">Desaprobados</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {academicStats.grades_by_course.map((course) => (
-                  <TableRow key={course.course_id}>
-                    <TableCell className="font-medium">{course.course_name}</TableCell>
-                    <TableCell className="text-center">{course.total_students}</TableCell>
-                    <TableCell className="text-center">{course.total_grades}</TableCell>
-                    <TableCell className="text-center">
-                      <span className={`font-bold ${getGradeColor(course.average_grade)}`}>
-                        {course.average_grade?.toFixed(2) || "-"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center text-sm text-muted-foreground">
-                      {course.min_grade?.toFixed(1) || "-"} / {course.max_grade?.toFixed(1) || "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="text-success border-success">
-                        {course.passing_count}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="text-error border-error">
-                        {course.failing_count}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Attendance by Course - Detailed Table */}
-      {academicStats && academicStats.attendance_by_course.length > 0 && (
+      {filteredAttendance.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -481,7 +476,7 @@ export default function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {academicStats.attendance_by_course.map((course) => (
+                {filteredAttendance.map((course) => (
                   <TableRow key={course.course_id}>
                     <TableCell className="font-medium">{course.course_name}</TableCell>
                     <TableCell className="text-center">{course.total_records}</TableCell>
@@ -525,7 +520,7 @@ export default function AdminPage() {
       )}
 
       {/* Discipline by Course */}
-      {academicStats && academicStats.discipline_by_course.some(c => c.total_sanctions > 0) && (
+      {filteredDiscipline.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -545,9 +540,7 @@ export default function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {academicStats.discipline_by_course
-                  .filter(c => c.total_sanctions > 0)
-                  .map((course) => (
+                {filteredDiscipline.map((course) => (
                   <TableRow key={course.course_id}>
                     <TableCell className="font-medium">{course.course_name}</TableCell>
                     <TableCell className="text-center">
@@ -625,7 +618,7 @@ export default function AdminPage() {
       {/* Quick Create Actions */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Acciones rapidas</h2>
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
           {adminCreateActions.map((action) => (
             <button
               key={action.key}
@@ -668,15 +661,18 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Create Dialog */}
+      {/* Create Modal */}
       <Dialog open={modalOpen} onOpenChange={(open) => {
         setModalOpen(open);
         if (!open) setCreateAction(null);
       }}>
-        <DialogContent className="max-w-2xl dashboard-modal-content">
-          <DialogTitle>{createAction || "Crear"}</DialogTitle>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{createAction || "Crear"}</DialogTitle>
+            <DialogDescription>Completar los datos del formulario</DialogDescription>
+          </DialogHeader>
           {createAction && (
-            <ActionForm
+            <ActionFormRouter
               action={createAction}
               onBack={() => {
                 setCreateAction(null);

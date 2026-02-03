@@ -20,6 +20,7 @@ import {
   BookOpen,
   FileText,
 } from "lucide-react";
+import { EVENT_TYPES, EventType } from "@/types/events";
 import type { AgendaEventType } from "@/hooks/useAgendaEvents";
 
 interface AgendaEventDetailProps {
@@ -239,6 +240,101 @@ function ClassDetail({ event }: { event: CalendarEvent }) {
   );
 }
 
+function EventDetail({ event }: { event: CalendarEvent }) {
+  const props = event.extendedProps || {};
+  const eventTypeKey = props.eventTypeKey as EventType | undefined;
+  const typeName = eventTypeKey ? EVENT_TYPES[eventTypeKey] : (props.eventTypeName as string) || "Evento";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Badge variant="warning">{typeName}</Badge>
+        {props.courseId ? (
+          <Badge variant="secondary">Curso</Badge>
+        ) : (
+          <Badge variant="info">General</Badge>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        {props.description && (
+          <div className="flex items-start gap-2.5">
+            <FileText className="h-4 w-4 text-text-secondary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-text-secondary">Descripcion</p>
+              <p className="text-sm text-text-primary">
+                {props.description as string}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-start gap-2.5">
+          <Calendar className="h-4 w-4 text-text-secondary mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-xs font-medium text-text-secondary">Fecha</p>
+            <p className="text-sm text-text-primary">
+              {props.startDate
+                ? (() => {
+                    const fmt = (d: string) =>
+                      new Date(d).toLocaleDateString("es-AR", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      });
+                    const start = fmt(props.startDate as string);
+                    if (props.endDate && props.endDate !== props.startDate) {
+                      return `${start} — ${fmt(props.endDate as string)}`;
+                    }
+                    return start;
+                  })()
+                : "-"}
+            </p>
+          </div>
+        </div>
+
+        {props.startTime && (
+          <div className="flex items-start gap-2.5">
+            <Clock className="h-4 w-4 text-text-secondary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-text-secondary">Horario</p>
+              <p className="text-sm text-text-primary">
+                {props.startTime as string}
+                {props.endTime ? ` - ${props.endTime as string}` : ""}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {props.location && (
+          <div className="flex items-start gap-2.5">
+            <MapPin className="h-4 w-4 text-text-secondary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-text-secondary">Lugar</p>
+              <p className="text-sm text-text-primary">
+                {props.location as string}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {props.creatorName && (
+          <div className="flex items-start gap-2.5">
+            <User className="h-4 w-4 text-text-secondary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-text-secondary">Creado por</p>
+              <p className="text-sm text-text-primary">
+                {props.creatorName as string}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AgendaEventDetail({
   event,
   onClose,
@@ -254,6 +350,8 @@ export default function AgendaEventDetail({
         return "Reunion";
       case "class":
         return (event.extendedProps?.subjectName as string) || "Clase";
+      case "event":
+        return event.title;
       default:
         return event.title;
     }
@@ -272,6 +370,7 @@ export default function AgendaEventDetail({
         )}
         {event && eventType === "meeting" && <MeetingDetail event={event} />}
         {event && eventType === "class" && <ClassDetail event={event} />}
+        {event && eventType === "event" && <EventDetail event={event} />}
 
         <ModalFooter>
           <Button variant="secondary" onClick={onClose}>

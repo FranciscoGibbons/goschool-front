@@ -17,16 +17,24 @@ function extractJwtFromCookie(cookieString: string): string | null {
   return null;
 }
 
+function getTenant(request: NextRequest): string {
+  const host = request.headers.get('host') || '';
+  const match = host.match(/^([a-z0-9-]+)\.goschool\./);
+  return match ? match[1] : (process.env.NEXT_PUBLIC_DEFAULT_SCHOOL || '');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const cookie = request.headers.get('cookie') || '';
     const token = extractJwtFromCookie(cookie);
     const formData = await request.formData();
+    const tenant = getTenant(request);
 
     const response = await fetch(`${BACKEND_URL}/api/v1/assessments/upload/`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(tenant ? { 'X-Tenant': tenant } : {}),
       },
       body: formData,
       // @ts-expect-error - httpsAgent is valid for node-fetch

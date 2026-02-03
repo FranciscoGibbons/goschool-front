@@ -17,14 +17,18 @@ import {
   Clock,
   MessageCircle,
 } from "lucide-react";
-import { LoadingSpinner, PageHeader, Card, CardContent } from "@/components/sacred";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import "../../dashboard-modal.css";
-import { ActionForm } from "./ActionForm";
+  LoadingSpinner,
+  PageHeader,
+  Card,
+  CardContent,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+} from "@/components/sacred";
+import { ActionFormRouter } from "./AddActionHandler";
 
 import axios from "axios";
 
@@ -309,15 +313,18 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
         </div>
       </div>
 
-      {/* Create Dialog */}
-      <Dialog open={modalOpen} onOpenChange={(open) => {
+      {/* Create Modal */}
+      <Modal open={modalOpen} onOpenChange={(open) => {
         setModalOpen(open);
         if (!open) setCreateAction(null);
       }}>
-        <DialogContent className="max-w-2xl dashboard-modal-content">
-          <DialogTitle>{createAction || "Crear"}</DialogTitle>
+        <ModalContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <ModalHeader>
+            <ModalTitle>{createAction || "Crear"}</ModalTitle>
+            <ModalDescription>Completar los datos del formulario</ModalDescription>
+          </ModalHeader>
           {createAction && (
-            <ActionForm
+            <ActionFormRouter
               action={createAction}
               onBack={() => {
                 setCreateAction(null);
@@ -329,8 +336,8 @@ const DashAdminPreceptorTeacher = ({ role }: { role: ActionableRole }) => {
               }}
             />
           )}
-        </DialogContent>
-      </Dialog>
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

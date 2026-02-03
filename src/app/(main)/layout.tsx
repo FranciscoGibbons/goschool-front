@@ -1,6 +1,7 @@
 import Sidebar from "../components/sidebar/Sidebar";
 import { MobileHeaderClient } from "./components/mobile-header-client";
 import MobileBottomTabs from "@/components/MobileBottomTabs";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 
 export default async function DashboardLayout({
   children,
@@ -27,6 +28,9 @@ export default async function DashboardLayout({
         {/* Bottom Navigation - Mobile only */}
         <MobileBottomTabs />
       </div>
+
+      {/* Push notification permission prompt */}
+      <PushNotificationPrompt />
     </div>
   );
 }

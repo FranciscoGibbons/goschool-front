@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileUpload } from "@/components/ui/profile-upload";
 import userInfoStore from "@/store/userInfoStore";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   Phone,
@@ -19,19 +20,23 @@ import {
   Pencil,
   X,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import { branding } from "@/config/branding";
 import axios from "axios";
 import { toast } from "sonner";
 
 export function ProfileContent() {
-  const { userInfo, fetchUserInfo } = userInfoStore();
+  const { userInfo, fetchUserInfo, refreshUserInfo } = userInfoStore();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({
     phone_number: "",
     address: "",
   });
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
 
   useEffect(() => {
     if (!userInfo || !userInfo.role) {
@@ -48,6 +53,39 @@ export function ProfileContent() {
       });
     }
   }, [userInfo]);
+
+  useEffect(() => {
+    axios
+      .get("/api/proxy/available-roles/", { withCredentials: true })
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setAvailableRoles(res.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSwitchRole = async (role: string) => {
+    if (role === userInfo?.role || isSwitchingRole) return;
+    setIsSwitchingRole(true);
+    try {
+      const res = await axios.post("/api/proxy/switch-role/", role, {
+        withCredentials: true,
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.data?.success) {
+        toast.success(`Rol cambiado a ${getRoleLabel(role)}`);
+        await refreshUserInfo();
+        router.refresh();
+      } else {
+        toast.error("No se pudo cambiar el rol");
+      }
+    } catch {
+      toast.error("Error al cambiar el rol");
+    } finally {
+      setIsSwitchingRole(false);
+    }
+  };
 
   const getInitials = (name: string): string => {
     if (!name) return "";
@@ -376,25 +414,57 @@ export function ProfileContent() {
         {/* Role Information - Spans remaining columns */}
         <Card className="md:col-span-2">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <div className="p-2 bg-surface-muted rounded-lg">
-                {getRoleIcon(userInfo.role)}
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <div className="p-2.5 bg-surface-muted rounded-lg">
+                <Shield className="h-6 w-6 text-primary" />
               </div>
-              Información del Rol
+              {availableRoles.length > 1 ? "Cambiar Rol" : "Información del Rol"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Badge
-                  variant={getRoleVariant(userInfo.role)}
-                  icon={getRoleIcon(userInfo.role)}
-                >
-                  {getRoleLabel(userInfo.role)}
-                </Badge>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                {availableRoles.length > 1 ? (
+                  availableRoles.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => handleSwitchRole(r)}
+                      disabled={r === userInfo.role || isSwitchingRole}
+                      className="cursor-pointer disabled:cursor-default disabled:opacity-100 transition-all hover:opacity-80 hover:scale-105"
+                    >
+                      <Badge
+                        variant={getRoleVariant(r)}
+                        icon={
+                          isSwitchingRole && r !== userInfo.role ? (
+                            <RefreshCw className="h-5 w-5 animate-spin" />
+                          ) : (
+                            getRoleIcon(r)
+                          )
+                        }
+                        className={`text-sm px-4 py-2 [&>svg]:size-4 ${
+                          r === userInfo.role
+                            ? "ring-3 ring-primary ring-offset-2"
+                            : "opacity-60"
+                        }`}
+                      >
+                        {getRoleLabel(r)}
+                      </Badge>
+                    </button>
+                  ))
+                ) : (
+                  <Badge
+                    variant={getRoleVariant(userInfo.role)}
+                    icon={getRoleIcon(userInfo.role)}
+                    className="text-sm px-4 py-2 [&>svg]:size-4"
+                  >
+                    {getRoleLabel(userInfo.role)}
+                  </Badge>
+                )}
               </div>
               <p className="text-sm text-text-secondary">
-                Tu rol determina las funcionalidades y permisos disponibles en el sistema académico.
+                {availableRoles.length > 1
+                  ? "Seleccioná un rol para cambiar tu acceso activo en el sistema."
+                  : "Tu rol determina las funcionalidades y permisos disponibles en el sistema académico."}
               </p>
             </div>
           </CardContent>

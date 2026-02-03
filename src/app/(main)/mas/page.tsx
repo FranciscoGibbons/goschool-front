@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import {
   Clock,
@@ -15,9 +16,11 @@ import {
   FileText,
   ClipboardCheck,
   CalendarDays,
+  PartyPopper,
 } from "lucide-react";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import userInfoStore from "@/store/userInfoStore";
+import featureFlagsStore from "@/store/featureFlagsStore";
 import axios from "axios";
 
 interface MenuItem {
@@ -28,10 +31,18 @@ interface MenuItem {
   destructive?: boolean;
   adminOnly?: boolean;
   staffOnly?: boolean;
+  featureKey?: string;
 }
 
 function MasContent() {
   const { userInfo } = userInfoStore();
+  const { fetchFlags, isEnabled } = featureFlagsStore();
+
+  useEffect(() => {
+    if (userInfo) {
+      fetchFlags();
+    }
+  }, [userInfo, fetchFlags]);
   const role = userInfo?.role;
   const isAdmin = role === "admin";
   const isStaff = role === "admin" || role === "teacher" || role === "preceptor";
@@ -49,24 +60,25 @@ function MasContent() {
     {
       title: "Academico",
       items: [
-        { icon: CalendarDays, label: "Agenda", href: "/agenda" },
-        { icon: Clock, label: "Horario", href: "/horario" },
-        { icon: BookOpen, label: "Asignaturas", href: "/asignaturas" },
-        { icon: GraduationCap, label: "Evaluaciones", href: "/examenes" },
+        { icon: CalendarDays, label: "Agenda", href: "/agenda", featureKey: "events" },
+        { icon: PartyPopper, label: "Eventos", href: "/eventos", featureKey: "events" },
+        { icon: Clock, label: "Horario", href: "/horario", featureKey: "timetables" },
+        { icon: BookOpen, label: "Asignaturas", href: "/asignaturas", featureKey: "subject_messages" },
+        { icon: GraduationCap, label: "Evaluaciones", href: "/examenes", featureKey: "assessments" },
         ...(isStaff
           ? [
-              { icon: FileText, label: "Calificaciones", href: "/calificaciones" },
-              { icon: ClipboardCheck, label: "Asistencia", href: "/asistencia" },
+              { icon: FileText, label: "Calificaciones", href: "/calificaciones", featureKey: "grades" },
+              { icon: ClipboardCheck, label: "Asistencia", href: "/asistencia", featureKey: "assistance" },
             ]
           : []),
-        { icon: Users, label: "Conducta", href: "/conducta" },
+        { icon: Users, label: "Conducta", href: "/conducta", featureKey: "disciplinary_sanctions" },
       ],
     },
     {
       title: "Comunicacion",
       items: [
-        { icon: Mail, label: "Mensajes", href: "/mensajes" },
-        { icon: MessageCircle, label: "Chat", href: "/chat" },
+        { icon: Mail, label: "Mensajes", href: "/mensajes", featureKey: "messages" },
+        { icon: MessageCircle, label: "Chat", href: "/chat", featureKey: "chat" },
       ],
     },
     {
@@ -92,7 +104,12 @@ function MasContent() {
         <h1 className="page-title">Mas</h1>
       </div>
 
-      {menuSections.map((section, sectionIdx) => (
+      {menuSections.map((section, sectionIdx) => {
+        const visibleItems = section.items.filter(
+          (item) => !item.featureKey || isEnabled(item.featureKey)
+        );
+        if (visibleItems.length === 0) return null;
+        return (
         <div key={sectionIdx}>
           {section.title && (
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider px-1 mb-2">
@@ -100,7 +117,7 @@ function MasContent() {
             </p>
           )}
           <div className="sacred-card !p-0 overflow-hidden divide-y divide-border">
-            {section.items.map((item, itemIdx) => {
+            {visibleItems.map((item, itemIdx) => {
               const content = (
                 <div className="flex items-center justify-between px-4 py-3.5">
                   <div className="flex items-center gap-3">
@@ -147,7 +164,8 @@ function MasContent() {
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

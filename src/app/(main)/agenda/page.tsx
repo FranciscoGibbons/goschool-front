@@ -14,12 +14,30 @@ import AgendaEventDetail from "./components/AgendaEventDetail";
 import AgendaLegend from "./components/AgendaLegend";
 import userInfoStore from "@/store/userInfoStore";
 import childSelectionStore from "@/store/childSelectionStore";
+import { EVENT_TYPES, EventType } from "@/types/events";
 import {
+  Button,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   ErrorBoundary,
   ErrorDisplay,
+  FormGroup,
+  Input,
+  Label,
   LoadingSpinner,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalFooter,
+  NativeSelect,
   PageHeader,
+  Textarea,
 } from "@/components/sacred";
+import { Plus } from "lucide-react";
 
 function AgendaContent() {
   const { userInfo } = userInfoStore();
@@ -41,11 +59,17 @@ function AgendaContent() {
     showAssessments: true,
     showMeetings: true,
     showClasses: false,
+    showEvents: true,
   });
 
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null
   );
+
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [createEventLoading, setCreateEventLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [eventCourseId, setEventCourseId] = useState<number | null>(null);
 
   // Determine courseId based on role
   const effectiveCourseId = (() => {
@@ -64,10 +88,56 @@ function AgendaContent() {
       academicYearId: selectedYearId,
       filters,
       showTimetables: filters.showClasses,
+      refreshTrigger: refreshKey,
     });
+
+  const canCreateEvents = role === "admin" || role === "teacher" || role === "preceptor";
 
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setCreateEventLoading(true);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    const body: Record<string, unknown> = {
+      title: formData.get("title") as string,
+      description: (formData.get("description") as string) || null,
+      event_type: formData.get("event_type") as string,
+      start_date: formData.get("start_date") as string,
+      end_date: (formData.get("end_date") as string) || null,
+      start_time: (formData.get("start_time") as string) || null,
+      end_time: (formData.get("end_time") as string) || null,
+      location: (formData.get("location") as string) || null,
+    };
+
+    body.course_id = eventCourseId;
+
+    if (selectedYearId) {
+      body.academic_year_id = selectedYearId;
+    }
+
+    try {
+      const res = await fetch("/api/proxy/events/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        setShowCreateEvent(false);
+        setEventCourseId(null);
+        setRefreshKey((k) => k + 1);
+      }
+    } catch (err) {
+      console.error("Error creating event:", err);
+    } finally {
+      setCreateEventLoading(false);
+    }
   };
 
   if (coursesLoading) {
@@ -109,6 +179,138 @@ function AgendaContent() {
       </div>
     );
   }
+
+  const createEventModal = (
+    <Modal open={showCreateEvent} onOpenChange={setShowCreateEvent}>
+      <ModalContent className="max-w-lg">
+        <ModalHeader>
+          <ModalTitle>Nuevo evento</ModalTitle>
+          <ModalDescription>Crear un evento escolar</ModalDescription>
+        </ModalHeader>
+        <form onSubmit={handleCreateEvent} className="space-y-4">
+          <FormGroup>
+            <Label htmlFor="event-title">Titulo *</Label>
+            <Input id="event-title" name="title" required placeholder="Nombre del evento" />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="event-description">Descripcion</Label>
+            <Textarea id="event-description" name="description" rows={3} placeholder="Descripcion del evento (opcional)" />
+          </FormGroup>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormGroup>
+              <Label htmlFor="event-type">Tipo de evento *</Label>
+              <NativeSelect id="event-type" name="event_type" required>
+                {(Object.entries(EVENT_TYPES) as [EventType, string][]).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </NativeSelect>
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="start-date">Fecha inicio *</Label>
+              <Input id="start-date" name="start_date" type="date" required />
+            </FormGroup>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormGroup>
+              <Label htmlFor="end-date">Fecha fin</Label>
+              <Input id="end-date" name="end_date" type="date" />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="event-start">Hora inicio</Label>
+              <Input id="event-start" name="start_time" type="time" />
+            </FormGroup>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormGroup>
+              <Label htmlFor="event-end">Hora fin</Label>
+              <Input id="event-end" name="end_time" type="time" />
+            </FormGroup>
+          </div>
+
+          <FormGroup>
+            <Label htmlFor="event-location">Ubicacion</Label>
+            <Input id="event-location" name="location" placeholder="Lugar del evento (opcional)" />
+          </FormGroup>
+
+          <FormGroup>
+            <Label>Curso</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" className="w-full justify-start text-sm font-normal">
+                  {eventCourseId === null
+                    ? "Todo el colegio"
+                    : courses.find((c) => c.id === eventCourseId)?.name || "Todo el colegio"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-80 max-h-64 overflow-y-auto p-2">
+                <div className="flex gap-2 mb-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setEventCourseId(null)}
+                  >
+                    Todo el colegio
+                  </Button>
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => {
+                      const primary = courses.find((c) => c.level === "primary");
+                      if (primary) setEventCourseId(primary.id);
+                    }}
+                  >
+                    Primaria
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => {
+                      const secondary = courses.find((c) => c.level === "secondary");
+                      if (secondary) setEventCourseId(secondary.id);
+                    }}
+                  >
+                    Secundaria
+                  </Button>
+                </div>
+                {courses.map((course) => (
+                  <DropdownMenuCheckboxItem
+                    key={course.id}
+                    checked={eventCourseId === course.id}
+                    onCheckedChange={(checked) => {
+                      setEventCourseId(checked ? course.id : null);
+                    }}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {course.name}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </FormGroup>
+
+          <ModalFooter>
+            <Button type="button" variant="secondary" onClick={() => { setShowCreateEvent(false); setEventCourseId(null); }}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={createEventLoading}>
+              {createEventLoading ? "Creando..." : "Crear evento"}
+            </Button>
+          </ModalFooter>
+        </form>
+      </ModalContent>
+    </Modal>
+  );
 
   // Student/Father view
   if (isStudentOrFather) {
@@ -165,6 +367,14 @@ function AgendaContent() {
       <PageHeader
         title="Agenda"
         subtitle="Calendario de actividades"
+        action={
+          canCreateEvents ? (
+            <Button variant="primary" size="sm" onClick={() => setShowCreateEvent(true)}>
+              <Plus className="size-4" />
+              Nuevo evento
+            </Button>
+          ) : null
+        }
       />
 
       <div className="flex flex-wrap items-center gap-3 p-3 sacred-card">
@@ -220,6 +430,8 @@ function AgendaContent() {
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
       />
+
+      {canCreateEvents && createEventModal}
     </div>
   );
 }

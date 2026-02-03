@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Extract tenant from subdomain (e.g., stella.goschool.ar -> stella)
     const host = request.headers.get('host') || '';
     const tenantMatch = host.match(/^([a-z0-9-]+)\.goschool\./);
-    const tenant = tenantMatch ? tenantMatch[1] : (request.headers.get('x-tenant') || '');
+    const tenant = tenantMatch ? tenantMatch[1] : (process.env.NEXT_PUBLIC_DEFAULT_SCHOOL || request.headers.get('x-tenant') || '');
 
     // Send role selection to backend with the temp JWT
     // The body should just contain the role (e.g., "admin", "teacher", etc.)

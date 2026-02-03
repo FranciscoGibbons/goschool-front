@@ -32,6 +32,9 @@ const PUBLIC_ROUTES = [
 
 // Rutas permitidas sin subdominio (landing + superadmin)
 const NO_SUBDOMAIN_ALLOWED = [
+  '/login',
+  '/forgot-password',
+  '/reset-password',
   '/superadmin-login',
   '/superadmin',
   '/_next',
@@ -39,11 +42,21 @@ const NO_SUBDOMAIN_ALLOWED = [
   '/images',
   '/public',
   '/api/proxy/superadmin',
+  '/api/proxy/login',
+  '/api/proxy/verify-token',
+  '/api/proxy/verify_token',
+  '/api/proxy/request-reset-password',
+  '/api/proxy/reset-password',
 ] as const;
 
 function getSubdomain(host: string): string | null {
   const match = host.match(/^([a-z0-9-]+)\.goschool\./);
-  return match ? match[1] : null;
+  if (match) return match[1];
+  return null;
+}
+
+function getTenant(host: string): string | null {
+  return getSubdomain(host) || process.env.NEXT_PUBLIC_DEFAULT_SCHOOL || null;
 }
 
 // Headers de seguridad
@@ -82,31 +95,44 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || '';
   const subdomain = getSubdomain(host);
+  const tenant = getTenant(host);
 
-  // --- Sin subdominio: solo landing + superadmin ---
-  if (!subdomain) {
+  // --- Sin subdominio real Y sin default school: solo landing + superadmin ---
+  if (!subdomain && !tenant) {
     // Permitir la raíz (landing page)
     if (pathname === '/') {
       const response = NextResponse.next();
       return addSecurityHeaders(response);
     }
 
-    // Permitir rutas de superadmin y estáticos
+    // Permitir rutas sin subdominio (login, superadmin, estáticos)
     if (NO_SUBDOMAIN_ALLOWED.some(route => pathname.startsWith(route))) {
       const response = NextResponse.next();
       return addSecurityHeaders(response);
     }
 
-    // Todo lo demás sin subdominio → redirect a landing
+    // Todo lo demás sin tenant → redirect a landing
     const landingUrl = new URL('/', request.url);
     const response = NextResponse.redirect(landingUrl);
     return addSecurityHeaders(response);
   }
 
-  // --- Con subdominio: comportamiento normal de la app escolar ---
+  // --- Con subdominio o default school: comportamiento normal ---
 
   // Permitir rutas públicas sin verificación
   if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+    const response = NextResponse.next();
+    return addSecurityHeaders(response);
+  }
+
+  // La raíz con tenant muestra la landing (el usuario decide si ir a /login)
+  if (pathname === '/') {
+    const response = NextResponse.next();
+    return addSecurityHeaders(response);
+  }
+
+  // Permitir rutas sin subdominio (login, superadmin, estáticos)
+  if (NO_SUBDOMAIN_ALLOWED.some(route => pathname.startsWith(route))) {
     const response = NextResponse.next();
     return addSecurityHeaders(response);
   }
@@ -131,7 +157,7 @@ export function middleware(request: NextRequest) {
     return addSecurityHeaders(response);
   }
 
-  // Para rutas no protegidas con subdominio, solo añadir headers
+  // Para rutas no protegidas, solo añadir headers
   const response = NextResponse.next();
   return addSecurityHeaders(response);
 }
