@@ -37,7 +37,16 @@ export async function GET(
 
     const imageUrl = `${BACKEND_URL}/${imagePath}`;
 
+    // Extract the JWT cookie from the incoming request and forward it as an
+    // Authorization header so the backend can authenticate the file request.
+    const jwtCookie = request.cookies.get('jwt')?.value;
+    const headers: Record<string, string> = {};
+    if (jwtCookie) {
+      headers['Authorization'] = `Bearer ${jwtCookie}`;
+    }
+
     const response = await fetch(imageUrl, {
+      headers,
       // @ts-expect-error - agent is valid for node-fetch
       agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
     });

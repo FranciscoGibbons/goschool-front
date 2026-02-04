@@ -8,13 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Settings, ArrowLeft } from "lucide-react";
+import { Settings, ArrowLeft, Lock } from "lucide-react";
 import Link from "next/link";
 
 interface FeatureFlag {
   id: number;
   feature: string;
   is_enabled: boolean;
+  locked_by_superadmin: boolean;
 }
 
 export default function FeatureFlagsPage() {
@@ -123,19 +124,31 @@ export default function FeatureFlagsPage() {
               {flags.map((flag) => (
                 <div
                   key={flag.id}
-                  className="flex items-center justify-between p-4 rounded-lg border"
+                  className={`flex items-center justify-between p-4 rounded-lg border ${
+                    flag.locked_by_superadmin ? "opacity-60 bg-muted/50" : ""
+                  }`}
                 >
-                  <Label
-                    htmlFor={`flag-${flag.id}`}
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    {flag.feature}
-                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor={`flag-${flag.id}`}
+                      className={`text-sm font-medium ${
+                        flag.locked_by_superadmin ? "cursor-not-allowed" : "cursor-pointer"
+                      }`}
+                    >
+                      {flag.feature}
+                    </Label>
+                    {flag.locked_by_superadmin && (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Lock className="h-3 w-3" />
+                        Bloqueado por el superadmin
+                      </span>
+                    )}
+                  </div>
                   <Switch
                     id={`flag-${flag.id}`}
                     checked={flag.is_enabled}
                     onCheckedChange={() => handleToggle(flag)}
-                    disabled={updatingId === flag.id}
+                    disabled={updatingId === flag.id || flag.locked_by_superadmin}
                   />
                 </div>
               ))}

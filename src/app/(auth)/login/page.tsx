@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import LoginForm from "./components/LoginForm";
 import Image from "next/image";
 import { branding, brandingMeta } from "@/config/branding";
@@ -105,7 +106,9 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form */}
-          <LoginForm />
+          <Suspense fallback={null}>
+            <LoginForm />
+          </Suspense>
 
           {/* Footer on desktop */}
           <p className="hidden lg:block mt-10 text-center text-xs text-text-muted">

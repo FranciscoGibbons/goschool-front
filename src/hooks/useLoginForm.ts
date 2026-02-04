@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import userInfoStore from "@/store/userInfoStore";
+import { getSafeRedirectPath } from "@/lib/security";
 
 interface LoginCredentials {
   email: string;
@@ -44,6 +45,13 @@ export const useLoginForm = (): UseLoginFormReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [roles, setRoles] = useState<string[]>([]);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Obtener la ruta de destino después del login (validada contra open redirect)
+  const redirectTo = useMemo(
+    () => getSafeRedirectPath(searchParams.get("from")),
+    [searchParams]
+  );
 
   // Validación del formulario
   const isFormValid = useMemo(() => {
@@ -138,6 +146,17 @@ export const useLoginForm = (): UseLoginFormReturn => {
     setErrorLogin(null);
   }, []);
 
+  // Esperar cookie JWT, cargar info de usuario y redirigir
+  const completeLoginAndRedirect = useCallback(async () => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await fetchUserInfo();
+    } catch (err) {
+      console.error("Error fetching user info:", err);
+    }
+    router.push(redirectTo);
+  }, [fetchUserInfo, router, redirectTo]);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -161,19 +180,9 @@ export const useLoginForm = (): UseLoginFormReturn => {
           }
 
           if (loginResult.selectRole && loginResult.roles && loginResult.roles.length > 0) {
-            // Multiple roles - show role selector
             setRoles(loginResult.roles);
           } else {
-            // Single role - login successful, redirect
-            try {
-              console.log("⏳ Esperando que se establezca la cookie JWT...");
-              await new Promise(resolve => setTimeout(resolve, 300));
-              await fetchUserInfo();
-              router.push("/dashboard");
-            } catch (userInfoError) {
-              console.error("Error fetching user info:", userInfoError);
-              router.push("/dashboard");
-            }
+            await completeLoginAndRedirect();
           }
         } else {
           // Step 2: Select role (we already have temp JWT in cookie)
@@ -183,17 +192,8 @@ export const useLoginForm = (): UseLoginFormReturn => {
           }
 
           const success = await selectRole(role);
-
           if (success) {
-            try {
-              console.log("⏳ Esperando que se establezca la cookie JWT...");
-              await new Promise(resolve => setTimeout(resolve, 300));
-              await fetchUserInfo();
-              router.push("/dashboard");
-            } catch (userInfoError) {
-              console.error("Error fetching user info:", userInfoError);
-              router.push("/dashboard");
-            }
+            await completeLoginAndRedirect();
           }
         }
       } catch (error) {
@@ -214,8 +214,7 @@ export const useLoginForm = (): UseLoginFormReturn => {
       isFormValid,
       performLogin,
       selectRole,
-      fetchUserInfo,
-      router,
+      completeLoginAndRedirect,
     ]
   );
 

@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import userInfoStore from '@/store/userInfoStore';
+import { getSafeRedirectPath } from '@/lib/security';
 
 interface UseAuthRedirectOptions {
   requiredRole?: string;
@@ -17,8 +18,7 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
   const [isChecking, setIsChecking] = useState(true);
 
   const handleRedirect = useCallback((path: string) => {
-    const from = searchParams.get('from');
-    router.push(from && from !== '/login' ? from : path);
+    router.push(getSafeRedirectPath(searchParams.get('from'), path));
   }, [router, searchParams]);
 
   const verifyAuth = useCallback(async () => {

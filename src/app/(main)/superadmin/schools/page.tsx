@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, Settings } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 interface School {
@@ -11,6 +12,14 @@ interface School {
   name: string;
   database_name: string;
   is_active: boolean;
+  description: string | null;
+  primary_color: string | null;
+  logo_url: string | null;
+  hero_title: string | null;
+  hero_description: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  address: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +38,14 @@ interface CreateForm {
 interface EditForm {
   name: string;
   is_active: boolean;
+  description: string;
+  primary_color: string;
+  logo_url: string;
+  hero_title: string;
+  hero_description: string;
+  contact_email: string;
+  contact_phone: string;
+  address: string;
 }
 
 interface LevelConfig {
@@ -78,7 +95,7 @@ export default function SchoolsPage() {
 
   // Edit state
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ name: '', is_active: true });
+  const [editForm, setEditForm] = useState<EditForm>({ name: '', is_active: true, description: '', primary_color: '#1a73e8', logo_url: '', hero_title: '', hero_description: '', contact_email: '', contact_phone: '', address: '' });
 
   // Delete state
   const [deletingSchool, setDeletingSchool] = useState<School | null>(null);
@@ -233,7 +250,18 @@ export default function SchoolsPage() {
 
   const openEdit = (school: School) => {
     setEditingSchool(school);
-    setEditForm({ name: school.name, is_active: school.is_active });
+    setEditForm({
+      name: school.name,
+      is_active: school.is_active,
+      description: school.description || '',
+      primary_color: school.primary_color || '#1a73e8',
+      logo_url: school.logo_url || '',
+      hero_title: school.hero_title || '',
+      hero_description: school.hero_description || '',
+      contact_email: school.contact_email || '',
+      contact_phone: school.contact_phone || '',
+      address: school.address || '',
+    });
   };
 
   const updateLevel = (level: 'primary' | 'secondary', updates: Partial<LevelConfig>) => {
@@ -310,6 +338,13 @@ export default function SchoolsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/superadmin/schools/${school.slug}/features`}
+                          className="inline-flex items-center justify-center rounded-md text-sm h-8 w-8 hover:bg-muted transition-colors"
+                          title="Feature Flags"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Link>
                         <button
                           onClick={() => openEdit(school)}
                           className="inline-flex items-center justify-center rounded-md text-sm h-8 w-8 hover:bg-muted transition-colors"
@@ -612,7 +647,7 @@ export default function SchoolsPage() {
       {/* Edit Dialog */}
       {editingSchool && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingSchool(null)}>
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-background rounded-lg shadow-lg w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div>
               <h2 className="text-lg font-semibold">Edit School</h2>
               <p className="text-sm text-muted-foreground">Editing: {editingSchool.slug}</p>
@@ -638,6 +673,96 @@ export default function SchoolsPage() {
                     editForm.is_active ? 'translate-x-6' : 'translate-x-1'
                   }`} />
                 </button>
+              </div>
+
+              {/* Landing Page Config */}
+              <hr className="my-1" />
+              <p className="text-xs text-muted-foreground font-medium">Landing Page</p>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Descripcion</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className={`${inputClass} min-h-[80px] resize-y`}
+                  placeholder="Descripcion del colegio..."
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Color primario</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={editForm.primary_color}
+                    onChange={(e) => setEditForm({ ...editForm, primary_color: e.target.value })}
+                    className="h-10 w-12 rounded-md border border-input cursor-pointer"
+                  />
+                  <input
+                    value={editForm.primary_color}
+                    onChange={(e) => setEditForm({ ...editForm, primary_color: e.target.value })}
+                    className={`${inputClass} flex-1`}
+                    placeholder="#1a73e8"
+                    maxLength={7}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Logo URL</label>
+                <input
+                  value={editForm.logo_url}
+                  onChange={(e) => setEditForm({ ...editForm, logo_url: e.target.value })}
+                  className={inputClass}
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Hero - Titulo</label>
+                <input
+                  value={editForm.hero_title}
+                  onChange={(e) => setEditForm({ ...editForm, hero_title: e.target.value })}
+                  className={inputClass}
+                  placeholder="Bienvenidos a nuestro colegio"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Hero - Descripcion</label>
+                <textarea
+                  value={editForm.hero_description}
+                  onChange={(e) => setEditForm({ ...editForm, hero_description: e.target.value })}
+                  className={`${inputClass} min-h-[80px] resize-y`}
+                  placeholder="Texto principal de la landing..."
+                  rows={3}
+                />
+              </div>
+
+              <hr className="my-1" />
+              <p className="text-xs text-muted-foreground font-medium">Contacto</p>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Email de contacto</label>
+                <input
+                  value={editForm.contact_email}
+                  onChange={(e) => setEditForm({ ...editForm, contact_email: e.target.value })}
+                  className={inputClass}
+                  placeholder="info@colegio.edu.ar"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Telefono</label>
+                <input
+                  value={editForm.contact_phone}
+                  onChange={(e) => setEditForm({ ...editForm, contact_phone: e.target.value })}
+                  className={inputClass}
+                  placeholder="341-1234567"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Direccion</label>
+                <input
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                  className={inputClass}
+                  placeholder="Av. Pellegrini 1234, Rosario"
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">

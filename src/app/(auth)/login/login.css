@@ -6,14 +6,14 @@
 .login-hero-overlay {
   background: linear-gradient(
     160deg,
-    hsl(155 40% 10% / 0.92) 0%,
-    hsl(158 45% 16% / 0.85) 40%,
-    hsl(155 35% 12% / 0.88) 100%
+    hsl(var(--sidebar) / 0.92) 0%,
+    hsl(var(--sidebar-border) / 0.85) 40%,
+    hsl(var(--sidebar) / 0.88) 100%
   );
 }
 
 .login-hero-accent {
-  background: linear-gradient(135deg, hsl(158 55% 55%) 0%, hsl(152 50% 65%) 100%);
+  background: linear-gradient(135deg, hsl(var(--sidebar-primary)) 0%, hsl(var(--sidebar-ring)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

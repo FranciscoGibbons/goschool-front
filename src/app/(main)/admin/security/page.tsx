@@ -416,13 +416,20 @@ export default function SecurityPage() {
               </TableHeader>
               <TableBody>
                 {trafficStats.map((stat) => {
-                  const end = new Date(stat.window_end);
-                  const start = new Date(end.getTime() - 15 * 60 * 1000);
-                  const fmt = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                  // Parse time directly from the string to avoid browser timezone conversion.
+                  // The backend sends NaiveDateTime (no timezone suffix), representing DB server local time.
+                  const timePart = stat.window_end.split('T')[1] || '00:00';
+                  const [endH, endM] = timePart.split(':').map(Number);
+                  let startM = endM - 15;
+                  let startH = endH;
+                  if (startM < 0) { startM += 60; startH -= 1; }
+                  if (startH < 0) startH += 24;
+                  const pad = (n: number) => String(n).padStart(2, '0');
+                  const fmt = (h: number, m: number) => `${pad(h)}:${pad(m)}`;
                   return (
                     <TableRow key={stat.window_end}>
                       <TableCell className="font-medium">
-                        {fmt(start)} - {fmt(end)}
+                        {fmt(startH, startM)} - {fmt(endH, endM)}
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline">{stat.requests_total}</Badge>

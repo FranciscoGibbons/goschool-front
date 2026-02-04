@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import https from 'https';
+import { headers as getHeaders } from 'next/headers';
 
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost:3001';
 
@@ -33,12 +34,27 @@ function extractJwtFromCookie(cookieString: string): string | null {
   return null;
 }
 
+/**
+ * Extract tenant slug from the incoming request's Host header.
+ * e.g. "stellamaris.goschool.ar" → "stellamaris"
+ */
+async function getTenantFromRequest(): Promise<string> {
+  try {
+    const h = await getHeaders();
+    const host = h.get('host') || '';
+    const match = host.match(/^([a-z0-9-]+)\.goschool\./);
+    return match ? match[1] : '';
+  } catch {
+    return '';
+  }
+}
+
 export async function backendFetch<T = unknown>(
   endpoint: string,
   options: BackendFetchOptions = {}
 ): Promise<BackendFetchResult<T>> {
   const { method = 'GET', headers = {}, body, cookie } = options;
-  const tenant = options.tenant ?? process.env.NEXT_PUBLIC_DEFAULT_SCHOOL ?? '';
+  const tenant = options.tenant || (await getTenantFromRequest()) || process.env.NEXT_PUBLIC_DEFAULT_SCHOOL || '';
 
   // Extraer JWT de la cookie y enviarlo como Bearer token
   const token = cookie ? extractJwtFromCookie(cookie) : null;

@@ -15,7 +15,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasRedirected = useRef(false);
 
   const isPublicRoute = useCallback((path: string) => {
-    return PUBLIC_ROUTES.some(route => path.startsWith(route));
+    return path === "/" || PUBLIC_ROUTES.some(route => path.startsWith(route));
   }, []);
 
   const redirectToLogin = useCallback((showToast = true) => {
@@ -29,7 +29,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           description: "Por favor, inicia sesion nuevamente",
         });
       }
-      router.replace("/login");
+      const loginUrl = currentPath && currentPath !== "/login"
+        ? `/login?from=${encodeURIComponent(currentPath)}`
+        : "/login";
+      router.replace(loginUrl);
       // Reset after navigation
       setTimeout(() => {
         hasRedirected.current = false;

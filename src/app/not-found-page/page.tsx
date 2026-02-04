@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="text-center max-w-md">
@@ -9,13 +9,13 @@ export default function NotFound() {
           Pagina no encontrada
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
-          La pagina que buscas no existe o fue movida.
+          El colegio que buscas no existe o no esta disponible.
         </p>
         <Link
-          href="/"
+          href="https://goschool.ar"
           className="mt-8 inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          Volver al inicio
+          Ir a Klass
         </Link>
       </div>
     </div>

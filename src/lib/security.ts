@@ -244,6 +244,25 @@ export const SECURITY_HEADERS = {
     "frame-ancestors 'none';"
 } as const;
 
+// Validación de rutas internas para redirección post-login (prevención de open redirect)
+const BLOCKED_REDIRECT_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0'];
+
+export function getSafeRedirectPath(from: string | null, fallback = '/dashboard'): string {
+  if (!from) return fallback;
+  const lower = from.toLowerCase();
+  if (
+    from !== '/login' &&
+    from.startsWith('/') &&
+    !from.startsWith('//') &&
+    !from.includes('\\') &&
+    !from.includes('://') &&
+    !BLOCKED_REDIRECT_HOSTS.some((h) => lower.includes(h))
+  ) {
+    return from;
+  }
+  return fallback;
+}
+
 // Función para logs de seguridad
 export function logSecurityEvent(event: string, details: Record<string, unknown>, severity: 'low' | 'medium' | 'high' = 'medium'): void {
   if (process.env.NODE_ENV === 'development') {

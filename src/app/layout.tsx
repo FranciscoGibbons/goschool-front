@@ -1,9 +1,11 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
+import { headers } from "next/headers";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { SchoolThemeProvider } from "@/components/providers/SchoolThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { branding, brandingMeta } from "@/config/branding";
 import "./globals.css";
@@ -110,24 +112,26 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = (await headers()).get("x-nonce") || "";
+
   return (
     <html lang="es" suppressHydrationWarning className="h-full">
       <head>
         {/* Preconnect para recursos externos */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
+
         {/* Security headers adicionales */}
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
         <meta httpEquiv="X-Frame-Options" content="DENY" />
         <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
-        
+
         {/* PWA meta tags */}
         <meta name="application-name" content={branding.appName} />
         <meta name="apple-mobile-web-app-title" content={branding.appName} />
@@ -148,13 +152,16 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
           themes={["light"]}
+          nonce={nonce}
         >
-          <AuthProvider>
-            <div className="min-h-screen flex flex-col">
-              {children}
-            </div>
-            <Toaster position="top-center" richColors />
-          </AuthProvider>
+          <SchoolThemeProvider>
+            <AuthProvider>
+              <div className="min-h-screen flex flex-col">
+                {children}
+              </div>
+              <Toaster position="top-center" richColors />
+            </AuthProvider>
+          </SchoolThemeProvider>
         </ThemeProvider>
       </body>
 
