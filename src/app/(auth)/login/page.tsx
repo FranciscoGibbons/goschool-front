@@ -1,22 +1,67 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import LoginForm from "./components/LoginForm";
 import Image from "next/image";
 import { branding, brandingMeta } from "@/config/branding";
 import "./login.css";
 
-export default function LoginPage() {
+interface SchoolPublicInfo {
+  name: string;
+  slug: string;
+  primary_color: string | null;
+  logo_url: string | null;
+  hero_image: string | null;
+}
+
+async function fetchSchoolInfo(slug: string): Promise<SchoolPublicInfo | null> {
+  try {
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://localhost:3001';
+    const res = await fetch(`${backendUrl}/api/school/${slug}/`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export default async function LoginPage() {
+  const headersList = await headers();
+  const host = headersList.get('host') || '';
+  const subdomainMatch = host.match(/^([a-z0-9-]+)\.goschool\./);
+
+  let schoolInfo: SchoolPublicInfo | null = null;
+  if (subdomainMatch) {
+    schoolInfo = await fetchSchoolInfo(subdomainMatch[1]);
+  }
+
+  const primaryColor = schoolInfo?.primary_color || null;
+  const heroImage = schoolInfo?.hero_image || "/images/aside_login.webp";
+  const schoolLogo = schoolInfo?.logo_url || branding.logoPath;
+  const schoolName = schoolInfo?.name || branding.schoolFullName;
+
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-background">
       {/* Left side - Branded Hero */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Background image */}
-        <Image
-          src="/images/aside_login.webp"
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
-        />
+        {schoolInfo?.hero_image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={heroImage}
+            alt="Background"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <Image
+            src={heroImage}
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+          />
+        )}
         {/* Dark branded overlay */}
         <div className="absolute inset-0 login-hero-overlay" />
 
@@ -25,18 +70,27 @@ export default function LoginPage() {
           {/* Top - Logo and school name */}
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center p-1.5">
-              <Image
-                src={branding.logoPath}
-                alt={brandingMeta.logoAlt}
-                width={48}
-                height={48}
-                className="w-full h-auto"
-                priority
-              />
+              {schoolInfo?.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={schoolLogo}
+                  alt={schoolName}
+                  className="w-full h-auto object-contain"
+                />
+              ) : (
+                <Image
+                  src={schoolLogo}
+                  alt={brandingMeta.logoAlt}
+                  width={48}
+                  height={48}
+                  className="w-full h-auto"
+                  priority
+                />
+              )}
             </div>
             <div>
               <p className="text-white/90 font-semibold text-lg tracking-tight">
-                {branding.schoolFullName}
+                {schoolName}
               </p>
               <p className="text-white/50 text-sm">
                 Plataforma educativa
@@ -67,7 +121,7 @@ export default function LoginPage() {
 
           {/* Bottom - Footer */}
           <p className="text-white/30 text-xs">
-            &copy; {new Date().getFullYear()} {branding.schoolFullName}. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} {schoolName}. Todos los derechos reservados.
           </p>
         </div>
       </div>
@@ -77,20 +131,29 @@ export default function LoginPage() {
         {/* Mobile header */}
         <div className="lg:hidden mb-10 text-center">
           <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center p-2">
-            <Image
-              src={branding.logoPath}
-              alt={brandingMeta.logoAlt}
-              width={64}
-              height={64}
-              className="w-full h-auto"
-              priority
-            />
+            {schoolInfo?.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={schoolLogo}
+                alt={schoolName}
+                className="w-full h-auto object-contain"
+              />
+            ) : (
+              <Image
+                src={schoolLogo}
+                alt={brandingMeta.logoAlt}
+                width={64}
+                height={64}
+                className="w-full h-auto"
+                priority
+              />
+            )}
           </div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">
             {branding.appName}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            {branding.schoolFullName}
+            {schoolName}
           </p>
         </div>
 
@@ -107,18 +170,18 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <Suspense fallback={null}>
-            <LoginForm />
+            <LoginForm primaryColor={primaryColor} />
           </Suspense>
 
           {/* Footer on desktop */}
           <p className="hidden lg:block mt-10 text-center text-xs text-text-muted">
-            &copy; {new Date().getFullYear()} {branding.schoolFullName}
+            &copy; {new Date().getFullYear()} {schoolName}
           </p>
         </div>
 
         {/* Mobile footer */}
         <p className="lg:hidden mt-auto pt-8 text-center text-xs text-text-muted">
-          &copy; {new Date().getFullYear()} {branding.schoolFullName}
+          &copy; {new Date().getFullYear()} {schoolName}
         </p>
       </div>
     </div>

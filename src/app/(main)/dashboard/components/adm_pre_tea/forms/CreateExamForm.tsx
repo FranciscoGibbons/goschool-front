@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { cleanSubjectName } from "@/utils/subjectHelpers";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { AcademicYearSelector } from "@/components/AcademicYearSelector";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 import { FormProps, useSubjects } from "./shared";
 
 export default function CreateExamForm({ onBack, onClose }: FormProps) {
@@ -37,6 +38,7 @@ export default function CreateExamForm({ onBack, onClose }: FormProps) {
 
   const { academicYears, selectedYearId, setSelectedYearId, isLoading: isLoadingYears } = useAcademicYears();
   const { subjects, isLoading: isLoadingSubjects, load: loadSubjects } = useSubjects();
+  const { limits: uploadLimits } = useUploadLimits();
 
   useEffect(() => {
     loadSubjects(selectedYearId);
@@ -250,7 +252,7 @@ export default function CreateExamForm({ onBack, onClose }: FormProps) {
               setFormData((p) => ({ ...p, file: file || undefined }));
             }}
           />
-          <p className="text-xs text-text-secondary mt-1">PDF o DOCX (max. 10MB)</p>
+          <p className="text-xs text-text-secondary mt-1">PDF o DOCX (max. {uploadLimits.documents}MB)</p>
         </div>
       )}
 

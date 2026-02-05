@@ -55,17 +55,19 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type') || '';
 
     // Handle multipart form data (file uploads)
+    // Stream the body directly to the backend to avoid buffering large videos in memory
     if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
-
       const response = await fetch(`${BACKEND_URL}/api/v1/subject_messages/`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': contentType,
         },
-        body: formData,
+        body: request.body,
         // @ts-expect-error - httpsAgent is valid for node-fetch
         agent: BACKEND_URL.startsWith('https') ? httpsAgent : undefined,
+        // @ts-expect-error - duplex is required for streaming request bodies
+        duplex: 'half',
       });
 
       const data = await safeJson(response);

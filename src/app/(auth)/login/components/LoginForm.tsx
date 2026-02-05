@@ -39,7 +39,11 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-export default function LoginForm() {
+interface LoginFormProps {
+  primaryColor?: string | null;
+}
+
+export default function LoginForm({ primaryColor }: LoginFormProps) {
   const {
     formData,
     role,
@@ -154,6 +158,7 @@ export default function LoginForm() {
         type="submit"
         disabled={isLoading || !isFormValid}
         className="login-button-primary w-full"
+        style={primaryColor ? { backgroundColor: primaryColor } : undefined}
       >
         {isLoading ? (
           <div className="flex items-center justify-center gap-2.5">
@@ -210,6 +215,7 @@ export default function LoginForm() {
           type="submit"
           disabled={isLoading || !role}
           className="login-button-primary flex-1"
+          style={primaryColor ? { backgroundColor: primaryColor } : undefined}
         >
           {isLoading ? (
             <div className="flex items-center justify-center gap-2.5">

@@ -18,6 +18,7 @@ import {
   PencilIcon,
   TrashIcon,
   ExclamationTriangleIcon,
+  VideoCameraIcon,
 } from "@heroicons/react/24/outline";
 import {
   AlertDialog,
@@ -55,7 +56,7 @@ interface SubjectMessage {
   subject_id: number;
   title: string;
   content: string;
-  type: "message" | "file" | "link";
+  type: "message" | "file" | "link" | "video";
   created_at: string;
 }
 
@@ -80,6 +81,11 @@ const typeConfig = {
     iconBg: "bg-success-muted text-success border-success/20",
     badge: "success" as const,
     label: "Mensaje",
+  },
+  video: {
+    iconBg: "bg-primary/10 text-primary border-primary/20",
+    badge: "info" as const,
+    label: "Video",
   },
 } as const;
 
@@ -115,7 +121,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   const [editData, setEditData] = useState<{
     title?: string;
     content?: string;
-    type?: "message" | "file" | "link";
+    type?: "message" | "file" | "link" | "video";
   }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -176,6 +182,8 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
         return <DocumentIcon className="w-6 h-6" />;
       case "link":
         return <ArrowDownTrayIcon className="w-6 h-6" />;
+      case "video":
+        return <VideoCameraIcon className="w-6 h-6" />;
       default:
         return <ChatBubbleLeftIcon className="w-6 h-6" />;
     }
@@ -190,8 +198,20 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
   };
 
   const getDownloadUrl = (message: SubjectMessage) => {
-    if (message.type === "file" && message.content) {
+    if ((message.type === "file" || message.type === "video") && message.content) {
       return message.content;
+    }
+    return null;
+  };
+
+  // Convert video URL to proxy URL for authentication (with streaming support)
+  const getVideoProxyUrl = (message: SubjectMessage) => {
+    if (message.type === "video" && message.content) {
+      // Extract path from full URL: https://domain/./uploads/videos/file.mp4 -> uploads/videos/file.mp4
+      const match = message.content.match(/uploads\/videos\/[^"'\s]+/);
+      if (match) {
+        return `/api/video-proxy/${match[0]}`;
+      }
     }
     return null;
   };
@@ -400,6 +420,27 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                     ) : null;
                   })()}
 
+                  {message.type === "video" && message.content && (() => {
+                    const videoUrl = getVideoProxyUrl(message);
+                    return videoUrl ? (
+                      <div className="mt-2">
+                        <video
+                          controls
+                          preload="metadata"
+                          className="w-full max-w-lg rounded-lg"
+                        >
+                          <source src={videoUrl} type="video/mp4" />
+                          Tu navegador no soporta la reproduccion de video.
+                        </video>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-warning text-sm">
+                        <ExclamationTriangleIcon className="size-4" />
+                        <span>Video no disponible</span>
+                      </div>
+                    );
+                  })()}
+
                   <div className="flex justify-end gap-2 mt-2">
                     <span className="text-xs text-text-muted">
                       {formatTime(message.created_at)}
@@ -467,7 +508,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setEditData({
                     ...editData,
-                    type: e.target.value as "message" | "file" | "link",
+                    type: e.target.value as "message" | "file" | "link" | "video",
                   })
                 }
                 required
@@ -475,6 +516,7 @@ export default function SubjectMessages({ subjectId }: SubjectMessagesProps) {
                 <option value="message">Mensaje</option>
                 <option value="file">Archivo</option>
                 <option value="link">Link</option>
+                <option value="video">Video</option>
               </NativeSelect>
             </FormGroup>
 

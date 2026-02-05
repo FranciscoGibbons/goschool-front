@@ -38,6 +38,7 @@ import { SANCTION_TYPES, SANCTION_LABELS } from "@/types/disciplinarySanction";
 import { PRESENCE_STATUS } from "@/types/assistance";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { AcademicYearSelector } from "@/components/AcademicYearSelector";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 
 // Tipos para los datos dinámicos
 interface Assessment {
@@ -135,6 +136,9 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
 
   // Hook para años académicos
   const { academicYears, selectedYearId, setSelectedYearId, isLoading: isLoadingYears } = useAcademicYears();
+
+  // Hook para límites de subida
+  const { limits: uploadLimits } = useUploadLimits();
 
   // Estado local para materias con información de cursos
   const [subjects, setSubjects] = useState<SubjectWithCourseName[]>([]);
@@ -1250,7 +1254,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                 }}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Formatos permitidos: PDF, DOCX (max. 10MB)
+                Formatos permitidos: PDF, DOCX (max. {uploadLimits.documents}MB)
               </p>
             </div>
           )}
@@ -1667,7 +1671,7 @@ export const ActionForm = ({ action, onBack, onClose }: ActionFormProps) => {
                     }}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Formatos permitidos: PDF, DOCX (max. 10MB)
+                    Formatos permitidos: PDF, DOCX (max. {uploadLimits.documents}MB)
                   </p>
                 </div>
               )}

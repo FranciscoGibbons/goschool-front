@@ -15,6 +15,7 @@ const ALLOWED_PREFIXES = [
   'uploads/files/',
   'uploads/submissions/',
   'uploads/chat_files/',
+  'uploads/videos/',
 ];
 
 export async function GET(
@@ -61,11 +62,12 @@ export async function GET(
     const buffer = await response.arrayBuffer();
     const contentType = response.headers.get('content-type') || 'image/jpeg';
 
-    // Permitir content-types de imagen y documentos
+    // Permitir content-types de imagen, documentos y videos
     const allowedTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'video/mp4', 'video/webm', 'video/quicktime',
     ];
     const safeContentType = allowedTypes.includes(contentType) ? contentType : 'application/octet-stream';
 

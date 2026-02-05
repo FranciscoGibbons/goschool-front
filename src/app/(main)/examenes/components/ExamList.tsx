@@ -54,6 +54,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { useSubmissions } from "@/hooks/useSubmissions";
 import { validateFile } from "@/types/submission";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 
 
 interface Props {
@@ -90,6 +91,7 @@ export default function ExamList({ exams, role, subjects }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isStudent = role === "student";
+  const { limits: uploadLimits } = useUploadLimits();
 
   // Memoize filter to avoid re-fetching on every render
   const submissionFilter = useMemo(
@@ -462,7 +464,7 @@ export default function ExamList({ exams, role, subjects }: Props) {
                 }}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Formatos permitidos: PDF, DOCX (max. 10MB)
+                Formatos permitidos: PDF, DOCX (max. {uploadLimits.documents}MB)
               </p>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Building2, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, Settings, HardDrive } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -14,14 +14,25 @@ interface School {
   is_active: boolean;
   description: string | null;
   primary_color: string | null;
+  secondary_color: string | null;
   logo_url: string | null;
+  hero_image: string | null;
   hero_title: string | null;
   hero_description: string | null;
+  about_title: string | null;
+  about_description: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   address: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface StorageStats {
+  database_size_mb: number;
+  files_size_mb: number;
+  total_size_mb: number;
+  files_count: number;
 }
 
 interface CreateForm {
@@ -40,9 +51,13 @@ interface EditForm {
   is_active: boolean;
   description: string;
   primary_color: string;
+  secondary_color: string;
   logo_url: string;
+  hero_image: string;
   hero_title: string;
   hero_description: string;
+  about_title: string;
+  about_description: string;
   contact_email: string;
   contact_phone: string;
   address: string;
@@ -79,6 +94,7 @@ export default function SchoolsPage() {
   const router = useRouter();
   const [schools, setSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [storageStats, setStorageStats] = useState<Record<string, StorageStats | 'loading' | 'error'>>({});
 
   // Create state
   const [showCreate, setShowCreate] = useState(false);
@@ -95,7 +111,9 @@ export default function SchoolsPage() {
 
   // Edit state
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ name: '', is_active: true, description: '', primary_color: '#1a73e8', logo_url: '', hero_title: '', hero_description: '', contact_email: '', contact_phone: '', address: '' });
+  const [editForm, setEditForm] = useState<EditForm>({ name: '', is_active: true, description: '', primary_color: '#1a73e8', secondary_color: '', logo_url: '', hero_image: '', hero_title: '', hero_description: '', about_title: '', about_description: '', contact_email: '', contact_phone: '', address: '' });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
 
   // Delete state
   const [deletingSchool, setDeletingSchool] = useState<School | null>(null);
@@ -119,9 +137,37 @@ export default function SchoolsPage() {
     }
   }, [router]);
 
+  const fetchStorageStats = useCallback(async (slug: string) => {
+    setStorageStats(prev => ({ ...prev, [slug]: 'loading' }));
+    try {
+      const res = await fetch(`/api/proxy/superadmin/schools/${slug}/storage/`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStorageStats(prev => ({ ...prev, [slug]: data }));
+      } else {
+        setStorageStats(prev => ({ ...prev, [slug]: 'error' }));
+      }
+    } catch {
+      setStorageStats(prev => ({ ...prev, [slug]: 'error' }));
+    }
+  }, []);
+
   useEffect(() => {
     fetchSchools();
   }, [fetchSchools]);
+
+  // Fetch storage stats for all schools after they're loaded
+  useEffect(() => {
+    if (schools.length > 0) {
+      schools.forEach(school => {
+        if (!storageStats[school.slug]) {
+          fetchStorageStats(school.slug);
+        }
+      });
+    }
+  }, [schools, storageStats, fetchStorageStats]);
 
   // Calculate course preview count
   const coursesPreview = useMemo(() => {
@@ -248,6 +294,24 @@ export default function SchoolsPage() {
     }
   };
 
+  const uploadSchoolImage = async (schoolId: number, field: 'logo' | 'hero_image', file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`/api/proxy/superadmin/upload?school_id=${schoolId}&field=${field}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(typeof data === 'string' ? data : data.error || 'Upload failed');
+    }
+
+    return res.json();
+  };
+
   const openEdit = (school: School) => {
     setEditingSchool(school);
     setEditForm({
@@ -255,9 +319,13 @@ export default function SchoolsPage() {
       is_active: school.is_active,
       description: school.description || '',
       primary_color: school.primary_color || '#1a73e8',
+      secondary_color: school.secondary_color || '',
       logo_url: school.logo_url || '',
+      hero_image: school.hero_image || '',
       hero_title: school.hero_title || '',
       hero_description: school.hero_description || '',
+      about_title: school.about_title || '',
+      about_description: school.about_description || '',
       contact_email: school.contact_email || '',
       contact_phone: school.contact_phone || '',
       address: school.address || '',
@@ -297,6 +365,7 @@ export default function SchoolsPage() {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Slug</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Database</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Storage</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Created</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
@@ -306,24 +375,40 @@ export default function SchoolsPage() {
               {isLoading ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i} className="border-b">
-                    <td colSpan={6} className="px-4 py-4">
+                    <td colSpan={7} className="px-4 py-4">
                       <div className="h-5 bg-muted rounded animate-pulse" />
                     </td>
                   </tr>
                 ))
               ) : schools.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     <Building2 className="w-10 h-10 mx-auto mb-2 opacity-40" />
                     No schools found
                   </td>
                 </tr>
               ) : (
-                schools.map((school) => (
+                schools.map((school) => {
+                  const storage = storageStats[school.slug];
+                  return (
                   <tr key={school.id} className="border-b hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs">{school.slug}</td>
                     <td className="px-4 py-3 font-medium">{school.name}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{school.database_name}</td>
+                    <td className="px-4 py-3">
+                      {storage === 'loading' ? (
+                        <span className="text-xs text-muted-foreground">Calculando...</span>
+                      ) : storage === 'error' ? (
+                        <span className="text-xs text-destructive">Error</span>
+                      ) : storage ? (
+                        <div className="text-xs" title={`BD: ${storage.database_size_mb} MB | Archivos: ${storage.files_size_mb} MB (${storage.files_count} archivos)`}>
+                          <span className="font-medium">{storage.total_size_mb} MB</span>
+                          <span className="text-muted-foreground ml-1">({storage.files_count} files)</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         school.is_active
@@ -345,6 +430,13 @@ export default function SchoolsPage() {
                         >
                           <Settings className="w-4 h-4" />
                         </Link>
+                        <Link
+                          href={`/superadmin/schools/${school.slug}/upload-limits`}
+                          className="inline-flex items-center justify-center rounded-md text-sm h-8 w-8 hover:bg-muted transition-colors"
+                          title="Límites de Subida"
+                        >
+                          <HardDrive className="w-4 h-4" />
+                        </Link>
                         <button
                           onClick={() => openEdit(school)}
                           className="inline-flex items-center justify-center rounded-md text-sm h-8 w-8 hover:bg-muted transition-colors"
@@ -362,7 +454,7 @@ export default function SchoolsPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                );})
               )}
             </tbody>
           </table>
@@ -688,33 +780,128 @@ export default function SchoolsPage() {
                   rows={3}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Color primario</label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="color"
-                    value={editForm.primary_color}
-                    onChange={(e) => setEditForm({ ...editForm, primary_color: e.target.value })}
-                    className="h-10 w-12 rounded-md border border-input cursor-pointer"
-                  />
-                  <input
-                    value={editForm.primary_color}
-                    onChange={(e) => setEditForm({ ...editForm, primary_color: e.target.value })}
-                    className={`${inputClass} flex-1`}
-                    placeholder="#1a73e8"
-                    maxLength={7}
-                  />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Color primario</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={editForm.primary_color}
+                      onChange={(e) => setEditForm({ ...editForm, primary_color: e.target.value })}
+                      className="h-10 w-12 rounded-md border border-input cursor-pointer"
+                    />
+                    <input
+                      value={editForm.primary_color}
+                      onChange={(e) => setEditForm({ ...editForm, primary_color: e.target.value })}
+                      className={`${inputClass} flex-1`}
+                      placeholder="#1a73e8"
+                      maxLength={7}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Color secundario</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={editForm.secondary_color || '#6b7280'}
+                      onChange={(e) => setEditForm({ ...editForm, secondary_color: e.target.value })}
+                      className="h-10 w-12 rounded-md border border-input cursor-pointer"
+                    />
+                    <input
+                      value={editForm.secondary_color}
+                      onChange={(e) => setEditForm({ ...editForm, secondary_color: e.target.value })}
+                      className={`${inputClass} flex-1`}
+                      placeholder="#6b7280"
+                      maxLength={7}
+                    />
+                  </div>
                 </div>
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Logo URL</label>
-                <input
-                  value={editForm.logo_url}
-                  onChange={(e) => setEditForm({ ...editForm, logo_url: e.target.value })}
-                  className={inputClass}
-                  placeholder="https://..."
-                />
+                <label className="text-sm font-medium">Logo</label>
+                {editForm.logo_url && (
+                  <div className="flex items-center gap-3 mb-2">
+                    <img src={editForm.logo_url} alt="Logo actual" className="h-12 w-12 rounded-md object-contain border" />
+                    <span className="text-xs text-muted-foreground truncate flex-1">{editForm.logo_url}</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    value={editForm.logo_url}
+                    onChange={(e) => setEditForm({ ...editForm, logo_url: e.target.value })}
+                    className={`${inputClass} flex-1`}
+                    placeholder="URL o subir archivo..."
+                  />
+                  <label className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-10 px-3 border border-input hover:bg-accent cursor-pointer transition-colors ${uploadingLogo ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {uploadingLogo ? 'Subiendo...' : 'Subir'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={uploadingLogo}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !editingSchool) return;
+                        setUploadingLogo(true);
+                        try {
+                          const result = await uploadSchoolImage(editingSchool.id, 'logo', file);
+                          setEditForm(prev => ({ ...prev, logo_url: result.url }));
+                          toast.success('Logo subido');
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : 'Error al subir logo');
+                        } finally {
+                          setUploadingLogo(false);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Hero - Imagen de fondo</label>
+                {editForm.hero_image && (
+                  <div className="mb-2">
+                    <img src={editForm.hero_image} alt="Hero actual" className="h-24 w-full rounded-md object-cover border" />
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    value={editForm.hero_image}
+                    onChange={(e) => setEditForm({ ...editForm, hero_image: e.target.value })}
+                    className={`${inputClass} flex-1`}
+                    placeholder="URL o subir archivo..."
+                  />
+                  <label className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-10 px-3 border border-input hover:bg-accent cursor-pointer transition-colors ${uploadingHero ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {uploadingHero ? 'Subiendo...' : 'Subir'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={uploadingHero}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !editingSchool) return;
+                        setUploadingHero(true);
+                        try {
+                          const result = await uploadSchoolImage(editingSchool.id, 'hero_image', file);
+                          setEditForm(prev => ({ ...prev, hero_image: result.url }));
+                          toast.success('Imagen hero subida');
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : 'Error al subir imagen');
+                        } finally {
+                          setUploadingHero(false);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Hero - Titulo</label>
                 <input
@@ -732,6 +919,28 @@ export default function SchoolsPage() {
                   className={`${inputClass} min-h-[80px] resize-y`}
                   placeholder="Texto principal de la landing..."
                   rows={3}
+                />
+              </div>
+
+              <hr className="my-1" />
+              <p className="text-xs text-muted-foreground font-medium">Seccion &quot;Sobre nosotros&quot;</p>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Titulo</label>
+                <input
+                  value={editForm.about_title}
+                  onChange={(e) => setEditForm({ ...editForm, about_title: e.target.value })}
+                  className={inputClass}
+                  placeholder="Sobre nosotros"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Descripcion</label>
+                <textarea
+                  value={editForm.about_description}
+                  onChange={(e) => setEditForm({ ...editForm, about_description: e.target.value })}
+                  className={`${inputClass} min-h-[100px] resize-y`}
+                  placeholder="Historia, mision y vision del colegio..."
+                  rows={4}
                 />
               </div>
 

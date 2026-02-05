@@ -69,27 +69,27 @@ export default function Sidebar({ className = "" }: { className?: string }) {
   return (
     <aside
       className={cn(
-        "flex flex-col h-full w-full bg-sidebar border-r border-sidebar-border",
+        "flex flex-col h-full w-full bg-sidebar border-r border-sidebar-border overflow-visible",
         className
       )}
       aria-label="Menu principal"
     >
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        {/* Logo + Notifications */}
-        <div className="px-4 py-4 border-b border-sidebar-border flex items-center justify-between">
-          <Link href={homeHref} className="block w-24">
-            <Image
-              src="/images/logo.webp"
-              alt="Logo"
-              width={96}
-              height={48}
-              className="w-full h-auto"
-              priority
-            />
-          </Link>
-          <NotificationBell />
-        </div>
+      {/* Logo + Notifications - Outside overflow container */}
+      <div className="px-4 py-4 border-b border-sidebar-border flex items-center justify-between flex-shrink-0">
+        <Link href={homeHref} className="block w-24">
+          <Image
+            src="/images/logo.webp"
+            alt="Logo"
+            width={96}
+            height={48}
+            className="w-full h-auto"
+            priority
+          />
+        </Link>
+        <NotificationBell />
+      </div>
 
+      <div className="flex-1 flex flex-col overflow-y-auto">
         <div className="px-3 py-3">
           <ChildSelector />
         </div>

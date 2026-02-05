@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   TAILWIND 4 THEME - Verde Académico
-   All colors defined with literal values for Tailwind 4 compatibility
+   TAILWIND 4 THEME - Neutral with Green Accents
+   Neutral backgrounds/surfaces/borders with green primary color
    ========================================================================== */
 @theme {
-  /* Core backgrounds - green-tinted, never pure white */
-  --color-background: hsl(148 22% 94%);
-  --color-surface: hsl(150 14% 98.5%);
-  --color-surface-muted: hsl(150 20% 92%);
+  /* Core backgrounds - neutral grays */
+  --color-background: hsl(0 0% 96%);
+  --color-surface: hsl(0 0% 100%);
+  --color-surface-muted: hsl(0 0% 95%);
 
-  /* Borders - noticeable green tint */
-  --color-border: hsl(150 18% 82%);
-  --color-border-muted: hsl(150 18% 88%);
-  --color-input: hsl(150 18% 82%);
+  /* Borders - neutral grays */
+  --color-border: hsl(0 0% 82%);
+  --color-border-muted: hsl(0 0% 88%);
+  --color-input: hsl(0 0% 82%);
   --color-ring: hsl(158 45% 32%);
 
-  /* Text hierarchy */
-  --color-foreground: hsl(155 28% 14%);
-  --color-text-primary: hsl(155 28% 14%);
-  --color-text-secondary: hsl(152 12% 40%);
-  --color-text-muted: hsl(150 8% 54%);
+  /* Text hierarchy - neutral */
+  --color-foreground: hsl(0 0% 10%);
+  --color-text-primary: hsl(0 0% 10%);
+  --color-text-secondary: hsl(0 0% 40%);
+  --color-text-muted: hsl(0 0% 54%);
   --color-text-inverse: hsl(0 0% 100%);
 
   /* Primary - Verde bosque */
@@ -36,19 +36,19 @@
   --color-error: hsl(0 65% 50%);
   --color-error-muted: hsl(0 65% 94%);
 
-  /* Legacy shadcn compatibility */
-  --color-secondary: hsl(150 18% 89%);
-  --color-secondary-foreground: hsl(155 28% 14%);
+  /* Legacy shadcn compatibility - neutral */
+  --color-secondary: hsl(0 0% 92%);
+  --color-secondary-foreground: hsl(0 0% 10%);
   --color-destructive: hsl(0 65% 50%);
   --color-destructive-foreground: hsl(0 0% 100%);
-  --color-muted: hsl(150 18% 89%);
-  --color-muted-foreground: hsl(152 12% 40%);
-  --color-accent: hsl(150 22% 91%);
-  --color-accent-foreground: hsl(155 28% 14%);
-  --color-popover: hsl(150 14% 98.5%);
-  --color-popover-foreground: hsl(155 28% 14%);
-  --color-card: hsl(150 14% 98.5%);
-  --color-card-foreground: hsl(155 28% 14%);
+  --color-muted: hsl(0 0% 92%);
+  --color-muted-foreground: hsl(0 0% 40%);
+  --color-accent: hsl(0 0% 94%);
+  --color-accent-foreground: hsl(0 0% 10%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(0 0% 10%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 10%);
 
   /* Sidebar - dark forest green */
   --color-sidebar: hsl(155 35% 15%);
@@ -135,12 +135,12 @@
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
 
-  /* Core colors (HSL values without hsl() wrapper for flexibility) */
-  --background: 148 22% 94%;
-  --surface: 150 14% 98.5%;
-  --surface-muted: 150 20% 92%;
-  --border: 150 18% 82%;
-  --border-muted: 150 18% 88%;
+  /* Core colors (HSL values without hsl() wrapper for flexibility) - neutral */
+  --background: 0 0% 96%;
+  --surface: 0 0% 100%;
+  --surface-muted: 0 0% 95%;
+  --border: 0 0% 82%;
+  --border-muted: 0 0% 88%;
   --primary: 158 45% 32%;
   --primary-hover: 158 45% 26%;
   --primary-foreground: 0 0% 100%;
@@ -150,26 +150,26 @@
   --warning-muted: 40 80% 93%;
   --error: 0 65% 50%;
   --error-muted: 0 65% 94%;
-  --text-primary: 155 28% 14%;
-  --text-secondary: 152 12% 40%;
-  --text-muted: 150 8% 54%;
+  --text-primary: 0 0% 10%;
+  --text-secondary: 0 0% 40%;
+  --text-muted: 0 0% 54%;
   --text-inverse: 0 0% 100%;
 
-  /* Legacy shadcn tokens */
-  --foreground: 155 28% 14%;
-  --card: 150 14% 98.5%;
-  --card-foreground: 155 28% 14%;
-  --popover: 150 14% 98.5%;
-  --popover-foreground: 155 28% 14%;
-  --secondary: 150 18% 89%;
-  --secondary-foreground: 155 28% 14%;
-  --muted: 150 18% 89%;
-  --muted-foreground: 152 12% 40%;
-  --accent: 150 22% 91%;
-  --accent-foreground: 155 28% 14%;
+  /* Legacy shadcn tokens - neutral */
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 0 0% 92%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 0 0% 94%;
+  --accent-foreground: 0 0% 10%;
   --destructive: 0 65% 50%;
   --destructive-foreground: 0 0% 100%;
-  --input: 150 18% 82%;
+  --input: 0 0% 82%;
   --ring: 158 45% 32%;
 
   /* Sidebar - dark forest green */

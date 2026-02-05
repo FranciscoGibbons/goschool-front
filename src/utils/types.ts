@@ -102,7 +102,7 @@ export interface SubjectMessageForm {
   subject_id: string;
   title: string;
   content: string;
-  type: "message" | "file" | "link";
+  type: "message" | "file" | "link" | "video";
   file?: File;
 }
 
@@ -181,7 +181,7 @@ export function isSubjectMessageForm(form: unknown): form is SubjectMessageForm 
   if (typeof form !== "object" || form === null) return false;
   
   const f = form as Record<string, unknown>;
-  const validTypes = ["message", "file", "link"];
+  const validTypes = ["message", "file", "link", "video"];
   
   return (
     typeof f.subject_id === "string" &&

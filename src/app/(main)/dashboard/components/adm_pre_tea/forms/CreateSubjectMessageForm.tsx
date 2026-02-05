@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cleanSubjectName } from "@/utils/subjectHelpers";
 import { useAcademicYears } from "@/hooks/useAcademicYears";
 import { AcademicYearSelector } from "@/components/AcademicYearSelector";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
 import { FormProps, useSubjects } from "./shared";
 
 export default function CreateSubjectMessageForm({ onBack, onClose }: FormProps) {
@@ -31,14 +32,25 @@ export default function CreateSubjectMessageForm({ onBack, onClose }: FormProps)
 
   const { academicYears, selectedYearId, setSelectedYearId, isLoading: isLoadingYears } = useAcademicYears();
   const { subjects, isLoading: isLoadingSubjects, load: loadSubjects } = useSubjects();
+  const { limits } = useUploadLimits();
 
   useEffect(() => {
     loadSubjects(selectedYearId);
   }, [selectedYearId, loadSubjects]);
 
   const handleSubmit = async () => {
-    if (!formData.subject_id || !formData.title || !formData.content) {
+    if (!formData.subject_id || !formData.title) {
       toast.error("Por favor completa todos los campos requeridos");
+      return;
+    }
+
+    if ((formData.type === "message" || formData.type === "link") && !formData.content) {
+      toast.error("Por favor completa el contenido");
+      return;
+    }
+
+    if ((formData.type === "file" || formData.type === "video") && !formData.file) {
+      toast.error("Por favor selecciona un archivo");
       return;
     }
 
@@ -127,31 +139,59 @@ export default function CreateSubjectMessageForm({ onBack, onClose }: FormProps)
             <SelectItem value="message">Mensaje</SelectItem>
             <SelectItem value="file">Archivo</SelectItem>
             <SelectItem value="link">Link</SelectItem>
+            <SelectItem value="video">Video</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div>
-        <Label>Contenido *</Label>
-        <RichTextEditor
-          content={formData.content}
-          onChange={(html) => setFormData((p) => ({ ...p, content: html }))}
-          placeholder="Contenido del mensaje"
-        />
-      </div>
+      {(formData.type === "message" || formData.type === "link") && (
+        <div>
+          <Label>Contenido *</Label>
+          <RichTextEditor
+            content={formData.content}
+            onChange={(html) => setFormData((p) => ({ ...p, content: html }))}
+            placeholder="Contenido del mensaje"
+          />
+        </div>
+      )}
 
       {formData.type === "file" && (
         <div>
-          <Label>Archivo</Label>
+          <Label>Archivo *</Label>
           <Input
             type="file"
             accept=".pdf,.docx"
             onChange={(e) => {
               const file = e.target.files?.[0];
+              if (file && file.size > limits.documents * 1024 * 1024) {
+                toast.error(`El archivo no puede superar los ${limits.documents}MB`);
+                e.target.value = "";
+                return;
+              }
               setFormData((p) => ({ ...p, file: file || undefined }));
             }}
           />
-          <p className="text-xs text-text-secondary mt-1">PDF o DOCX (max. 10MB)</p>
+          <p className="text-xs text-text-secondary mt-1">PDF o DOCX (max. {limits.documents}MB)</p>
+        </div>
+      )}
+
+      {formData.type === "video" && (
+        <div>
+          <Label>Video *</Label>
+          <Input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && file.size > limits.videos * 1024 * 1024) {
+                toast.error(`El video no puede superar los ${limits.videos}MB`);
+                e.target.value = "";
+                return;
+              }
+              setFormData((p) => ({ ...p, file: file || undefined }));
+            }}
+          />
+          <p className="text-xs text-text-secondary mt-1">MP4, WebM o MOV (max. {limits.videos}MB)</p>
         </div>
       )}
 

@@ -34,6 +34,7 @@ import {
 import { useChatStore } from '@/store/chatStore';
 import { useChat } from '@/hooks/useChat';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useUploadLimits } from '@/hooks/useUploadLimits';
 import userInfoStore from '@/store/userInfoStore';
 import { SecuritySanitizer } from '@/lib/security';
 import type { Chat, ChatMessage, PubUser, TypingUser } from '@/types/chat';
@@ -345,7 +346,6 @@ function TypingIndicator({ users }: { users: TypingUser[] }) {
 
 // ============ CHAT WINDOW COMPONENT ============
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_FILE_TYPES = 'image/jpeg,image/png,image/gif,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 function ChatWindow({
@@ -386,6 +386,8 @@ function ChatWindow({
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
   const { userInfo } = userInfoStore();
+  const { limits: uploadLimits } = useUploadLimits();
+  const maxFileSize = uploadLimits.chat_files * 1024 * 1024;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -467,8 +469,8 @@ function ChatWindow({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > MAX_FILE_SIZE) {
-      alert('El archivo es muy grande. Maximo 10MB.');
+    if (file.size > maxFileSize) {
+      alert(`El archivo es muy grande. Maximo ${uploadLimits.chat_files}MB.`);
       return;
     }
 
@@ -657,7 +659,7 @@ function ChatWindow({
             variant="ghost"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            title="Adjuntar archivo (JPG, PNG, GIF, PDF, DOCX - max. 10MB)"
+            title={`Adjuntar archivo (JPG, PNG, GIF, PDF, DOCX - max. ${uploadLimits.chat_files}MB)`}
           >
             <Paperclip className="h-5 w-5" />
           </Button>
